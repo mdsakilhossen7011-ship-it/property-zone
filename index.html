@@ -46,4 +46,30 @@ function login(){let email=document.getElementById('loginEmail').value.trim();if
 function logout(){currentUser=null;showView('home')}
 renderProperties();
 </script>
+  <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+import {
+  getAuth,
+  RecaptchaVerifier,
+  signInWithPhoneNumber
+} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDRLWFf4ISfQdoZp7JaQAWwwKCoL_aV6No",
+  authDomain: "property-zone-17121.firebaseapp.com",
+  projectId: "property-zone-17121",
+  storageBucket: "property-zone-17121.firebasestorage.app",
+  messagingSenderId: "631227640032",
+  appId: "1:631227640032:web:855536883072ccfe3b8885"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+window.propertyZoneAuth = auth;
+window.propertyZoneRecaptchaVerifier = RecaptchaVerifier;
+window.propertyZoneSignInWithPhoneNumber = signInWithPhoneNumber;
+
+console.log("Property Zone Firebase Connected");
+</script>
 </body></html>
