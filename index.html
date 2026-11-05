@@ -34,6 +34,20 @@
 .dash-earning-card strong{display:block;color:var(--gold2);font:34px Georgia;margin:10px 0}
 .dash-earning-card small{font-size:11px}
 @media(max-width:560px){.dash-earnings{gap:9px}.dash-earning-card{padding:15px}.dash-earning-card strong{font-size:27px}.dash-earning-card span{font-size:12px}}
+
+/* Admin panel layout */
+.admin-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}
+.admin-stat{padding:17px;border:1px solid var(--line);border-radius:13px;background:#17130e}
+.admin-stat span{display:block;color:var(--muted);font-size:12px}.admin-stat strong{display:block;color:var(--gold2);font:30px Georgia;margin-top:8px}
+.admin-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:15px}
+.admin-form label{display:flex;flex-direction:column;gap:6px;color:var(--muted);font-size:12px}
+.admin-form input,.admin-form textarea,.admin-form select{width:100%;box-sizing:border-box;padding:12px;border:1px solid var(--line);border-radius:9px;background:#100e0b;color:var(--white);font:inherit}
+.admin-form textarea{min-height:90px;resize:vertical}.admin-form .wide{grid-column:1/-1}
+.admin-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0}
+.admin-tool{padding:15px;border:1px solid var(--line);border-radius:11px;background:#17130e;text-align:left;color:var(--white)}
+.admin-tool b{display:block;margin-bottom:5px}.admin-tool small{color:var(--muted)}
+.admin-lock{padding:13px;border:1px solid #765b27;border-radius:10px;background:#211a10;color:var(--gold2);margin:14px 0}
+@media(max-width:600px){.admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-form{grid-template-columns:1fr}.admin-form .wide{grid-column:auto}.admin-tools{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -44,6 +58,7 @@
 <button class="menu-item" onclick="menuGo('properties')"><span class="menu-icon">▦</span><span>Properties</span></button>
 <button class="menu-item" id="menuProfile" style="display:none" onclick="menuGo('profile')"><span class="menu-icon">♙</span><span>My Profile</span></button>
 <button class="menu-item" id="menuDashboard" style="display:none" onclick="menuGo('dashboard')"><span class="menu-icon">▤</span><span>Dashboard</span></button>
+<button class="menu-item" id="menuAdmin" style="display:none" onclick="menuGo('admin')"><span class="menu-icon">⚙</span><span>Admin Panel</span></button>
 <button class="menu-item" onclick="menuGo('referral')"><span class="menu-icon">♧</span><span>Refer &amp; Commission</span></button>
 <button class="menu-item" onclick="menuGo('livechat')"><span class="menu-icon">▤</span><span>Live Chat</span><small class="menu-soon">SOON</small></button>
 <button class="menu-item" onclick="menuGo('livechat')"><span class="menu-icon">?</span><span>Help &amp; Support</span></button>
@@ -121,6 +136,38 @@
 <div class="profile-logout"><button class="btn" onclick="logout()">↪ Log out</button></div>
 </section>
 <section id="livechat" class="view"><div class="panel" style="max-width:720px;margin:24px auto"><div class="eyebrow">PROPERTY ZONE SUPPORT</div><h2>Live Chat &amp; Help Center</h2><p class="muted">Need help with your account or a property listing? Our support chat is being prepared.</p><div class="status">Live chat is coming soon. Messages cannot be sent yet because the support system has not been connected.</div><div class="profile-row"><span>Account support</span><strong>Coming soon</strong></div><div class="profile-row"><span>Property assistance</span><strong>Coming soon</strong></div><div class="profile-row"><span>Referral support</span><strong>Coming soon</strong></div><button class="btn" onclick="showView(currentUser?'dashboard':'home')">← Back</button></div></section>
+<section id="admin" class="view">
+ <div class="panel">
+  <div class="eyebrow">PROPERTY ZONE CONTROL CENTER</div><h2>Admin Panel</h2>
+  <p class="muted">Manage offers, members and property submissions from one place.</p>
+  <div class="admin-lock">Admin access setup is pending. This panel is hidden from normal members until the owner email and secure Firebase admin permissions are configured.</div>
+  <h3>Overview</h3>
+  <div class="admin-grid">
+   <div class="admin-stat"><span>Total Users</span><strong>—</strong></div>
+   <div class="admin-stat"><span>Properties</span><strong>—</strong></div>
+   <div class="admin-stat"><span>Published Offers</span><strong>—</strong></div>
+  </div>
+  <h3>Manage Offers</h3>
+  <p class="muted">Create an offer that will appear in the Latest Offers area for members after the database connection is enabled.</p>
+  <form class="admin-form" onsubmit="event.preventDefault();setStatus('Offer publishing will be enabled after secure Firebase admin setup.',true)">
+   <label>Offer Title<input type="text" placeholder="Enter offer title" disabled></label>
+   <label>Discount / Bonus<input type="text" placeholder="e.g. 10% discount" disabled></label>
+   <label class="wide">Description<textarea placeholder="Write offer details" disabled></textarea></label>
+   <label>Start Date<input type="date" disabled></label>
+   <label>End Date<input type="date" disabled></label>
+   <label class="wide">Offer Image URL<input type="url" placeholder="https://..." disabled></label>
+   <div class="wide"><button class="btn primary" type="button" disabled>Publish Offer · Setup required</button></div>
+  </form>
+  <h3>Other Management</h3>
+  <div class="admin-tools">
+   <div class="admin-tool"><b>Manage Users</b><small>Member list and account status · Setup pending</small></div>
+   <div class="admin-tool"><b>Manage Properties</b><small>Approve or reject listings · Setup pending</small></div>
+   <div class="admin-tool"><b>Referral &amp; Commission</b><small>Referral tracking and commission controls · Setup pending</small></div>
+   <div class="admin-tool"><b>Announcements</b><small>Publish notices to all members · Setup pending</small></div>
+  </div>
+  <button class="btn" onclick="showView('dashboard')">Back to Dashboard</button>
+ </div>
+</section>
 <section id="referral" class="view"><div class="panel"><div class="eyebrow">Partner program</div><h2>Refer &amp; Commission</h2><p class="muted">Invite people to Property Zone and earn commission when the referral program becomes active.</p><div class="dash-earnings"><div class="dash-earning-card"><span>Today's Earning</span><strong>$0.00</strong><small>Today's confirmed commission</small></div><div class="dash-earning-card"><span>Total Earning</span><strong>$0.00</strong><small>Total confirmed commission</small></div></div><div class="stats"><div class="stat"><b>Coming soon</b><small>Referral tracking</small></div><div class="stat"><b>—</b><small>Total referrals</small></div><div class="stat"><b>—</b><small>Commission earned</small></div></div><p class="notice">Referral links, referral records and commission payments are not active yet. We will show your personal referral link and confirmed commission here after the referral system is connected.</p><button class="btn" onclick="showView('home')">Back to Home</button></div></section>
 <div id="globalStatus" class="status" role="status" aria-live="polite" style="display:none"></div>
 </main><footer>© 2026 Property Zone · Property marketplace · Verified listings only · Payments are not active.</footer>
@@ -128,12 +175,12 @@
 const properties=[];let filter="All",currentUser=null;
 function renderProperties(){let q=(document.getElementById('search')?.value||'').toLowerCase();let list=properties.filter(p=>(filter==='All'||p.status===filter)&&(p.name+' '+p.loc+' '+p.type).toLowerCase().includes(q));document.getElementById('propertyGrid').innerHTML=list.length?list.map(p=>`<article class="card property"><div class="photo"><span>${p.status}</span></div><div class="propbody"><h3>${p.name}</h3><div class="location">⌖ ${p.loc} · ${p.type}</div><p class="muted">${p.desc}</p><div class="meta"><span>Property details</span><span class="price">${p.packages.length} options</span></div><div class="cardactions"><button class="btn primary" onclick="openProperty(${p.id})">View details</button></div></div></article>`).join(''):'<p class="muted">No verified properties are published yet. Listings will appear here after admin review.</p>'}
 function setFilter(f,b){filter=f;document.querySelectorAll('.filters .btn').forEach(x=>x.classList.remove('primary'));b.classList.add('primary');renderProperties()}
-function showView(id){if((id==='dashboard'||id==='profile')&&!currentUser){id='login';setStatus('Please log in to view your account.',true)}document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);if(id==='dashboard'||id==='profile')updateDashboard();closeMenu()}
+function showView(id){if(id==='admin'){id='dashboard';setStatus('Admin access is not configured yet.',true)}if((id==='dashboard'||id==='profile')&&!currentUser){id='login';setStatus('Please log in to view your account.',true)}document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);if(id==='dashboard'||id==='profile')updateDashboard();closeMenu()}
 function toggleMenu(){const open=!document.getElementById('sideMenu').classList.contains('open');document.getElementById('sideMenu').classList.toggle('open',open);document.getElementById('menuBackdrop').classList.toggle('open',open);document.getElementById('menuToggle').setAttribute('aria-expanded',String(open));document.getElementById('sideMenu').setAttribute('aria-hidden',String(!open))}
 function closeMenu(){const menu=document.getElementById('sideMenu');if(!menu)return;menu.classList.remove('open');document.getElementById('menuBackdrop').classList.remove('open');document.getElementById('menuToggle').setAttribute('aria-expanded','false');menu.setAttribute('aria-hidden','true')}
 function menuGo(id){if(id==='properties'){showView('home');setTimeout(()=>document.getElementById('listings').scrollIntoView({behavior:'smooth'}),50)}else showView(id)}
 
-function syncNavigation(){const loggedIn=!!currentUser;document.getElementById('menuLogin').style.display=loggedIn?'none':'';document.getElementById('menuJoin').style.display=loggedIn?'none':'';document.getElementById('menuProfile').style.display=loggedIn?'':'none';document.getElementById('menuDashboard').style.display=loggedIn?'':'none';document.getElementById('menuLogout').style.display=loggedIn?'':'none'}
+function syncNavigation(){const loggedIn=!!currentUser;document.getElementById('menuLogin').style.display=loggedIn?'none':'';document.getElementById('menuJoin').style.display=loggedIn?'none':'';document.getElementById('menuProfile').style.display=loggedIn?'':'none';document.getElementById('menuDashboard').style.display=loggedIn?'':'none';document.getElementById('menuAdmin').style.display='none';document.getElementById('menuLogout').style.display=loggedIn?'':'none'}
 function openProperty(id){let p=properties.find(x=>x.id===id);document.getElementById('detailContent').innerHTML=`<div class="hero"><div><div class="eyebrow">${p.status} · ${p.type}</div><h1>${p.name}</h1><p class="muted">⌖ ${p.loc}</p><p class="muted">${p.desc}</p></div><div class="heroart"><strong>${p.name}</strong></div></div><h2>Illustrative tiers</h2><p class="notice">Sample figures only. No payment or investment packages are offered on this website.</p><div class="packages">${p.packages.map(n=>`<div class="package"><div class="eyebrow">Example tier</div><h3>Package</h3><b>৳${n.toLocaleString('en-BD')}</b><p class="notice">Illustrative amount · no payment enabled</p><button class="btn" onclick="showView('register')">Register to explore</button></div>`).join('')}</div>`;showView('details')}
 function updateDashboard(){const name=currentUser?.displayName||'Member';const email=currentUser?.email||'—';document.getElementById('profileName').textContent=name;document.getElementById('profileEmail').textContent=email;document.getElementById('profileVerified').textContent=currentUser?.emailVerified?'✓ Verified':'Not verified';document.getElementById('profileHeroName').textContent=name;document.getElementById('profileHeroEmail').textContent=email;document.getElementById('profileAvatar').textContent=name.split(/\\s+/).map(x=>x[0]||'').slice(0,2).join('').toUpperCase()||'PZ';document.getElementById('profileHeroStatus').textContent=currentUser?.emailVerified?'● Email verified':'● Verification pending';document.getElementById('accountStatus').textContent=currentUser?'Your account is active. Email verification is complete.':'Sign in to view your account.';document.getElementById('profileNameInput').value=name;const welcome=document.getElementById('dashWelcome');if(welcome)welcome.textContent=name.split(/\\s+/)[0]||'Member';const dashStatus=document.getElementById('dashAccountStatus');if(dashStatus)dashStatus.textContent=currentUser?.emailVerified?'Email verified':'Verification pending';const dashDetail=document.getElementById('dashAccountDetail');if(dashDetail)dashDetail.textContent=email+' · '+(currentUser?.emailVerified?'Verified account':'Please verify your email');syncNavigation()}
 function openDashboardFeature(title,description){document.getElementById('dashboardFeatureTitle').textContent=title;document.getElementById('dashboardFeatureText').textContent=description;showView('dashboardFeature')}
