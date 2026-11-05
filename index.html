@@ -23,6 +23,8 @@
 <button class="menu-item" id="menuProfile" style="display:none" onclick="menuGo('dashboard')">♙ <span>My Profile</span></button>
 <button class="menu-item" id="menuDashboard" style="display:none" onclick="menuGo('dashboard')">▤ <span>Dashboard</span></button>
 <button class="menu-item" onclick="menuGo('referral')">♧ <span>Refer &amp; Commission</span></button>
+<button class="menu-item" onclick="menuGo('livechat')">💬 <span>Live Chat</span><span style="margin-left:auto;color:var(--gold2);font-size:11px">SOON</span></button>
+<button class="menu-item" onclick="menuGo('livechat')">ⓘ <span>Help &amp; Support</span></button>
 <div class="menu-divider"></div>
 <button class="menu-item" id="menuLogin" onclick="menuGo('login')">⇥ <span>Login</span></button>
 <button class="menu-item" id="menuJoin" onclick="menuGo('register')">＋ <span>Join Now</span></button>
@@ -63,6 +65,7 @@
 <div id="profileProperties" class="panel profile-pane hidden"><h3>My Properties</h3><p class="muted">You have not added any properties yet. Property submission will be available after the member listing feature is enabled.</p><button class="btn" onclick="showView('home')">Browse properties</button></div>
 <div class="profile-logout"><button class="btn" onclick="logout()">↪ Log out</button></div>
 </section>
+<section id="livechat" class="view"><div class="panel" style="max-width:720px;margin:24px auto"><div class="eyebrow">PROPERTY ZONE SUPPORT</div><h2>Live Chat &amp; Help Center</h2><p class="muted">Need help with your account or a property listing? Our support chat is being prepared.</p><div class="status">Live chat is coming soon. Messages cannot be sent yet because the support system has not been connected.</div><div class="profile-row"><span>Account support</span><strong>Coming soon</strong></div><div class="profile-row"><span>Property assistance</span><strong>Coming soon</strong></div><div class="profile-row"><span>Referral support</span><strong>Coming soon</strong></div><button class="btn" onclick="showView(currentUser?'dashboard':'home')">← Back</button></div></section>
 <section id="referral" class="view"><div class="panel"><div class="eyebrow">Partner program</div><h2>Refer &amp; Commission</h2><p class="muted">Invite people to Property Zone and earn commission when the referral program becomes active.</p><div class="stats"><div class="stat"><b>Coming soon</b><small>Referral tracking</small></div><div class="stat"><b>—</b><small>Total referrals</small></div><div class="stat"><b>—</b><small>Commission earned</small></div></div><p class="notice">Referral links, referral records and commission payments are not active yet. We will show your personal referral link and confirmed commission here after the referral system is connected.</p><button class="btn" onclick="showView('home')">Back to Home</button></div></section>
 <div id="globalStatus" class="status" role="status" aria-live="polite" style="display:none"></div>
 </main><footer>© 2026 Property Zone · Property marketplace · Verified listings only · Payments are not active.</footer>
