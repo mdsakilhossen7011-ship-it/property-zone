@@ -135,6 +135,20 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // Public lookup exposes only referral code status, never member details.
+    // A member can create only the code assigned to their own profile.
+    match /referralCodes/{code} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if signedIn()
+        && exists(/databases/$(database)/documents/members/$(request.auth.uid))
+        && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.referralCode == code
+        && request.resource.data.keys().hasOnly(['code', 'active', 'createdAt'])
+        && request.resource.data.code == code
+        && request.resource.data.active == true;
+      allow update, delete: if isAdmin();
+    }
+
     match /activityLogs/{logId} {
       allow get, list, create: if isAdmin();
       allow update, delete: if isAdmin();
