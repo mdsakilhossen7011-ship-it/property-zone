@@ -1,8 +1,45 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && request.auth.uid == "Ry06huUzzmeqryzna9lPzpNw4Rr1"
+        && request.auth.token.email == "ridoyhasank5434@gmail.com"
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == "admin"
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.active == true;
+    }
+
+    match /admins/{adminId} {
+      allow get: if signedIn() && request.auth.uid == adminId;
+      allow list: if false;
+      allow create, update, delete: if false;
+    }
+
+    // Member profiles: each member can read only their own profile.
+    // Admin can review and update member status.
+    match /members/{memberId} {
+      allow create: if signedIn()
+        && request.auth.uid == memberId
+        && request.resource.data.uid == memberId
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.status == "active"
+        && request.resource.data.name is string
+        && request.resource.data.referralCode is string
+        && request.resource.data.referredByCode is string;
+      allow get: if (signedIn() && request.auth.uid == memberId) || isAdmin();
+      allow list: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    // Legacy collection retained for older registration records.
     match /users/{userId} {
-      allow create: if request.auth != null
+      allow create: if signedIn()
         && request.auth.uid == userId
         && request.resource.data.keys().hasAll([
           'firstName', 'lastName', 'email', 'phoneNumber',
@@ -22,8 +59,88 @@ service cloud.firestore {
             || request.resource.data.phoneNumber is string)
         && (request.resource.data.referralCode == null
             || request.resource.data.referralCode is string);
-      allow read: if request.auth != null && request.auth.uid == userId;
+      allow get: if signedIn() && request.auth.uid == userId;
+      allow list: if false;
       allow update, delete: if false;
+    }
+
+    // Public visitors may read only published listings. All writes are admin-only.
+    match /properties/{propertyId} {
+      allow get, list: if isAdmin() || resource.data.status == "published";
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasAll([
+          "title", "location", "type", "availability", "price",
+          "description", "status", "createdAt", "updatedAt", "createdBy"
+        ])
+        && request.resource.data.status in ["draft", "published"];
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Members submit properties for manual review; only admins can review them.
+    match /propertySubmissions/{submissionId} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == "pending"
+        && request.resource.data.title is string
+        && request.resource.data.location is string
+        && request.resource.data.type is string
+        && request.resource.data.price is string
+        && request.resource.data.description is string;
+      allow get, list: if isAdmin()
+        || (signedIn() && resource.data.uid == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    match /propertyEnquiries/{enquiryId} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.propertyId is string
+        && request.resource.data.message is string
+        && request.resource.data.status == "open";
+      allow get, list: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    match /supportMessages/{messageId} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.subject is string
+        && request.resource.data.message is string
+        && request.resource.data.status == "open";
+      allow get, list: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    match /offers/{offerId} {
+      allow get, list: if isAdmin() || resource.data.status == "published";
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /notices/{noticeId} {
+      allow get, list: if isAdmin()
+        || (signedIn() && resource.data.status == "published");
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /siteSettings/{settingId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /referralSettings/{settingId} {
+      allow get, list: if isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /activityLogs/{logId} {
+      allow get, list, create: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    // Default deny for every collection not explicitly listed above.
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
