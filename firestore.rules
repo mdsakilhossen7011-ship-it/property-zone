@@ -24,7 +24,7 @@ service cloud.firestore {
     // Member profiles: each member can read only their own profile.
     // Admin can review and update member status.
     match /members/{memberId} {
-      allow create: if isAdmin() || (signedIn()
+      allow create: if signedIn()
         && request.auth.uid == memberId
         && request.resource.data.uid == memberId
         && request.resource.data.email == request.auth.token.email
@@ -139,7 +139,7 @@ service cloud.firestore {
     match /referralRegistrations/{code}/members/{memberId} {
       allow get, list: if signedIn()
         && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.referralCode == code;
-      allow create: if signedIn()
+      allow create: if isAdmin() || (signedIn()
         && request.auth.uid == memberId
         && exists(/databases/$(database)/documents/members/$(memberId))
         && get(/databases/$(database)/documents/members/$(memberId)).data.referredByCode == code
