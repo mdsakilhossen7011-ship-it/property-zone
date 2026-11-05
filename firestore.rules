@@ -33,9 +33,7 @@ service cloud.firestore {
         && request.resource.data.referralCode is string
         && request.resource.data.referredByCode is string;
       allow get: if (signedIn() && request.auth.uid == memberId) || isAdmin();
-      allow list: if isAdmin()
-        || (signedIn()
-          && resource.data.referredByCode == get(/databases/$(database)/documents/members/$(request.auth.uid)).data.referralCode);
+      allow list: if isAdmin();
       allow update, delete: if isAdmin();
     }
 
@@ -137,6 +135,18 @@ service cloud.firestore {
 
     // Public lookup exposes only referral code status, never member details.
     // A member can create only the code assigned to their own profile.
+    // Referrers can count their own signups without reading member profile data.
+    match /referralRegistrations/{code}/members/{memberId} {
+      allow get, list: if signedIn()
+        && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.referralCode == code;
+      allow create: if signedIn()
+        && request.auth.uid == memberId
+        && exists(/databases/$(database)/documents/members/$(memberId))
+        && get(/databases/$(database)/documents/members/$(memberId)).data.referredByCode == code
+        && request.resource.data.keys().hasOnly(['createdAt']);
+      allow update, delete: if false;
+    }
+
     match /referralCodes/{code} {
       allow get: if true;
       allow list: if false;
