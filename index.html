@@ -76,6 +76,8 @@
 <input class="search" id="search" placeholder="Search by property or location..." oninput="renderProperties()">
 <div class="filters"><button class="btn primary" onclick="setFilter('All',this)">All</button><button class="btn" onclick="setFilter('Available',this)">Available</button><button class="btn" onclick="setFilter('Upcoming',this)">Upcoming</button></div>
 <div class="grid" id="propertyGrid"></div>
+<div class="sectionhead" id="promotions"><div><div class="eyebrow">LATEST PROMOTIONS</div><h2>Offers & Special Deals</h2></div></div>
+<div class="grid" id="publicOfferGrid"><p class="muted">Loading current offers…</p></div>
 </section>
 <section id="details" class="view"><button class="btn" onclick="showView('home')">← Back to properties</button><div id="detailContent"></div></section>
 <section id="login" class="view"><div class="panel form"><div class="eyebrow">Welcome back</div><h2>Member Login</h2><div id="emailLogin"><input id="loginEmail" type="email" placeholder="Email address" autocomplete="email"><input id="loginPassword" type="password" placeholder="Password" autocomplete="current-password"><button class="btn primary" style="width:100%" onclick="loginEmailPassword()">Login</button><p style="text-align:right;margin:10px 0"><a href="#" onclick="resetLoginPassword();return false" style="color:var(--gold2)">Forgot password?</a></p></div><p class="notice">Sign in with your email and password. Your email must be verified first.</p><p>New here? <a href="#" onclick="showView('register')" style="color:var(--gold2)">Create account</a></p></div></section>
@@ -190,7 +192,25 @@ function toggleProfileEdit(force){const box=document.getElementById('profileEdit
 async function saveProfileName(){try{const name=document.getElementById('profileNameInput').value.trim();if(!name)throw new Error('Enter your name.');if(!currentUser)throw new Error('Please log in again.');const f=await getFirebase();await f.updateProfile(currentUser,{displayName:name});currentUser= f.auth.currentUser;updateDashboard();toggleProfileEdit(false);setStatus('Profile name updated.')}catch(e){setStatus(e.message||'Could not update profile name.',true)}}
 function setStatus(msg,isError=false){const el=document.getElementById('globalStatus');el.style.display='block';el.textContent=msg;el.style.color=isError?'#ffb4a8':'var(--gold2)'}
 function clearStatus(){const el=document.getElementById('globalStatus');el.style.display='none';el.textContent=''}
-async function getFirebase(){if(window.pzFirebase)return window.pzFirebase;const [appMod,authMod,firestoreMod]=await Promise.all([import('https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js'),import('https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js')]);const config={apiKey:"AIzaSyDRLWFf4ISfQdoZp7JaQAWwwKCoL_aV6No",authDomain:"property-zone-17121.firebaseapp.com",projectId:"property-zone-17121",storageBucket:"property-zone-17121.firebasestorage.app",messagingSenderId:"631227640032",appId:"1:631227640032:web:855536883072ccfe3b8885"};const app=appMod.initializeApp(config);const auth=authMod.getAuth(app);const db=firestoreMod.getFirestore(app);window.pzFirebase={auth,db,firestore:firestoreMod,createUserWithEmailAndPassword:authMod.createUserWithEmailAndPassword,signInWithEmailAndPassword:authMod.signInWithEmailAndPassword,updateProfile:authMod.updateProfile,sendEmailVerification:authMod.sendEmailVerification,sendPasswordResetEmail:authMod.sendPasswordResetEmail,onAuthStateChanged:authMod.onAuthStateChanged,signOut:authMod.signOut};window.pzFirebase.onAuthStateChanged(auth,u=>{currentUser=u&&u.emailVerified?u:null;syncNavigation();if(currentUser){showView('dashboard')}else{updateDashboard()}});loadPublicWebsiteSettings(db,firestoreMod);return window.pzFirebase}
+async function getFirebase(){if(window.pzFirebase)return window.pzFirebase;const [appMod,authMod,firestoreMod]=await Promise.all([import('https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js'),import('https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js')]);const config={apiKey:"AIzaSyDRLWFf4ISfQdoZp7JaQAWwwKCoL_aV6No",authDomain:"property-zone-17121.firebaseapp.com",projectId:"property-zone-17121",storageBucket:"property-zone-17121.firebasestorage.app",messagingSenderId:"631227640032",appId:"1:631227640032:web:855536883072ccfe3b8885"};const app=appMod.initializeApp(config);const auth=authMod.getAuth(app);const db=firestoreMod.getFirestore(app);window.pzFirebase={auth,db,firestore:firestoreMod,createUserWithEmailAndPassword:authMod.createUserWithEmailAndPassword,signInWithEmailAndPassword:authMod.signInWithEmailAndPassword,updateProfile:authMod.updateProfile,sendEmailVerification:authMod.sendEmailVerification,sendPasswordResetEmail:authMod.sendPasswordResetEmail,onAuthStateChanged:authMod.onAuthStateChanged,signOut:authMod.signOut};window.pzFirebase.onAuthStateChanged(auth,u=>{currentUser=u&&u.emailVerified?u:null;syncNavigation();if(currentUser){showView('dashboard')}else{updateDashboard()}});loadPublicWebsiteSettings(db,firestoreMod);loadPublicOffers(db,firestoreMod);return window.pzFirebase}
+async function loadPublicOffers(db,fs){
+ const grid=document.getElementById("publicOfferGrid");if(!grid)return;
+ try{
+  const snap=await fs.getDocs(fs.query(fs.collection(db,"offers"),fs.where("status","==","published")));
+  if(snap.empty){grid.innerHTML='<p class="muted">No special offers are available right now. Please check back soon.</p>';return;}
+  grid.innerHTML="";
+  snap.forEach(docSnap=>{
+   const o=docSnap.data(),card=document.createElement("article");card.className="card";card.style.overflow="hidden";
+   if(o.imageUrl){const img=document.createElement("img");img.src=o.imageUrl;img.alt=o.title||"Offer";img.loading="lazy";img.style.cssText="width:100%;height:170px;object-fit:cover;display:block";img.onerror=()=>img.remove();card.appendChild(img);}
+   const body=document.createElement("div");body.style.padding="16px";
+   const title=document.createElement("h3");title.textContent=o.title||"Special Offer";title.style.cssText="margin:0 0 8px;font:22px Georgia";
+   const desc=document.createElement("p");desc.className="muted";desc.textContent=o.description||"";desc.style.whiteSpace="pre-wrap";
+   body.append(title,desc);
+   if(o.buttonUrl){try{const u=new URL(o.buttonUrl);if(["https:","http:"].includes(u.protocol)){const link=document.createElement("a");link.className="btn primary";link.href=u.href;link.target="_blank";link.rel="noopener noreferrer";link.textContent=o.buttonText||"Learn more";link.style.display="inline-block";link.style.marginTop="8px";body.appendChild(link);}}catch(e){}}
+   card.appendChild(body);grid.appendChild(card);
+  });
+ }catch(e){grid.innerHTML='<p class="muted">Offers are temporarily unavailable.</p>';console.warn("Public offers could not load:",e);}
+}
 async function loadPublicWebsiteSettings(db,fs){
  try{
   const snap=await fs.getDoc(fs.doc(db,'siteSettings','general'));
