@@ -185,7 +185,7 @@
 </section>
 <section id="referral" class="view"><div class="panel"><div class="eyebrow">PARTNER PROGRAM</div><h2>Refer &amp; Commission</h2><p class="muted">Share your personal referral link. Referral counts and commission balances will update after the referral records and payment rules are activated.</p><div class="dash-earnings"><div class="dash-earning-card"><span>Today's Earning</span><strong>$0.00</strong><small>Confirmed commission only</small></div><div class="dash-earning-card"><span>Total Earning</span><strong>$0.00</strong><small>Payments are not activated</small></div></div><div class="panel" style="margin:16px 0"><label for="myReferralCode">YOUR REFERRAL CODE</label><input id="myReferralCode" class="search" readonly value="Loading…"><label for="myReferralLink">YOUR REFERRAL LINK</label><input id="myReferralLink" class="search" readonly value="Loading…"><button class="btn primary" type="button" onclick="copyReferralLink()">Copy referral link</button><p id="referralStatus" class="muted" role="status">Loading your referral details…</p></div><p class="notice">Only genuine referrals are counted. No commission is promised or payable until the program terms and eligible transactions are formally enabled.</p><button class="btn" onclick="showView('home')">Back to Home</button></div></section>
 <div id="globalStatus" class="status" role="status" aria-live="polite" style="display:none"></div>
-</main><footer>© 2026 Property Zone · Property marketplace · Verified listings only · Payments are not active.</footer>
+</main><footer>© 2026 Property Zone · Property marketplace · Verified listings only · Payments are not active.<span id="siteContactDetails" style="display:none;margin-left:8px"></span></footer>
 <script>
 let properties=[];let filter="All",currentUser=null,authReady=false;
 function escapeHTML(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
@@ -256,6 +256,15 @@ async function loadPublicWebsiteSettings(db,fs){
   }
   if(s.faviconUrl){
    let fav=document.querySelector('link[rel="icon"]');if(!fav){fav=document.createElement('link');fav.rel='icon';document.head.appendChild(fav);}fav.href=s.faviconUrl;
+  }
+  const contact=document.getElementById('siteContactDetails');
+  if(contact){
+   contact.replaceChildren();
+   const links=[];
+   if(s.contactEmail){const email=document.createElement('a');email.href='mailto:'+s.contactEmail;email.textContent=s.contactEmail;email.style.color='var(--gold2)';links.push(email);}
+   if(s.contactPhone){const phone=document.createElement('a');phone.href='tel:'+String(s.contactPhone).replace(/[^+0-9]/g,'');phone.textContent=s.contactPhone;phone.style.color='var(--gold2)';links.push(phone);}
+   links.forEach((link,index)=>{if(index){contact.appendChild(document.createTextNode(' · '));}contact.appendChild(link);});
+   contact.style.display=links.length?'inline':'none';
   }
  }catch(e){console.warn('Public website settings could not be loaded:',e);}
 }
