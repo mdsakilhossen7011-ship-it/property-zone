@@ -33,7 +33,9 @@ service cloud.firestore {
         && request.resource.data.referralCode is string
         && request.resource.data.referredByCode is string;
       allow get: if (signedIn() && request.auth.uid == memberId) || isAdmin();
-      allow list: if isAdmin();
+      allow list: if isAdmin()
+        || (signedIn()
+          && resource.data.referredByCode == get(/databases/$(database)/documents/members/$(request.auth.uid)).data.referralCode);
       allow update, delete: if isAdmin();
     }
 
