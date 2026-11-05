@@ -4,10 +4,24 @@ service cloud.firestore {
     match /users/{userId} {
       allow create: if request.auth != null
         && request.auth.uid == userId
-        && request.resource.data.keys().hasOnly(['firstName','lastName','email','phoneNumber','referralCode','createdAt','role'])
+        && request.resource.data.keys().hasAll([
+          'firstName', 'lastName', 'email', 'phoneNumber',
+          'phoneVerified', 'referralCode', 'createdAt',
+          'role', 'emailVerified'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'firstName', 'lastName', 'email', 'phoneNumber',
+          'phoneVerified', 'referralCode', 'createdAt',
+          'role', 'emailVerified'
+        ])
         && request.resource.data.role == 'member'
         && request.resource.data.email == request.auth.token.email
-        && request.resource.data.phoneNumber == request.auth.token.phone_number;
+        && request.resource.data.phoneVerified == false
+        && request.resource.data.emailVerified == false
+        && (request.resource.data.phoneNumber == null
+            || request.resource.data.phoneNumber is string)
+        && (request.resource.data.referralCode == null
+            || request.resource.data.referralCode is string);
       allow read: if request.auth != null && request.auth.uid == userId;
       allow update, delete: if false;
     }
