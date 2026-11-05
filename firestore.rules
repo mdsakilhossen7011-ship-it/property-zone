@@ -137,8 +137,8 @@ service cloud.firestore {
     // A member can create only the code assigned to their own profile.
     // Referrers can count their own signups without reading member profile data.
     match /referralRegistrations/{code}/members/{memberId} {
-      allow get, list: if signedIn()
-        && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.referralCode == code;
+      allow get, list: if isAdmin() || (signedIn()
+        && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.referralCode == code);
       allow create: if isAdmin() || (signedIn()
         && request.auth.uid == memberId
         && exists(/databases/$(database)/documents/members/$(memberId))
