@@ -274,8 +274,7 @@ async function ensureMemberProfile(f,user,referralCode=''){
   const member=snap.data();
   if(member.status!=='active')throw new Error('Your account is inactive. Please contact support.');
   if(member.referralCode){
-   const ownCodeRef=fs.doc(f.db,'referralCodes',member.referralCode),ownCodeSnap=await fs.getDoc(ownCodeRef);
-   if(!ownCodeSnap.exists()){try{await fs.setDoc(ownCodeRef,{code:member.referralCode,active:true,createdAt:fs.serverTimestamp()});}catch(indexError){console.warn('Referral code index could not be created yet:',indexError.message);}}
+   try{const ownCodeRef=fs.doc(f.db,'referralCodes',member.referralCode),ownCodeSnap=await fs.getDoc(ownCodeRef);if(!ownCodeSnap.exists())await fs.setDoc(ownCodeRef,{code:member.referralCode,active:true,createdAt:fs.serverTimestamp()});}catch(indexError){console.warn('Referral code index could not be created yet:',indexError.message);}
   }
   if(member.referredByCode){const recordRef=fs.doc(f.db,'referralRegistrations',member.referredByCode,'members',user.uid);try{const record=await fs.getDoc(recordRef);if(!record.exists())await fs.setDoc(recordRef,{createdAt:fs.serverTimestamp()});}catch(recordError){console.warn('Referral signup record could not be created yet:',recordError.message);}}
   return;
