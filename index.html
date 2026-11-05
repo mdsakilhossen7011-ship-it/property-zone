@@ -27,6 +27,13 @@
 .dash-action:active,.dash-action:hover{border-color:var(--gold2);background:#211a10}.dash-action>span{width:31px;height:31px;border-radius:9px;display:grid;place-items:center;background:#302311;color:var(--gold2);font-size:19px}.dash-action b{font-size:14px}.dash-action small{font-size:11px;color:var(--muted);line-height:1.4}
 .dash-bottom-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:13px;margin:18px 0}.dash-bottom-grid h3{margin:7px 0}
 @media(max-width:760px){.dash-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.dash-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.dash-bottom-grid{grid-template-columns:1fr}.dash-welcome{align-items:flex-start;flex-direction:column;padding:18px}.dash-welcome h2{font-size:24px}}
+
+.dash-earnings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:0 0 18px}
+.dash-earning-card{padding:22px;border-radius:15px;border:1px solid var(--line);background:linear-gradient(125deg,#302311,#17130d);min-width:0}
+.dash-earning-card span,.dash-earning-card small{display:block;color:var(--muted);font-size:13px}
+.dash-earning-card strong{display:block;color:var(--gold2);font:34px Georgia;margin:10px 0}
+.dash-earning-card small{font-size:11px}
+@media(max-width:560px){.dash-earnings{gap:9px}.dash-earning-card{padding:15px}.dash-earning-card strong{font-size:27px}.dash-earning-card span{font-size:12px}}
 </style>
 </head>
 <body>
@@ -61,6 +68,10 @@
  <div class="dash-welcome panel">
   <div><div class="eyebrow">MEMBER DASHBOARD</div><h2>Welcome back, <span id="dashWelcome">Member</span></h2><p class="muted">Manage your Property Zone account and property activity from one place.</p></div>
   <button class="btn primary" onclick="showView('profile')">View My Profile</button>
+ </div>
+ <div class="dash-earnings">
+  <div class="dash-earning-card"><span>Today's Earning</span><strong>$0.00</strong><small>Today's confirmed earnings</small></div>
+  <div class="dash-earning-card"><span>Total Earning</span><strong>$0.00</strong><small>Lifetime confirmed earnings</small></div>
  </div>
  <div class="dash-stats">
   <div class="dash-stat"><span>My Properties</span><strong>0</strong><small>No property submissions yet</small></div>
