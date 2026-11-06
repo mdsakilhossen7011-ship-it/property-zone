@@ -97,6 +97,44 @@
 .wallet-card .wallet-method .binance-mark{color:#f0b90b;font-size:15px;font-weight:900;letter-spacing:-.5px}
 @media(max-width:560px){.wallet-shortcuts{gap:9px}.wallet-shortcut{padding:13px 11px;gap:9px;min-height:75px}.wallet-shortcut-icon{width:38px;height:38px;flex-basis:38px;font-size:20px}.wallet-shortcut-copy strong{font-size:13px}.wallet-shortcut-copy small{font-size:10px}}
 
+
+/* Premium responsive public homepage */
+.home-hero{position:relative;display:grid;grid-template-columns:1.02fr .98fr;gap:30px;align-items:center;padding:42px 0 28px;min-height:420px}
+.home-hero-copy{position:relative;z-index:1;padding:12px 0}
+.home-kicker{display:flex;align-items:center;gap:9px;color:var(--gold2);font-size:10px;font-weight:850;letter-spacing:2px}
+.home-kicker-dot{width:8px;height:8px;border-radius:50%;background:#d8b45f;box-shadow:0 0 0 5px #d8b45f20}
+.home-hero h1{font:clamp(48px,7vw,82px)/.98 Georgia,serif;letter-spacing:-2px;margin:22px 0 17px;color:#fff}
+.home-hero h1 em{font-style:italic;color:var(--gold2)}
+.home-hero-copy>p{max-width:440px;color:#b9b2a5;font-size:15px;line-height:1.8;margin:0}
+.home-hero-actions{display:flex;gap:11px;flex-wrap:wrap;margin:25px 0 20px}
+.home-main-cta{padding:14px 19px;border-radius:12px}.home-main-cta span{margin-left:13px;font-size:17px}
+.home-account-cta{padding:13px 18px;border-radius:12px}
+.home-trust-line{font-size:11px;color:#918879;letter-spacing:.2px}.home-trust-line span{color:var(--gold2);margin-right:6px}
+.home-visual{height:355px;position:relative;overflow:hidden;border:1px solid #594522;border-radius:24px;background:radial-gradient(ellipse at 72% 18%,#69502a 0%,#332719 34%,#17130e 74%);box-shadow:0 22px 60px #0007}
+.home-visual:before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,#ffffff0b 1px,transparent 1px);background-size:34px 34px;opacity:.35}
+.home-visual-sun{position:absolute;width:180px;height:180px;right:14%;top:10%;border-radius:50%;background:radial-gradient(circle,#f4d990aa,#d2a74c22 68%,transparent 70%);filter:blur(1px)}
+.home-building{position:absolute;bottom:0;transform:skewY(-5deg);box-shadow:inset 0 0 0 1px #d8b56a33}
+.home-building-back{right:9%;width:43%;height:73%;background:repeating-linear-gradient(90deg,transparent 0 24px,#d9b96b55 25px 27px),repeating-linear-gradient(0deg,#151b1b 0 30px,#b28a4533 31px 33px),linear-gradient(110deg,#4b4a3c,#171b1b);border:1px solid #c5a45c77}
+.home-building-front{right:38%;width:34%;height:53%;background:repeating-linear-gradient(90deg,transparent 0 22px,#d9b96b55 23px 25px),repeating-linear-gradient(0deg,#202522 0 27px,#b28a4533 28px 30px),linear-gradient(110deg,#5b5748,#202522);border:1px solid #c5a45c77}
+.home-visual-label{position:absolute;left:24px;bottom:25px;display:flex;flex-direction:column;gap:7px;z-index:2;text-shadow:0 2px 12px #000}
+.home-visual-label span{font-size:9px;letter-spacing:2px;color:#f2d58a;font-weight:800}.home-visual-label strong{font:26px Georgia;color:#fff}
+.home-visual-tag{position:absolute;right:16px;top:16px;border:1px solid #ffffff33;background:#09090966;backdrop-filter:blur(8px);padding:9px 12px;border-radius:30px;font-size:9px;letter-spacing:1.4px;color:#f0d58f}
+.home-visual-tag b{margin-left:8px;font-size:14px}
+.home-search-strip{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:17px 19px;border:1px solid #4d3d22;border-radius:16px;background:linear-gradient(105deg,#211a10,#15130f);margin:8px 0 18px}
+.home-search-strip>div{display:flex;align-items:center;gap:13px}.home-search-icon{width:42px;height:42px;display:grid;place-items:center;border-radius:12px;background:#392a15;color:var(--gold2);font-size:27px}
+.home-search-strip strong,.home-search-strip small{display:block}.home-search-strip strong{font-size:14px}.home-search-strip small{font-size:11px;color:var(--muted);margin-top:4px}
+.home-search-strip button{white-space:nowrap}
+.home-benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0 35px}
+.home-benefits>div{padding:16px;border:1px solid #332b1e;border-radius:13px;background:#11100e;display:grid;grid-template-columns:35px 1fr;column-gap:10px;align-items:center}
+.home-benefits>div>span{grid-row:span 2;color:var(--gold2);font:20px Georgia}.home-benefits strong{font-size:13px}.home-benefits small{font-size:10px;color:var(--muted);margin-top:4px}
+.home-section-heading{display:flex;justify-content:space-between;align-items:end;gap:12px;margin:34px 0 15px}
+.home-section-heading h2{font:32px Georgia;margin:7px 0 0}.home-section-heading>span{font-size:9px;letter-spacing:1.5px;color:#857b6c}
+.home-notice-panel{padding:20px;background:linear-gradient(120deg,#17140f,#111)}
+.home-bottom-banner{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-top:32px;padding:25px;border:1px solid #594522;border-radius:18px;background:radial-gradient(circle at 85% 0%,#493719 0,transparent 42%),linear-gradient(110deg,#21190e,#121212)}
+.home-bottom-banner h2{font:26px Georgia;margin:8px 0}.home-bottom-banner p{margin:0;color:var(--muted);font-size:12px}
+@media(max-width:760px){.home-hero{grid-template-columns:1fr;gap:22px;padding:25px 0 20px;min-height:0}.home-hero h1{font-size:56px;margin:18px 0 14px}.home-hero-copy>p{font-size:13px}.home-visual{height:245px}.home-search-strip{align-items:flex-start;flex-direction:column;padding:15px}.home-search-strip button{width:100%}.home-benefits{gap:8px;margin:15px 0 28px}.home-benefits>div{grid-template-columns:1fr;gap:5px;padding:12px 10px}.home-benefits>div>span{grid-row:auto;font-size:17px}.home-benefits strong{font-size:12px}.home-benefits small{font-size:9px;line-height:1.4}.home-section-heading h2{font-size:27px}.home-section-heading>span{font-size:8px}.home-bottom-banner{align-items:flex-start;flex-direction:column;padding:19px}.home-bottom-banner h2{font-size:23px}.home-bottom-banner button{width:100%}}
+@media(max-width:390px){.home-hero h1{font-size:48px}.home-visual{height:215px}.home-benefits>div{padding:10px 8px}.home-benefits small{font-size:8px}}
+
 </style>
 </head>
 <body>
@@ -126,18 +164,39 @@
 </aside>
 <main class="wrap" id="appMain">
 <section id="home" class="view active">
-<div class="hero"><div><div class="eyebrow">PROPERTY MARKETPLACE</div><h1>Find Your <span>Next Property</span></h1><p class="muted">Browse verified property opportunities in one place. Manage your member account with email verification. Online payments are not active yet.</p><button class="btn primary" onclick="showView('properties')">Explore Properties →</button></div><div class="heroart"><strong>Own the view.<br>Explore the future.</strong></div></div>
- <div class="dash-welcome panel" id="homeWelcomePanel" style="margin:14px 0">
-  <div><div class="eyebrow">WELCOME TO PROLOGIS, INC. (PLD)</div><h2>Welcome to <span>Prologis, Inc. (PLD)</span></h2><p class="muted">Explore available properties, view the latest announcements and manage your member account.</p></div>
-  <button class="btn primary" id="homeWelcomeAction" onclick="showView(currentUser?'profile':'login')">My Account</button>
+ <div class="home-hero">
+  <div class="home-hero-copy">
+   <div class="home-kicker"><span class="home-kicker-dot"></span> YOUR PROPERTY JOURNEY STARTS HERE</div>
+   <h1>Find a place<br>to <em>belong.</em></h1>
+   <p>Explore property opportunities, discover new offers and manage everything from one simple place.</p>
+   <div class="home-hero-actions">
+    <button class="btn primary home-main-cta" onclick="showView('properties')">Explore Properties <span>↗</span></button>
+    <button class="btn ghost home-account-cta" id="homeWelcomeAction" onclick="showView(currentUser?'profile':'login')">My Account</button>
+   </div>
+   <div class="home-trust-line"><span>✦</span> A smarter way to explore property opportunities</div>
+  </div>
+  <div class="home-visual" aria-label="Modern architectural illustration">
+   <div class="home-visual-sun"></div><div class="home-building home-building-back"></div><div class="home-building home-building-front"></div>
+   <div class="home-visual-label"><span>DISCOVER</span><strong>Your next chapter.</strong></div>
+   <div class="home-visual-tag">PROPERTY MARKETPLACE <b>⌂</b></div>
+  </div>
  </div>
- <div class="panel" id="memberNoticePanel" style="margin:14px 0">
-  <div class="eyebrow">PROLOGIS, INC. (PLD) UPDATES</div><h3 style="margin:7px 0 12px">Notices & Announcements</h3>
+ <div class="home-search-strip">
+  <div><span class="home-search-icon">⌕</span><div><strong>Looking for your next property?</strong><small>Browse available listings and find an opportunity.</small></div></div>
+  <button class="btn primary" onclick="showView('properties')">Start exploring <span>→</span></button>
+ </div>
+ <div class="home-benefits">
+  <div><span>01</span><strong>Explore</strong><small>Browse property opportunities</small></div>
+  <div><span>02</span><strong>Discover</strong><small>See the latest offers and updates</small></div>
+  <div><span>03</span><strong>Manage</strong><small>Keep your member account in one place</small></div>
+ </div>
+ <div class="home-section-heading"><div><div class="eyebrow">STAY IN THE LOOP</div><h2>Latest updates</h2></div><span>NEWS & ANNOUNCEMENTS</span></div>
+ <div class="panel home-notice-panel" id="memberNoticePanel">
   <div id="memberNoticeList"><p class="muted">Loading notices…</p></div>
  </div>
-<div class="stats"><div class="stat"><b>0</b><small>Verified listings published</small></div><div class="stat"><b>Email</b><small>Email verification required</small></div><div class="stat"><b>Secure</b><small>Payments not activated</small></div></div>
-<div class="sectionhead" id="promotions"><div><div class="eyebrow">LATEST PROMOTIONS</div><h2>Offers & Special Deals</h2></div></div>
-<div class="grid" id="publicOfferGrid"><p class="muted">Loading current offers…</p></div>
+ <div class="home-section-heading" id="promotions"><div><div class="eyebrow">HANDPICKED FOR YOU</div><h2>Offers & special deals</h2></div><span>FEATURED OFFERS</span></div>
+ <div class="grid" id="publicOfferGrid"><p class="muted">Loading current offers…</p></div>
+ <div class="home-bottom-banner"><div><div class="eyebrow">READY TO GET STARTED?</div><h2>Your next opportunity could be one click away.</h2><p>Explore the latest property listings today.</p></div><button class="btn primary" onclick="showView('properties')">View properties ↗</button></div>
 </section>
 <section id="properties" class="view">
 <div id="listings" class="sectionhead"><div><div class="eyebrow">Verified listings only</div><h2>Available Properties</h2></div></div>
