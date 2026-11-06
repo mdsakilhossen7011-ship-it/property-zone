@@ -102,6 +102,30 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // Two-way live support conversations. Each member owns one chat document.
+    match /supportChats/{chatId} {
+      allow create: if signedIn() && request.auth.uid == chatId
+        && request.resource.data.uid == chatId && request.resource.data.status == "open";
+      allow get: if signedIn() && (request.auth.uid == chatId || isAdmin());
+      allow list: if isAdmin();
+      allow update: if isAdmin() || (signedIn() && request.auth.uid == chatId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastMessage', 'updatedAt', 'status']));
+      allow delete: if isAdmin();
+      match /messages/{messageId} {
+        allow create: if signedIn()
+          && ((isAdmin() && request.resource.data.senderRole == 'admin')
+            || (!isAdmin() && request.auth.uid == chatId && request.resource.data.senderRole == 'user'))
+          && request.resource.data.senderUid == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 2000
+          && request.resource.data.createdAt is timestamp
+          && exists(/databases/$(database)/documents/supportChats/$(chatId));
+        allow get, list: if signedIn() && (request.auth.uid == chatId || isAdmin());
+        allow update, delete: if false;
+      }
+    }
+
     match /supportMessages/{messageId} {
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
