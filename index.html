@@ -451,7 +451,7 @@ function pzTranslateText(root=document.body){
  while((node=walker.nextNode())){
   if(!node.parentElement||node.parentElement.closest('script,style,textarea,input,[contenteditable="true"]'))continue;
   if(node.__pzEnglish===undefined)node.__pzEnglish=node.nodeValue;
-  node.nodeValue=pzApplyTranslation(node.__pzEnglish);
+  const translated=pzApplyTranslation(node.__pzEnglish);if(node.nodeValue!==translated)node.nodeValue=translated;
  }
  root.querySelectorAll('input[placeholder],textarea[placeholder],option,[aria-label],button[title]').forEach(el=>{
   for(const attr of ['placeholder','aria-label','title']){
@@ -485,7 +485,7 @@ function setWebsiteLanguage(lang){
     if(record.type==='characterData'){
      const n=record.target;
      if(n.__pzEnglish===undefined)n.__pzEnglish=n.nodeValue;
-     if(pzLanguage==='bn')n.nodeValue=pzApplyTranslation(n.__pzEnglish);
+     if(pzLanguage==='bn'){const translated=pzApplyTranslation(n.__pzEnglish);if(n.nodeValue!==translated)n.nodeValue=translated;}
     }
     record.addedNodes.forEach(node=>{
      if(node.nodeType===Node.TEXT_NODE){if(node.__pzEnglish===undefined)node.__pzEnglish=node.nodeValue;node.nodeValue=pzApplyTranslation(node.__pzEnglish);}
