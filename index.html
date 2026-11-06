@@ -482,18 +482,22 @@ function setWebsiteLanguage(lang){
  if(window.MutationObserver){
   pzTranslationObserver=new MutationObserver(records=>{
    for(const record of records){
-    if(record.type==='characterData'){
-     const n=record.target;
-     if(n.__pzEnglish===undefined)n.__pzEnglish=n.nodeValue;
-     if(pzLanguage==='bn'){const translated=pzApplyTranslation(n.__pzEnglish);if(n.nodeValue!==translated)n.nodeValue=translated;}
-    }
     record.addedNodes.forEach(node=>{
-     if(node.nodeType===Node.TEXT_NODE){if(node.__pzEnglish===undefined)node.__pzEnglish=node.nodeValue;node.nodeValue=pzApplyTranslation(node.__pzEnglish);}
-     else if(node.nodeType===Node.ELEMENT_NODE)pzTranslateText(node);
+     if(node.nodeType===Node.TEXT_NODE){
+      if(node.__pzEnglish===undefined)node.__pzEnglish=node.nodeValue;
+      if(pzLanguage==='bn'){
+       const translated=pzApplyTranslation(node.__pzEnglish);
+       if(node.nodeValue!==translated)node.nodeValue=translated;
+      }
+     }else if(node.nodeType===Node.ELEMENT_NODE){
+      pzTranslateText(node);
+     }
     });
    }
   });
-  pzTranslationObserver.observe(document.body,{childList:true,subtree:true,characterData:true});
+  // Observe only added/removed nodes. Watching characterData here creates
+  // a self-triggering loop because translation itself changes text nodes.
+  pzTranslationObserver.observe(document.body,{childList:true,subtree:true});
  }
 })();
 
