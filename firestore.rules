@@ -113,8 +113,10 @@ service cloud.firestore {
       allow delete: if isAdmin();
       match /messages/{messageId} {
         allow create: if signedIn()
-          && ((isAdmin() && request.resource.data.senderRole == 'admin')
-            || (!isAdmin() && request.auth.uid == chatId && request.resource.data.senderRole == 'user'))
+          && (
+            (request.auth.uid == chatId && request.resource.data.senderRole == 'user')
+            || (isAdmin() && request.resource.data.senderRole == 'admin')
+          )
           && request.resource.data.senderUid == request.auth.uid
           && request.resource.data.text is string
           && request.resource.data.text.size() > 0
