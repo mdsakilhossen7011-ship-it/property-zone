@@ -84,6 +84,19 @@
 .wallet-note{padding:13px 15px;border:1px dashed #67522d;border-radius:12px;background:#17130d;color:#c9b991;font-size:12px;line-height:1.6}
 @media(max-width:650px){.wallet-grid{grid-template-columns:1fr}.wallet-card{padding:17px}.wallet-card h3{font-size:23px}}
 
+
+.wallet-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:0 0 20px}
+.wallet-shortcut{width:100%;min-width:0;min-height:82px;display:flex;align-items:center;gap:15px;text-align:left;padding:16px 18px;border:1px solid var(--line);border-radius:15px;background:linear-gradient(125deg,#241b0e,#14120f);color:var(--white);transition:border-color .18s,transform .18s}
+.wallet-shortcut:hover{border-color:var(--gold2);transform:translateY(-2px)}
+.wallet-shortcut-icon{width:46px;height:46px;flex:0 0 46px;display:grid;place-items:center;border-radius:13px;background:#352714;color:var(--gold2);font-size:24px}
+.wallet-shortcut.withdraw .wallet-shortcut-icon{background:#14263a;color:#9bcfff}
+.wallet-shortcut-copy{display:flex;flex-direction:column;gap:4px;min-width:0}
+.wallet-shortcut-copy strong{font-size:15px;color:var(--white)}.wallet-shortcut-copy small{font-size:11px;color:var(--muted)}
+.profile-wallet-shortcuts{margin:16px 0 18px}
+.wallet-methods{grid-template-columns:repeat(3,minmax(0,1fr))}.wallet-method{padding:8px 5px;font-size:13px}
+.wallet-card .wallet-method .binance-mark{color:#f0b90b;font-size:15px;font-weight:900;letter-spacing:-.5px}
+@media(max-width:560px){.wallet-shortcuts{gap:9px}.wallet-shortcut{padding:13px 11px;gap:9px;min-height:75px}.wallet-shortcut-icon{width:38px;height:38px;flex-basis:38px;font-size:20px}.wallet-shortcut-copy strong{font-size:13px}.wallet-shortcut-copy small{font-size:10px}}
+
 </style>
 </head>
 <body>
@@ -142,6 +155,9 @@
   <div class="dash-earning-card"><span>Today's Earning</span><strong>$0.00</strong><small>Today's confirmed earnings</small></div>
   <div class="dash-earning-card"><span>Total Earning</span><strong>$0.00</strong><small>Lifetime confirmed earnings</small></div>
  </div>
+ <div class="wallet-shortcuts" aria-label="Wallet actions">
+<button class="wallet-shortcut deposit" type="button" onclick="showView('wallet')"><span class="wallet-shortcut-icon">＋</span><span class="wallet-shortcut-copy"><strong>Deposit</strong><small>Add funds to your wallet · USD</small></span></button>
+<button class="wallet-shortcut withdraw" type="button" onclick="showView('wallet')"><span class="wallet-shortcut-icon">↗</span><span class="wallet-shortcut-copy"><strong>Withdraw</strong><small>Request a payout · USD</small></span></button></div>
  <div class="dash-stats">
   <div class="dash-stat"><span>My Properties</span><strong id="dashMyProperties">—</strong><small id="dashMyPropertiesNote">Loading submissions…</small></div>
   <div class="dash-stat"><span>Saved Properties</span><strong id="dashSavedProperties">0</strong><small>Saved on this device</small></div>
@@ -151,12 +167,8 @@
  <div class="dash-section-title"><div><div class="eyebrow">QUICK ACCESS</div><h3>Dashboard Services</h3></div></div>
  <div class="dash-actions">
   <button class="dash-action" onclick="showView('home');setTimeout(()=>document.getElementById('listings').scrollIntoView({behavior:'smooth'}),60)"><span>▦</span><b>Browse Properties</b><small>Explore available listings</small></button>
-  <button class="dash-action" onclick="showView('profile');profileTab('properties',document.querySelectorAll('.profile-tab')[1])"><span>⌂</span><b>My Properties</b><small>View your submissions</small></button>
-  <button class="dash-action" onclick="showView('savedProperties')"><span>♡</span><b>Saved Properties</b><small>Keep track of favourites</small></button>
   <button class="dash-action" onclick="showView('submitProperty')"><span>＋</span><b>Add Property</b><small>Submit a property for admin review</small></button>
   <button class="dash-action" onclick="showView('referral')"><span>♧</span><b>Refer &amp; Commission</b><small>Referral program overview</small></button>
-   <button class="dash-action" onclick="showView('wallet')"><span>＋</span><b>Deposit</b><small>Fund your account · USD</small></button>
-   <button class="dash-action" onclick="showView('wallet')"><span>↗</span><b>Withdraw</b><small>Request payout · USD</small></button>
   <button class="dash-action" onclick="openDashboardFeature('Notifications','You do not have any notifications yet. Notifications will appear here when the notification service is connected.')"><span>♢</span><b>Notifications</b><small>Account updates and alerts</small></button>
   <button class="dash-action" onclick="openDashboardFeature('Settings','Account settings will be available here in a future update.')"><span>⚙</span><b>Settings</b><small>Manage account preferences</small></button>
   <button class="dash-action" onclick="showView('profile')"><span>♙</span><b>Account Profile</b><small>Update your name and view email status</small></button>
@@ -174,16 +186,22 @@
  <div class="wallet-grid">
   <article class="wallet-card deposit"><div class="wallet-card-head"><div class="wallet-card-title"><div class="wallet-symbol">＋</div><div><h3>Deposit</h3><div class="wallet-sub">Add funds to your account</div></div></div><span class="wallet-pill">ADD FUNDS</span></div>
    <form onsubmit="submitWalletRequest(event,'deposit')"><label for="depositAmount">Deposit amount (USD)</label><input id="depositAmount" class="search" type="number" min="1" step="0.01" required placeholder="e.g. 25.00"><label>Select payment method</label>
-    <div class="wallet-methods"><button class="wallet-method selected" type="button" data-wallet-method="deposit" data-value="bKash" onclick="selectWalletMethod('deposit','bKash',this)"><span class="bkash-mark">bKash</span></button><button class="wallet-method" type="button" data-wallet-method="deposit" data-value="Nagad" onclick="selectWalletMethod('deposit','Nagad',this)"><span class="nagad-mark">Nagad</span></button></div><input type="hidden" id="depositMethod" value="bKash">
-    <label for="depositNumber">Your bKash / Nagad number</label><input id="depositNumber" class="search" type="tel" inputmode="numeric" maxlength="11" required placeholder="01XXXXXXXXX"><label for="depositTrx">Transaction ID (TrxID)</label><input id="depositTrx" class="search" required maxlength="100" placeholder="Enter payment TrxID"><button class="btn primary wallet-submit" type="submit">Submit Deposit Request →</button></form><p id="depositStatus" class="wallet-status" role="status"></p>
+    <div class="wallet-methods">
+<button class="wallet-method selected" type="button" data-wallet-method="deposit" data-value="bKash" onclick="selectWalletMethod('deposit','bKash',this)"><span class="bkash-mark">bKash</span></button>
+<button class="wallet-method" type="button" data-wallet-method="deposit" data-value="Nagad" onclick="selectWalletMethod('deposit','Nagad',this)"><span class="nagad-mark">Nagad</span></button>
+<button class="wallet-method" type="button" data-wallet-method="deposit" data-value="Binance" onclick="selectWalletMethod('deposit','Binance',this)"><span class="binance-mark">BINANCE</span></button></div><input type="hidden" id="depositMethod" value="bKash">
+     <label for="depositNumber" id="depositAccountLabel">Your bKash / Nagad number</label><input id="depositNumber" class="search" type="tel" inputmode="numeric" maxlength="11" required placeholder="01XXXXXXXXX"><label for="depositTrx">Transaction ID (TrxID)</label><input id="depositTrx" class="search" required maxlength="100" placeholder="Enter payment TrxID"><button class="btn primary wallet-submit" type="submit">Submit Deposit Request →</button></form><p id="depositStatus" class="wallet-status" role="status"></p>
   </article>
   <article class="wallet-card withdraw"><div class="wallet-card-head"><div class="wallet-card-title"><div class="wallet-symbol">↗</div><div><h3>Withdraw</h3><div class="wallet-sub">Request a payout</div></div></div><span class="wallet-pill">PAYOUT</span></div>
    <form onsubmit="submitWalletRequest(event,'withdraw')"><label for="withdrawAmount">Withdrawal amount (USD)</label><input id="withdrawAmount" class="search" type="number" min="1" step="0.01" required placeholder="e.g. 25.00"><label>Select payout method</label>
-    <div class="wallet-methods"><button class="wallet-method selected" type="button" data-wallet-method="withdraw" data-value="bKash" onclick="selectWalletMethod('withdraw','bKash',this)"><span class="bkash-mark">bKash</span></button><button class="wallet-method" type="button" data-wallet-method="withdraw" data-value="Nagad" onclick="selectWalletMethod('withdraw','Nagad',this)"><span class="nagad-mark">Nagad</span></button></div><input type="hidden" id="withdrawMethod" value="bKash">
-    <label for="withdrawNumber">Your bKash / Nagad number</label><input id="withdrawNumber" class="search" type="tel" inputmode="numeric" maxlength="11" required placeholder="01XXXXXXXXX"><button class="btn primary wallet-submit" type="submit">Submit Withdrawal Request →</button></form><p id="withdrawStatus" class="wallet-status" role="status"></p>
+    <div class="wallet-methods">
+<button class="wallet-method selected" type="button" data-wallet-method="withdraw" data-value="bKash" onclick="selectWalletMethod('withdraw','bKash',this)"><span class="bkash-mark">bKash</span></button>
+<button class="wallet-method" type="button" data-wallet-method="withdraw" data-value="Nagad" onclick="selectWalletMethod('withdraw','Nagad',this)"><span class="nagad-mark">Nagad</span></button>
+<button class="wallet-method" type="button" data-wallet-method="withdraw" data-value="Binance" onclick="selectWalletMethod('withdraw','Binance',this)"><span class="binance-mark">BINANCE</span></button></div><input type="hidden" id="withdrawMethod" value="bKash">
+     <label for="withdrawNumber" id="withdrawAccountLabel">Your bKash / Nagad number</label><input id="withdrawNumber" class="search" type="tel" inputmode="numeric" maxlength="11" required placeholder="01XXXXXXXXX"><button class="btn primary wallet-submit" type="submit">Submit Withdrawal Request →</button></form><p id="withdrawStatus" class="wallet-status" role="status"></p>
   </article>
  </div>
- <div class="wallet-note">Requests are sent to the Property Zone admin for review. bKash/Nagad are the selected local payment methods; this form records a request and does not transfer money automatically.</div><button class="btn" style="margin-top:16px" onclick="showView('dashboard')">← Back to Dashboard</button>
+ <div class="wallet-note">Requests are sent to the Property Zone admin for review. bKash, Nagad and Binance are available request methods; this form records a request and does not transfer money automatically.</div><button class="btn" style="margin-top:16px" onclick="showView('dashboard')">← Back to Dashboard</button>
 </section>
 
 <section id="profile" class="view">
@@ -203,6 +221,9 @@
     </div>
     <div class="panel profile-security"><div class="profile-medal">✦</div><h3>Member Account</h3><p id="accountStatus">Sign in to view your account.</p><span class="profile-secure">Your account details are private</span></div>
   </div>
+<div class="wallet-shortcuts profile-wallet-shortcuts" aria-label="Profile wallet actions">
+<button class="wallet-shortcut deposit" type="button" onclick="showView('wallet')"><span class="wallet-shortcut-icon">＋</span><span class="wallet-shortcut-copy"><strong>Deposit</strong><small>Add funds · USD</small></span></button>
+<button class="wallet-shortcut withdraw" type="button" onclick="showView('wallet')"><span class="wallet-shortcut-icon">↗</span><span class="wallet-shortcut-copy"><strong>Withdraw</strong><small>Request payout · USD</small></span></button></div>
   <div class="profile-metrics"><div class="profile-metric"><b>0</b><span>My Properties</span></div><div class="profile-metric"><b>—</b><span>Referrals</span></div><div class="profile-metric"><b>—</b><span>Commission</span></div></div>
   <div class="panel profile-activity"><h3>Recent Activity</h3><p class="muted">Your account activity will appear here when these features are available.</p></div>
 </div>
@@ -296,14 +317,27 @@ function openProperty(id){
 function showPropertyPackages(propertyId){const list=document.getElementById('propertyPackageList');if(!list)return;list.style.display='block';document.getElementById('buyPropertyButton').textContent='✓ PACKAGES AVAILABLE';}
 async function requestPropertyPurchase(propertyId,packageAmount){const status=document.getElementById('purchaseRequestStatus'),p=properties.find(x=>x.id===propertyId);if(!p||!status)return;if(!currentUser){setStatus('Please log in to select a package.',true);showView('login');return;}const buttons=document.querySelectorAll('#propertyPackageList button');buttons.forEach(b=>b.disabled=true);status.textContent='Sending your selected package request…';try{const f=await getFirebase();await f.firestore.addDoc(f.firestore.collection(f.db,'propertyEnquiries'),{propertyId,propertyTitle:p.name,propertyPrice:formatUSD(p.price),packageAmount,interestRateDaily:2,dailyReturnEstimate:packageAmount*0.02,uid:currentUser.uid,email:currentUser.email||'',name:currentUser.displayName||'',message:'Selected package: $'+packageAmount.toLocaleString('en-US')+' · Daily 2% calculation: $'+(packageAmount*0.02).toLocaleString('en-US')+'. Please contact me with package details and payment information.',requestType:'package-selection',status:'open',createdAt:f.firestore.serverTimestamp()});status.textContent='Package selection request sent. The Property Zone team will contact you. No payment has been taken.';}catch(e){status.textContent='Could not send package request: '+e.message;}finally{buttons.forEach(b=>b.disabled=false);}}
 
-function selectWalletMethod(kind,method,button){const field=document.getElementById(kind+'Method');if(!field)return;field.value=method;document.querySelectorAll('[data-wallet-method="'+kind+'"]').forEach(el=>el.classList.toggle('selected',el===button));}
+
+function selectWalletMethod(kind,method,button){
+ const field=document.getElementById(kind+'Method');if(!field)return;field.value=method;
+ document.querySelectorAll('[data-wallet-method="'+kind+'"]').forEach(el=>el.classList.toggle('selected',el===button));
+ const account=document.getElementById(kind+'Number'),label=document.getElementById(kind+'AccountLabel');if(!account||!label)return;
+ if(method==='Binance'){label.textContent='Binance Pay ID / UID';account.type='text';account.inputMode='text';account.maxLength=100;account.placeholder='Enter Binance Pay ID or UID';}
+ else{label.textContent='Your bKash / Nagad number';account.type='tel';account.inputMode='numeric';account.maxLength=11;account.placeholder='01XXXXXXXXX';}
+}
 async function submitWalletRequest(event,kind){
  event.preventDefault();if(!currentUser){setStatus('Please log in first.',true);showView('login');return;}
- const isDeposit=kind==='deposit',amount=Number(document.getElementById(isDeposit?'depositAmount':'withdrawAmount').value),method=document.getElementById(isDeposit?'depositMethod':'withdrawMethod').value,walletNumber=document.getElementById(isDeposit?'depositNumber':'withdrawNumber').value.trim(),trx=isDeposit?document.getElementById('depositTrx').value.trim():'',status=document.getElementById(isDeposit?'depositStatus':'withdrawStatus'),form=event.currentTarget,submit=form.querySelector('button[type="submit"]');
- if(!Number.isFinite(amount)||amount<=0){status.textContent='Enter a valid USD amount.';return;}if(!/^01[0-9]{9}$/.test(walletNumber)){status.textContent='Enter a valid 11-digit Bangladesh wallet number.';return;}if(isDeposit&&!trx){status.textContent='Enter the payment Transaction ID.';return;}
+ const isDeposit=kind==='deposit',amount=Number(document.getElementById(isDeposit?'depositAmount':'withdrawAmount').value),method=document.getElementById(isDeposit?'depositMethod':'withdrawMethod').value,account=document.getElementById(isDeposit?'depositNumber':'withdrawNumber').value.trim(),trx=isDeposit?document.getElementById('depositTrx').value.trim():'',status=document.getElementById(isDeposit?'depositStatus':'withdrawStatus'),form=event.currentTarget,submit=form.querySelector('button[type="submit"]');
+ if(!Number.isFinite(amount)||amount<=0){status.textContent='Enter a valid USD amount.';return;}
+ if(method==='Binance'?account.length<3||account.length>100:!/^01[0-9]{9}$/.test(account)){status.textContent=method==='Binance'?'Enter a valid Binance Pay ID or UID.':'Enter a valid 11-digit Bangladesh wallet number.';return;}
+ if(isDeposit&&!trx){status.textContent='Enter the payment Transaction ID.';return;}
  submit.disabled=true;status.textContent='Submitting your request…';
- try{const f=await getFirebase();await f.firestore.addDoc(f.firestore.collection(f.db,'propertyEnquiries'),{requestType:isDeposit?'wallet-deposit':'wallet-withdraw',uid:currentUser.uid,email:currentUser.email||'',name:currentUser.displayName||'',amountUSD:amount,paymentCurrency:'USD',paymentMethod:method,walletNumber,transactionId:trx,message:(isDeposit?'DEPOSIT':'WITHDRAWAL')+' request: $'+amount.toFixed(2)+' via '+method+'. Wallet: '+walletNumber+(trx?' · TrxID: '+trx:''),status:'open',createdAt:f.firestore.serverTimestamp()});
- status.textContent=(isDeposit?'Deposit':'Withdrawal')+' request submitted successfully. Admin review is pending.';form.reset();const field=document.getElementById(isDeposit?'depositMethod':'withdrawMethod');if(field)field.value='bKash';document.querySelectorAll('[data-wallet-method="'+kind+'"]').forEach(el=>el.classList.toggle('selected',el.dataset.value==='bKash'));
+ try{
+  const f=await getFirebase();await f.firestore.addDoc(f.firestore.collection(f.db,'propertyEnquiries'),{requestType:isDeposit?'wallet-deposit':'wallet-withdraw',uid:currentUser.uid,email:currentUser.email||'',name:currentUser.displayName||'',amountUSD:amount,paymentCurrency:'USD',paymentMethod:method,walletNumber:account,paymentAccount:account,transactionId:trx,message:(isDeposit?'DEPOSIT':'WITHDRAWAL')+' request: $'+amount.toFixed(2)+' via '+method+'. Account: '+account+(trx?' · TrxID: '+trx:''),status:'open',createdAt:f.firestore.serverTimestamp()});
+  status.textContent=(isDeposit?'Deposit':'Withdrawal')+' request submitted successfully. Admin review is pending.';form.reset();
+  const field=document.getElementById(isDeposit?'depositMethod':'withdrawMethod');if(field)field.value='bKash';
+  document.querySelectorAll('[data-wallet-method="'+kind+'"]').forEach(el=>el.classList.toggle('selected',el.dataset.value==='bKash'));
+  const accountInput=document.getElementById(isDeposit?'depositNumber':'withdrawNumber'),accountLabel=document.getElementById(kind+'AccountLabel');if(accountInput){accountInput.type='tel';accountInput.inputMode='numeric';accountInput.maxLength=11;accountInput.placeholder='01XXXXXXXXX';}if(accountLabel)accountLabel.textContent='Your bKash / Nagad number';
  }catch(error){status.textContent='Request failed: '+error.message;}finally{submit.disabled=false;}
 }
 
