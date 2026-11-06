@@ -474,7 +474,7 @@ async function ensureMemberProfile(f,user,referralCode=''){
   if(!referralSnap.exists()||referralSnap.data().active!==true)throw new Error('Referral code is invalid or inactive. Check the code and try again.');
  }
  const name=(user.displayName||user.email.split('@')[0]||'Member').trim(),ownCode=('PZ'+user.uid.replace(/[^a-z0-9]/gi,'').slice(0,8)).toUpperCase();
- const memberData={uid:user.uid,name,email:user.email,status:'pending',referralCode:ownCode,referredByCode:usedCode,createdAt:fs.serverTimestamp(),updatedAt:fs.serverTimestamp()};
+ const memberData={uid:user.uid,name,email:user.email,status:'active',referralCode:ownCode,referredByCode:usedCode,createdAt:fs.serverTimestamp(),updatedAt:fs.serverTimestamp()};
  await fs.setDoc(memberRef,memberData);
  return memberData;
 }
