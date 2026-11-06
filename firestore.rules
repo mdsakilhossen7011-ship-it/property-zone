@@ -1,15 +1,13 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
     function signedIn() {
       return request.auth != null;
     }
 
+    // An admin must have an active admin document. Never trust a client-side role alone.
     function isAdmin() {
       return signedIn()
-        && request.auth.uid == "Ry06huUzzmeqryzna9lPzpNw4Rr1"
-        && request.auth.token.email == "ridoyhasank5434@gmail.com"
         && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
         && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == "admin"
         && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.active == true;
@@ -21,8 +19,6 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
-    // Member profiles: each member can read only their own profile.
-    // Admin can review and update member status.
     match /members/{memberId} {
       allow create: if signedIn()
         && request.auth.uid == memberId
@@ -37,47 +33,30 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // Legacy collection retained for older registration records.
     match /users/{userId} {
       allow create: if signedIn()
         && request.auth.uid == userId
-        && request.resource.data.keys().hasAll([
-          'firstName', 'lastName', 'email', 'phoneNumber',
-          'phoneVerified', 'referralCode', 'createdAt',
-          'role', 'emailVerified'
-        ])
-        && request.resource.data.keys().hasOnly([
-          'firstName', 'lastName', 'email', 'phoneNumber',
-          'phoneVerified', 'referralCode', 'createdAt',
-          'role', 'emailVerified'
-        ])
+        && request.resource.data.keys().hasAll(['firstName','lastName','email','phoneNumber','phoneVerified','referralCode','createdAt','role','emailVerified'])
+        && request.resource.data.keys().hasOnly(['firstName','lastName','email','phoneNumber','phoneVerified','referralCode','createdAt','role','emailVerified'])
         && request.resource.data.role == 'member'
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.phoneVerified == false
         && request.resource.data.emailVerified == false
-        && (request.resource.data.phoneNumber == null
-            || request.resource.data.phoneNumber is string)
-        && (request.resource.data.referralCode == null
-            || request.resource.data.referralCode is string);
+        && (request.resource.data.phoneNumber == null || request.resource.data.phoneNumber is string)
+        && (request.resource.data.referralCode == null || request.resource.data.referralCode is string);
       allow get: if signedIn() && request.auth.uid == userId;
       allow list: if false;
       allow update, delete: if false;
     }
 
-    // Public visitors may read only published listings. All writes are admin-only.
     match /properties/{propertyId} {
       allow get, list: if isAdmin() || resource.data.status == "published";
       allow create: if isAdmin()
-        && request.resource.data.keys().hasAll([
-          "title", "location", "type", "availability", "price",
-          "description", "status", "createdAt", "updatedAt", "createdBy"
-        ])
-        && request.resource.data.status in ["draft", "published"];
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+        && request.resource.data.keys().hasAll(["title","location","type","availability","price","description","status","createdAt","updatedAt","createdBy"])
+        && request.resource.data.status in ["draft","published"];
+      allow update, delete: if isAdmin();
     }
 
-    // Members submit properties for manual review; only admins can review them.
     match /propertySubmissions/{submissionId} {
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
@@ -87,8 +66,7 @@ service cloud.firestore {
         && request.resource.data.type is string
         && request.resource.data.price is string
         && request.resource.data.description is string;
-      allow get, list: if isAdmin()
-        || (signedIn() && resource.data.uid == request.auth.uid);
+      allow get, list: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
       allow update, delete: if isAdmin();
     }
 
@@ -102,21 +80,19 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // Two-way live support conversations. Each member owns one chat document.
     match /supportChats/{chatId} {
       allow create: if signedIn() && request.auth.uid == chatId
-        && request.resource.data.uid == chatId && request.resource.data.status == "open";
+        && request.resource.data.uid == chatId
+        && request.resource.data.status == "open";
       allow get: if signedIn() && (request.auth.uid == chatId || isAdmin());
       allow list: if isAdmin();
       allow update: if isAdmin() || (signedIn() && request.auth.uid == chatId
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastMessage', 'updatedAt', 'status']));
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastMessage','updatedAt','status']));
       allow delete: if isAdmin();
       match /messages/{messageId} {
         allow create: if signedIn()
-          && (
-            (request.auth.uid == chatId && request.resource.data.senderRole == 'user')
-            || (isAdmin() && request.resource.data.senderRole == 'admin')
-          )
+          && ((request.auth.uid == chatId && request.resource.data.senderRole == 'user')
+            || (isAdmin() && request.resource.data.senderRole == 'admin'))
           && request.resource.data.senderUid == request.auth.uid
           && request.resource.data.text is string
           && request.resource.data.text.size() > 0
@@ -142,26 +118,18 @@ service cloud.firestore {
       allow get, list: if isAdmin() || resource.data.status == "published";
       allow create, update, delete: if isAdmin();
     }
-
     match /notices/{noticeId} {
-      allow get, list: if isAdmin()
-        || (signedIn() && resource.data.status == "published");
+      allow get, list: if isAdmin() || (signedIn() && resource.data.status == "published");
       allow create, update, delete: if isAdmin();
     }
-
     match /siteSettings/{settingId} {
       allow get, list: if true;
       allow create, update, delete: if isAdmin();
     }
-
     match /referralSettings/{settingId} {
       allow get, list: if isAdmin();
       allow create, update, delete: if isAdmin();
     }
-
-    // Public lookup exposes only referral code status, never member details.
-    // A member can create only the code assigned to their own profile.
-    // Referrers can count their own signups without reading member profile data.
     match /referralRegistrations/{code}/members/{memberId} {
       allow get, list: if isAdmin() || (signedIn()
         && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.referralCode == code);
@@ -174,27 +142,22 @@ service cloud.firestore {
         && request.resource.data.createdAt is timestamp);
       allow update, delete: if false;
     }
-
     match /referralCodes/{code} {
       allow get: if true;
       allow list: if false;
       allow create: if isAdmin() || (signedIn()
         && exists(/databases/$(database)/documents/members/$(request.auth.uid))
         && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.referralCode == code
-        && request.resource.data.keys().hasAll(['code', 'active', 'createdAt'])
-        && request.resource.data.keys().hasOnly(['code', 'active', 'createdAt'])
+        && request.resource.data.keys().hasAll(['code','active','createdAt'])
+        && request.resource.data.keys().hasOnly(['code','active','createdAt'])
         && request.resource.data.code == code
         && request.resource.data.active == true
         && request.resource.data.createdAt is timestamp);
       allow update, delete: if isAdmin();
     }
-
     match /activityLogs/{logId} {
-      allow get, list, create: if isAdmin();
-      allow update, delete: if isAdmin();
+      allow get, list, create, update, delete: if isAdmin();
     }
-
-    // Default deny for every collection not explicitly listed above.
     match /{document=**} {
       allow read, write: if false;
     }
