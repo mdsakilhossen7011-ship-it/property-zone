@@ -421,29 +421,49 @@ async function ensureMemberProfile(f,user,referralCode=''){
 }
 async function registerWithEmail(){clearStatus();try{const first=document.getElementById('regFirst').value.trim(),last=document.getElementById('regLast').value.trim(),email=document.getElementById('regEmail').value.trim(),pw=document.getElementById('regPassword').value,confirm=document.getElementById('regConfirm').value,ref=(document.getElementById('regReferral').value.trim()||new URLSearchParams(location.search).get('ref')||'').trim();if(!first||!last)throw new Error('Enter first and last name.');if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Enter a valid email address.');if(pw.length<8)throw new Error('Password must be at least 8 characters.');if(pw!==confirm)throw new Error('Passwords do not match.');const f=await getFirebase();if(ref){const referral=await f.firestore.getDoc(f.firestore.doc(f.db,'referralCodes',ref.toUpperCase()));if(!referral.exists()||referral.data().active!==true)throw new Error('Referral code is invalid or inactive. Check the code and try again.');}const result=await f.createUserWithEmailAndPassword(f.auth,email,pw);await f.updateProfile(result.user,{displayName:first+' '+last});await ensureMemberProfile(f,result.user,ref);await f.sendEmailVerification(result.user);await f.signOut(f.auth);setStatus('Account created. Verification link sent to '+email+'. Open your email and verify before logging in.');showView('login')}catch(e){const msg=e.code==='auth/email-already-in-use'?'This email already has an account. Please log in, or use Forgot password to reset its password.':(e.message||'Could not create account. Please try again.');setStatus(msg,true)}}
 
-/* Website language switcher */
+/* Website language switcher - robust text and dynamic content translation */
 const PZ_TRANSLATIONS={
  "Menu":"মেনু","Home":"হোম","Properties":"প্রপার্টি","My Profile":"আমার প্রোফাইল","Dashboard":"ড্যাশবোর্ড","Admin Panel":"অ্যাডমিন প্যানেল","Refer & Commission":"রেফার ও কমিশন","Support Inbox":"সাপোর্ট ইনবক্স","Help & Support":"সাহায্য ও সাপোর্ট","Login":"লগইন","Join Now":"নিবন্ধন করুন","Logout":"লগআউট","Website Language":"ওয়েবসাইটের ভাষা",
- "Property Marketplace":"প্রপার্টি মার্কেটপ্লেস","Find Your Next Property":"আপনার পছন্দের প্রপার্টি খুঁজুন","Explore Properties":"প্রপার্টি দেখুন","Available Properties":"উপলব্ধ প্রপার্টি","Search properties":"প্রপার্টি খুঁজুন","All property types":"সব ধরনের প্রপার্টি","Clear Filters":"ফিল্টার মুছুন","View Details":"বিস্তারিত দেখুন","Buy Now":"এখনই কিনুন","Save Property":"প্রপার্টি সংরক্ষণ করুন","Saved Properties":"সংরক্ষিত প্রপার্টি","Today’s Earning":"আজকের আয়","Today's Earning":"আজকের আয়","Total Earning":"মোট আয়","Deposit":"ডিপোজিট","Withdraw":"উত্তোলন","Profile":"প্রোফাইল","Personal Information":"ব্যক্তিগত তথ্য","Account Settings":"অ্যাকাউন্ট সেটিংস","Email verified":"ইমেইল যাচাইকৃত","Verify Now":"এখনই যাচাই করুন","Account verified":"অ্যাকাউন্ট যাচাইকৃত","Recent Activity":"সাম্প্রতিক কার্যক্রম","My Properties":"আমার প্রপার্টি","Edit Profile":"প্রোফাইল সম্পাদনা","Save Changes":"পরিবর্তন সংরক্ষণ","Cancel":"বাতিল","First Name":"নামের প্রথম অংশ","Last Name":"নামের শেষ অংশ","Email Address":"ইমেইল ঠিকানা","Phone Number":"ফোন নম্বর","Password":"পাসওয়ার্ড","Confirm Password":"পাসওয়ার্ড নিশ্চিত করুন","Forgot Password?":"পাসওয়ার্ড ভুলে গেছেন?","Create Account":"অ্যাকাউন্ট তৈরি করুন","Welcome":"স্বাগতম","Welcome back":"আবারও স্বাগতম","Loading verified properties…":"যাচাইকৃত প্রপার্টি লোড হচ্ছে…","No properties found.":"কোনো প্রপার্টি পাওয়া যায়নি।","Price on request":"দাম জানতে যোগাযোগ করুন","Location":"অবস্থান","Property Type":"প্রপার্টির ধরন","All":"সব","Available":"উপলব্ধ","Pending":"অপেক্ষমাণ","Approved":"অনুমোদিত","Rejected":"বাতিল","Submit":"জমা দিন","Submit Property":"প্রপার্টি জমা দিন","Referral":"রেফারেল","Referral Code":"রেফারেল কোড","Copy":"কপি","Copied":"কপি হয়েছে","Notice":"নোটিশ","Notifications":"বিজ্ঞপ্তি","Activity Log":"কার্যক্রমের ইতিহাস","Support":"সাপোর্ট","Contact Us":"যোগাযোগ করুন","Choose your package":"আপনার প্যাকেজ বেছে নিন","Investment Packages":"বিনিয়োগ প্যাকেজ","Amount":"পরিমাণ","Status":"অবস্থা","Date":"তারিখ","Actions":"অ্যাকশন","No special offers are available right now. Please check back soon.":"এই মুহূর্তে কোনো বিশেষ অফার নেই। পরে আবার দেখুন।"
+ "PROPERTY MARKETPLACE":"প্রপার্টি মার্কেটপ্লেস","Find Your":"খুঁজুন","Next Property":"পরবর্তী প্রপার্টি","Explore Properties":"প্রপার্টি দেখুন","Browse verified property opportunities in one place. Manage your member account with email verification. Online payments are not active yet.":"এক জায়গায় যাচাইকৃত প্রপার্টির সুযোগ দেখুন। ইমেইল যাচাইয়ের মাধ্যমে আপনার সদস্য অ্যাকাউন্ট পরিচালনা করুন। অনলাইন পেমেন্ট এখনো চালু হয়নি।","Own the view.":"নিজের পছন্দের দৃশ্য উপভোগ করুন।","Explore the future.":"ভবিষ্যতের সম্ভাবনা দেখুন।",
+ "Verified listings published":"যাচাইকৃত প্রপার্টি প্রকাশিত","Email verification required":"ইমেইল যাচাই প্রয়োজন","Payments not activated":"পেমেন্ট চালু হয়নি","LATEST PROMOTIONS":"সর্বশেষ অফার","Offers & Special Deals":"অফার ও বিশেষ সুবিধা","Loading current offers…":"বর্তমান অফার লোড হচ্ছে…","Available Properties":"উপলব্ধ প্রপার্টি","Verified listings only":"শুধু যাচাইকৃত তালিকা","Search properties":"প্রপার্টি খুঁজুন","All property types":"সব ধরনের প্রপার্টি","Clear Filters":"ফিল্টার মুছুন","View Details":"বিস্তারিত দেখুন","Buy Now":"এখনই কিনুন","Save Property":"প্রপার্টি সংরক্ষণ করুন","Saved Properties":"সংরক্ষিত প্রপার্টি",
+ "Today’s Earning":"আজকের আয়","Today's Earning":"আজকের আয়","Total Earning":"মোট আয়","Deposit":"ডিপোজিট","Withdraw":"উত্তোলন","Profile":"প্রোফাইল","Personal Information":"ব্যক্তিগত তথ্য","Account Settings":"অ্যাকাউন্ট সেটিংস","Email verified":"ইমেইল যাচাইকৃত","Verify Now":"এখনই যাচাই করুন","Account verified":"অ্যাকাউন্ট যাচাইকৃত","Recent Activity":"সাম্প্রতিক কার্যক্রম","My Properties":"আমার প্রপার্টি","Edit Profile":"প্রোফাইল সম্পাদনা","Save Changes":"পরিবর্তন সংরক্ষণ","Cancel":"বাতিল",
+ "First Name":"নামের প্রথম অংশ","Last Name":"নামের শেষ অংশ","Email Address":"ইমেইল ঠিকানা","Phone Number":"ফোন নম্বর","Password":"পাসওয়ার্ড","Confirm Password":"পাসওয়ার্ড নিশ্চিত করুন","Forgot Password?":"পাসওয়ার্ড ভুলে গেছেন?","Create Account":"অ্যাকাউন্ট তৈরি করুন","Welcome":"স্বাগতম","Welcome back":"আবারও স্বাগতম","Loading verified properties…":"যাচাইকৃত প্রপার্টি লোড হচ্ছে…","No properties found.":"কোনো প্রপার্টি পাওয়া যায়নি।","Price on request":"দাম জানতে যোগাযোগ করুন","Location":"অবস্থান","Property Type":"প্রপার্টির ধরন","All":"সব","Available":"উপলব্ধ","Pending":"অপেক্ষমাণ","Approved":"অনুমোদিত","Rejected":"বাতিল","Submit":"জমা দিন","Submit Property":"প্রপার্টি জমা দিন","Referral":"রেফারেল","Referral Code":"রেফারেল কোড","Copy":"কপি","Copied":"কপি হয়েছে","Notice":"নোটিশ","Notifications":"বিজ্ঞপ্তি","Activity Log":"কার্যক্রমের ইতিহাস","Support":"সাপোর্ট","Contact Us":"যোগাযোগ করুন","Choose your package":"আপনার প্যাকেজ বেছে নিন","Investment Packages":"প্যাকেজসমূহ","Amount":"পরিমাণ","Status":"অবস্থা","Date":"তারিখ","Actions":"কাজ","No special offers are available right now. Please check back soon.":"এই মুহূর্তে কোনো বিশেষ অফার নেই। পরে আবার দেখুন।",
+ "Enter your email address":"আপনার ইমেইল ঠিকানা লিখুন","Enter your password":"আপনার পাসওয়ার্ড লিখুন","Email":"ইমেইল","Phone":"ফোন","Name":"নাম","Submit":"জমা দিন","Loading…":"লোড হচ্ছে…","Please wait…":"অপেক্ষা করুন…","No data available":"কোনো তথ্য পাওয়া যায়নি","Member":"সদস্য","Earnings":"আয়","Commission":"কমিশন","Property":"প্রপার্টি","Details":"বিস্তারিত","Back":"ফিরে যান","Close":"বন্ধ করুন","Send":"পাঠান","Message":"বার্তা","Type your message":"আপনার বার্তা লিখুন"
 };
 let pzLanguage='en',pzTranslationObserver=null;
+function pzApplyTranslation(value){
+ let result=String(value??'');
+ if(pzLanguage==='en')return result;
+ const entries=Object.entries(PZ_TRANSLATIONS).sort((a,b)=>b[0].length-a[0].length);
+ for(const [en,bn] of entries){
+  const escaped=en.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  result=result.replace(new RegExp(escaped,'gi'),match=>{
+   if(match===match.toUpperCase())return bn;
+   return bn;
+  });
+ }
+ return result;
+}
 function pzTranslateText(root=document.body){
  if(!root)return;
  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
- let node;while((node=walker.nextNode())){
-  if(!node.parentElement||node.parentElement.closest('script,style,textarea,[contenteditable="true"]'))continue;
-  if(!node.__pzEnglish)node.__pzEnglish=node.nodeValue;
-  const original=node.__pzEnglish.trim();
-  if(!original)continue;
-  const translated=PZ_TRANSLATIONS[original];
-  if(pzLanguage==='bn'&&translated)node.nodeValue=node.__pzEnglish.replace(original,translated);
-  else if(pzLanguage==='en')node.nodeValue=node.__pzEnglish;
+ let node;
+ while((node=walker.nextNode())){
+  if(!node.parentElement||node.parentElement.closest('script,style,textarea,input,[contenteditable="true"]'))continue;
+  if(node.__pzEnglish===undefined)node.__pzEnglish=node.nodeValue;
+  node.nodeValue=pzApplyTranslation(node.__pzEnglish);
  }
- root.querySelectorAll('input[placeholder],textarea[placeholder],option').forEach(el=>{
-  if(!el.dataset.pzEnglish)el.dataset.pzEnglish=el.textContent||el.placeholder||'';
-  const original=el.dataset.pzEnglish.trim(),translated=PZ_TRANSLATIONS[original];
-  if(el.tagName==='OPTION'){if(pzLanguage==='bn'&&translated)el.textContent=translated;else if(pzLanguage==='en')el.textContent=el.dataset.pzEnglish;}
-  else if(pzLanguage==='bn'&&translated)el.placeholder=translated;else if(pzLanguage==='en')el.placeholder=el.dataset.pzEnglish;
+ root.querySelectorAll('input[placeholder],textarea[placeholder],option,[aria-label],button[title]').forEach(el=>{
+  for(const attr of ['placeholder','aria-label','title']){
+   if(!el.hasAttribute(attr))continue;
+   const key='pzEnglish'+attr;
+   if(el.dataset[key]===undefined)el.dataset[key]=el.getAttribute(attr);
+   el.setAttribute(attr,pzApplyTranslation(el.dataset[key]));
+  }
+  if(el.tagName==='OPTION'){
+   if(el.dataset.pzEnglish===undefined)el.dataset.pzEnglish=el.textContent;
+   el.textContent=pzApplyTranslation(el.dataset.pzEnglish);
+  }
  });
 }
 function setWebsiteLanguage(lang){
@@ -457,8 +477,24 @@ function setWebsiteLanguage(lang){
 }
 (function initWebsiteLanguage(){
  try{pzLanguage=localStorage.getItem('pz_website_language')==='bn'?'bn':'en'}catch(e){pzLanguage='en'}
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setWebsiteLanguage(pzLanguage),{once:true});else setWebsiteLanguage(pzLanguage);
- if(window.MutationObserver){pzTranslationObserver=new MutationObserver(records=>{if(pzLanguage!=='bn')return;records.forEach(record=>{record.addedNodes.forEach(node=>{if(node.nodeType===Node.TEXT_NODE){if(!node.__pzEnglish)node.__pzEnglish=node.nodeValue;const t=PZ_TRANSLATIONS[node.__pzEnglish.trim()];if(t)node.nodeValue=node.__pzEnglish.replace(node.__pzEnglish.trim(),t);}else if(node.nodeType===Node.ELEMENT_NODE)pzTranslateText(node);});});});pzTranslationObserver.observe(document.body,{childList:true,subtree:true});}
+ const apply=()=>setWebsiteLanguage(pzLanguage);
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
+ if(window.MutationObserver){
+  pzTranslationObserver=new MutationObserver(records=>{
+   for(const record of records){
+    if(record.type==='characterData'){
+     const n=record.target;
+     if(n.__pzEnglish===undefined)n.__pzEnglish=n.nodeValue;
+     if(pzLanguage==='bn')n.nodeValue=pzApplyTranslation(n.__pzEnglish);
+    }
+    record.addedNodes.forEach(node=>{
+     if(node.nodeType===Node.TEXT_NODE){if(node.__pzEnglish===undefined)node.__pzEnglish=node.nodeValue;node.nodeValue=pzApplyTranslation(node.__pzEnglish);}
+     else if(node.nodeType===Node.ELEMENT_NODE)pzTranslateText(node);
+    });
+   }
+  });
+  pzTranslationObserver.observe(document.body,{childList:true,subtree:true,characterData:true});
+ }
 })();
 
 async function loginEmailPassword(){const button=document.getElementById('loginButton');if(button?.disabled)return;const original=button?.innerHTML||'Login';const started=Date.now();if(button){button.disabled=true;button.innerHTML='<span class="login-spinner" aria-hidden="true"></span> Logging in…';}clearStatus();let loginError=null;try{const f=await getFirebase(),email=document.getElementById('loginEmail').value.trim(),pw=document.getElementById('loginPassword').value;if(!email||!pw)throw new Error('Enter email and password.');const result=await f.signInWithEmailAndPassword(f.auth,email,pw);if(!result.user.emailVerified){await f.sendEmailVerification(result.user);await f.signOut(f.auth);currentUser=null;currentMemberStatus=null;syncNavigation();throw new Error('Email not verified. A fresh verification link has been sent. Check inbox or spam.')}await ensureMemberProfile(f,result.user,'');currentUser=result.user;currentMemberStatus='active';syncNavigation();updateDashboard();setStatus('Logged in successfully.');showView('dashboard')}catch(e){loginError=e;setStatus(e.message||'Login failed.',true)}finally{const remaining=Math.max(0,3000-(Date.now()-started));await new Promise(resolve=>setTimeout(resolve,remaining));if(button){button.disabled=false;button.innerHTML=original;}}}
