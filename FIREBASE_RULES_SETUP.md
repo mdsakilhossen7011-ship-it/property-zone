@@ -32,6 +32,10 @@ Storage rules allow public reads of property images and restrict uploads/deletes
 - Test member registration with a valid referral code, then check the member dashboard referral count.
 - Test a member property submission and approve it from the Admin Panel.
 - Test creating, editing and publishing an offer and a notice.
+- Test a member deposit: approve it in Admin Panel and confirm the same USD amount is credited to that member's wallet.
+- Test a member withdrawal: approve it only when the wallet has enough balance; the amount is deducted once.
+- Test package activation with sufficient wallet balance; the selected package is activated immediately and the package price is deducted once. Confirm insufficient balance is rejected.
+- The member dashboard shows wallet balance, hourly earning, today's estimated earning and total estimated earning. Earnings refresh every minute while the dashboard is open.
 
 ## Security note
 
