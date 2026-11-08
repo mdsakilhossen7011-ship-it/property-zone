@@ -431,7 +431,7 @@ function refreshWalletPaymentInfo(kind){
  if(!enabled){info.textContent=message||(kind==='deposit'?'Deposit is currently unavailable':'Withdraw is currently unavailable');form.hidden=true;return;}
  form.hidden=false;
  info.textContent=account?(kind==='deposit'?'Send your payment to '+method+' account: '+account:'Payout information for '+method+': '+account):(message||'Admin has not configured this payment method yet.');
- const submit=form.querySelector('button[type="submit]');if(submit)submit.disabled=!account;
+ const submit=form.querySelector('button[type="submit"]');if(submit)submit.disabled=!account;
 }
 async function submitWalletRequest(event,kind){
  event.preventDefault();if(!currentUser){setStatus('Please log in first.',true);showView('login');return;}
