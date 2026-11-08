@@ -138,7 +138,7 @@ service cloud.firestore {
              && request.resource.data.exchangeRateBDT == get(/databases/$(database)/documents/siteSettings/wallet).data.exchangeRateBDT
              && request.resource.data.amountUSD == math.round((request.resource.data.amountBDT / request.resource.data.exchangeRateBDT) * 100) / 100
              && request.resource.data.status == "pending"
-             && (request.resource.data.requestType != "wallet-withdraw" || request.resource.data.amountBDT >= math.max(500, get(/databases/$(database)/documents/siteSettings/wallet).data.minimumWithdrawBDT))
+             && (request.resource.data.requestType != "wallet-withdraw" || get(/databases/$(database)/documents/siteSettings/wallet).data.minimumWithdrawBDT is int && get(/databases/$(database)/documents/siteSettings/wallet).data.minimumWithdrawBDT >= 500 && request.resource.data.amountBDT >= get(/databases/$(database)/documents/siteSettings/wallet).data.minimumWithdrawBDT)
             && request.resource.data.paymentCurrency == "BDT"
             && request.resource.data.paymentMethod in ["bKash", "Nagad", "Binance"]
             && request.resource.data.walletNumber is string
