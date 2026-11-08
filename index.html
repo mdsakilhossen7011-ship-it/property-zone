@@ -266,6 +266,7 @@
      <label for="depositNumber" id="depositAccountLabel">Your payment number (from which you sent the money)</label><input id="depositNumber" class="search" type="tel" inputmode="numeric" maxlength="11" required placeholder="01XXXXXXXXX"><label for="depositTrx">Transaction ID (TrxID)</label><input id="depositTrx" class="search" required maxlength="100" placeholder="Enter payment TrxID"><button class="btn primary wallet-submit" type="submit">Submit Deposit Request →</button></form><p id="depositStatus" class="wallet-status" role="status"></p>
   </article></div>
  <div class="wallet-note">Requests are sent to the Prologis, Inc. (PLD) admin for review. bKash, Nagad and Binance are available request methods; this form records a request and does not transfer money automatically.</div>
+ <button class="btn" style="margin-top:10px" onclick="showView('walletHistory')">View Deposit / Withdraw History</button>
  <button class="btn" style="margin-top:16px" onclick="showView('dashboard')">← Back to Dashboard</button>
 </section>
 
@@ -281,6 +282,7 @@
      <label for="withdrawNumber" id="withdrawAccountLabel">Your receiving bKash / Nagad number</label><input id="withdrawNumber" class="search" type="tel" inputmode="numeric" maxlength="11" required placeholder="01XXXXXXXXX"><button class="btn primary wallet-submit" type="submit">Submit Withdrawal Request →</button></form><p id="withdrawStatus" class="wallet-status" role="status"></p>
   </article></div>
  <div class="wallet-note">Requests are sent to the Prologis, Inc. (PLD) admin for review. bKash, Nagad and Binance are available request methods; this form records a request and does not transfer money automatically.</div>
+ <button class="btn" style="margin-top:10px" onclick="showView('walletHistory')">View Deposit / Withdraw History</button>
  <button class="btn" style="margin-top:10px" onclick="showView('walletHistory')">View Deposit / Withdraw History</button>
  <button class="btn" style="margin-top:16px" onclick="showView('dashboard')">← Back to Dashboard</button>
 </section>
