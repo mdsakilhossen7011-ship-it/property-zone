@@ -123,14 +123,23 @@ service cloud.firestore {
           || (
             request.resource.data.requestType in ["wallet-deposit", "wallet-withdraw"]
             && request.resource.data.keys().hasOnly([
-              "requestType", "uid", "email", "name", "amountUSD", "paymentCurrency",
+              "requestType", "uid", "email", "name", "amountUSD", "amountBDT", "exchangeRateBDT", "paymentCurrency",
               "paymentMethod", "walletNumber", "paymentAccount", "senderAccount",
               "receivingAccount", "adminPayoutAccount", "transactionId", "message",
               "status", "createdAt"
             ])
             && request.resource.data.amountUSD is number
             && request.resource.data.amountUSD > 0
-            && request.resource.data.paymentCurrency == "USD"
+             && request.resource.data.amountBDT is int
+             && request.resource.data.amountBDT > 0
+             && request.resource.data.exchangeRateBDT is number
+             && request.resource.data.exchangeRateBDT > 0
+             && exists(/databases/$(database)/documents/siteSettings/wallet)
+             && request.resource.data.exchangeRateBDT == get(/databases/$(database)/documents/siteSettings/wallet).data.exchangeRateBDT
+             && request.resource.data.amountUSD == math.round((request.resource.data.amountBDT / request.resource.data.exchangeRateBDT) * 100) / 100
+             && request.resource.data.status == "pending"
+             && (request.resource.data.requestType != "wallet-withdraw" || request.resource.data.amountBDT >= math.max(500, get(/databases/$(database)/documents/siteSettings/wallet).data.minimumWithdrawBDT))
+            && request.resource.data.paymentCurrency == "BDT"
             && request.resource.data.paymentMethod in ["bKash", "Nagad", "Binance"]
             && request.resource.data.walletNumber is string
             && request.resource.data.walletNumber.size() >= 3
@@ -149,7 +158,7 @@ service cloud.firestore {
             )
           )
         );
-      allow get, list: if isAdmin();
+       allow get, list: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
       allow update, delete: if isAdmin();
     }
 
