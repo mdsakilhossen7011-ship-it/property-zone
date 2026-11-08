@@ -49,6 +49,45 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    function validPackageAmount(amount) {
+      return amount in [1000, 2000, 5000, 10000, 20000, 50000, 100000];
+    }
+
+    match /wallets/{memberId} {
+      allow get: if (signedIn() && request.auth.uid == memberId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.uid == memberId
+        && request.resource.data.balanceUSD is number
+        && request.resource.data.balanceUSD >= 0;
+      allow update: if isAdmin() || (signedIn()
+        && request.auth.uid == memberId
+        && resource.data.uid == memberId
+        && request.resource.data.uid == memberId
+        && request.resource.data.balanceUSD is number
+        && request.resource.data.balanceUSD >= 0
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['balanceUSD','updatedAt'])
+        && validPackageAmount(resource.data.balanceUSD - request.resource.data.balanceUSD));
+      allow delete: if isAdmin();
+    }
+
+    match /activePackages/{packageId} {
+      allow get, list: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid','propertyId','propertyTitle','amountUSD','dailyRate','hourlyRate','status','startedAt','createdAt'])
+        && validPackageAmount(request.resource.data.amountUSD)
+        && request.resource.data.dailyRate == 0.02
+        && request.resource.data.hourlyRate == 0.02 / 24
+        && request.resource.data.status == 'active'
+        && request.resource.data.startedAt is timestamp
+        && request.resource.data.createdAt is timestamp
+        && exists(/databases/$(database)/documents/wallets/$(request.auth.uid))
+        && getAfter(/databases/$(database)/documents/wallets/$(request.auth.uid)).data.balanceUSD
+          == get(/databases/$(database)/documents/wallets/$(request.auth.uid)).data.balanceUSD - request.resource.data.amountUSD;
+      allow update, delete: if isAdmin();
+    }
+
     match /properties/{propertyId} {
       allow get, list: if isAdmin() || resource.data.status == "published";
       allow create: if isAdmin()
