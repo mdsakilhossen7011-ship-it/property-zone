@@ -248,28 +248,28 @@
 <section id="dashboardFeature" class="view"><div class="panel" style="max-width:760px;margin:24px auto"><div class="eyebrow">DASHBOARD SERVICE</div><h2 id="dashboardFeatureTitle">Service</h2><p class="muted" id="dashboardFeatureText"></p><button class="btn primary" onclick="showView('dashboard')">← Back to Dashboard</button></div></section>
 
 <section id="depositWallet" class="view">
- <div class="wallet-intro"><div class="eyebrow">PROLOGIS, INC. (PLD) WALLET</div><h2 style="margin:8px 0;color:var(--gold2)">Deposit</h2><p class="muted" style="margin:0">Add funds to your account. All amounts are displayed in US Dollars (USD).</p></div>
+ <div class="wallet-intro"><div class="eyebrow">PROLOGIS, INC. (PLD) WALLET</div><h2 style="margin:8px 0;color:var(--gold2)">Add Funds to Your Wallet</h2><p class="muted" style="margin:0">Send your payment using the selected method and the Cash In Number below. All amounts are displayed in US Dollars (USD).</p><div id="depositPaymentInfo" class="wallet-note" style="margin:16px 0 0">Loading Cash In Number…</div></div>
  <div class="wallet-grid" style="grid-template-columns:minmax(0,1fr);max-width:760px"><article class="wallet-card deposit"><div class="wallet-card-head"><div class="wallet-card-title"><div class="wallet-symbol">＋</div><div><h3>Deposit</h3><div class="wallet-sub">Add funds to your account</div></div></div><span class="wallet-pill">ADD FUNDS</span></div>
    <form onsubmit="submitWalletRequest(event,'deposit')"><label for="depositAmount">Deposit amount (USD)</label><input id="depositAmount" class="search" type="number" min="1" step="0.01" required placeholder="e.g. 25.00"><label>Select payment method</label>
     <div class="wallet-methods">
 <button class="wallet-method selected" type="button" data-wallet-method="deposit" data-value="bKash" onclick="selectWalletMethod('deposit','bKash',this)"><span class="bkash-mark">bKash</span></button>
 <button class="wallet-method" type="button" data-wallet-method="deposit" data-value="Nagad" onclick="selectWalletMethod('deposit','Nagad',this)"><span class="nagad-mark">Nagad</span></button>
 <button class="wallet-method" type="button" data-wallet-method="deposit" data-value="Binance" onclick="selectWalletMethod('deposit','Binance',this)"><span class="binance-mark">BINANCE</span></button></div><input type="hidden" id="depositMethod" value="bKash">
-     <div id="depositPaymentInfo" class="wallet-note" style="margin:12px 0">Loading official payment details…</div><label for="depositNumber" id="depositAccountLabel">Your payment number (from which you sent the money)</label><input id="depositNumber" class="search" type="tel" inputmode="numeric" maxlength="11" required placeholder="01XXXXXXXXX"><label for="depositTrx">Transaction ID (TrxID)</label><input id="depositTrx" class="search" required maxlength="100" placeholder="Enter payment TrxID"><button class="btn primary wallet-submit" type="submit">Submit Deposit Request →</button></form><p id="depositStatus" class="wallet-status" role="status"></p>
+     <label for="depositNumber" id="depositAccountLabel">Your payment number (from which you sent the money)</label><input id="depositNumber" class="search" type="tel" inputmode="numeric" maxlength="11" required placeholder="01XXXXXXXXX"><label for="depositTrx">Transaction ID (TrxID)</label><input id="depositTrx" class="search" required maxlength="100" placeholder="Enter payment TrxID"><button class="btn primary wallet-submit" type="submit">Submit Deposit Request →</button></form><p id="depositStatus" class="wallet-status" role="status"></p>
   </article></div>
  <div class="wallet-note">Requests are sent to the Prologis, Inc. (PLD) admin for review. bKash, Nagad and Binance are available request methods; this form records a request and does not transfer money automatically.</div>
  <button class="btn" style="margin-top:16px" onclick="showView('dashboard')">← Back to Dashboard</button>
 </section>
 
 <section id="withdrawWallet" class="view">
- <div class="wallet-intro"><div class="eyebrow">PROLOGIS, INC. (PLD) WALLET</div><h2 style="margin:8px 0;color:#9bcfff">Withdraw</h2><p class="muted" style="margin:0">Request a payout. All amounts are displayed in US Dollars (USD).</p></div>
+ <div class="wallet-intro"><div class="eyebrow">PROLOGIS, INC. (PLD) WALLET</div><h2 style="margin:8px 0;color:#9bcfff">Withdraw to Your Wallet</h2><p class="muted" style="margin:0">Choose your payout method and use the Cash Out Number below. All amounts are displayed in US Dollars (USD).</p><div id="withdrawPaymentInfo" class="wallet-note" style="margin:16px 0 0">Loading Cash Out Number…</div></div>
  <div class="wallet-grid" style="grid-template-columns:minmax(0,1fr);max-width:760px"><article class="wallet-card withdraw"><div class="wallet-card-head"><div class="wallet-card-title"><div class="wallet-symbol">↗</div><div><h3>Withdraw</h3><div class="wallet-sub">Request a payout</div></div></div><span class="wallet-pill">PAYOUT</span></div>
    <form onsubmit="submitWalletRequest(event,'withdraw')"><label for="withdrawAmount">Withdrawal amount (USD)</label><input id="withdrawAmount" class="search" type="number" min="1" step="0.01" required placeholder="e.g. 25.00"><label>Select payout method</label>
     <div class="wallet-methods">
 <button class="wallet-method selected" type="button" data-wallet-method="withdraw" data-value="bKash" onclick="selectWalletMethod('withdraw','bKash',this)"><span class="bkash-mark">bKash</span></button>
 <button class="wallet-method" type="button" data-wallet-method="withdraw" data-value="Nagad" onclick="selectWalletMethod('withdraw','Nagad',this)"><span class="nagad-mark">Nagad</span></button>
 <button class="wallet-method" type="button" data-wallet-method="withdraw" data-value="Binance" onclick="selectWalletMethod('withdraw','Binance',this)"><span class="binance-mark">BINANCE</span></button></div><input type="hidden" id="withdrawMethod" value="bKash">
-     <div id="withdrawPaymentInfo" class="wallet-note" style="margin:12px 0">Loading payout information…</div><label for="withdrawNumber" id="withdrawAccountLabel">Your receiving bKash / Nagad number</label><input id="withdrawNumber" class="search" type="tel" inputmode="numeric" maxlength="11" required placeholder="01XXXXXXXXX"><button class="btn primary wallet-submit" type="submit">Submit Withdrawal Request →</button></form><p id="withdrawStatus" class="wallet-status" role="status"></p>
+     <label for="withdrawNumber" id="withdrawAccountLabel">Your receiving bKash / Nagad number</label><input id="withdrawNumber" class="search" type="tel" inputmode="numeric" maxlength="11" required placeholder="01XXXXXXXXX"><button class="btn primary wallet-submit" type="submit">Submit Withdrawal Request →</button></form><p id="withdrawStatus" class="wallet-status" role="status"></p>
   </article></div>
  <div class="wallet-note">Requests are sent to the Prologis, Inc. (PLD) admin for review. bKash, Nagad and Binance are available request methods; this form records a request and does not transfer money automatically.</div>
  <button class="btn" style="margin-top:16px" onclick="showView('dashboard')">← Back to Dashboard</button>
@@ -415,7 +415,8 @@ async function loadWalletSettings(kind){
   const title=kind==='deposit'?'Deposit is currently unavailable':'Withdraw is currently unavailable';
   if(!enabled){info.textContent=message||title;form.hidden=true;return;}
   form.hidden=false;
-  info.textContent=account?(kind==='deposit'?'Send your payment to '+method+' account: '+account:'Payout information for '+method+': '+account):(message||'Admin has not configured this payment method yet.');
+  const heading=String(kind==='deposit'?walletSettingsCache.depositLabelText||'Cash In Number':walletSettingsCache.withdrawLabelText||'Cash Out Number').trim();
+  info.textContent=account?heading+' · '+method+': '+account:(message||'Admin has not configured this payment method yet.');
   const submit=form.querySelector('button[type="submit"]');
   if(submit)submit.disabled=!account;
  }catch(e){info.textContent='Could not load payment settings. Please try again later.';form.hidden=true;console.warn('Wallet settings could not load:',e);}
@@ -430,7 +431,8 @@ function refreshWalletPaymentInfo(kind){
  const account=String(accounts?.[method]||'').trim();
  if(!enabled){info.textContent=message||(kind==='deposit'?'Deposit is currently unavailable':'Withdraw is currently unavailable');form.hidden=true;return;}
  form.hidden=false;
- info.textContent=account?(kind==='deposit'?'Send your payment to '+method+' account: '+account:'Payout information for '+method+': '+account):(message||'Admin has not configured this payment method yet.');
+ const heading=String(kind==='deposit'?walletSettingsCache.depositLabelText||'Cash In Number':walletSettingsCache.withdrawLabelText||'Cash Out Number').trim();
+ info.textContent=account?heading+' · '+method+': '+account:(message||'Admin has not configured this payment method yet.');
  const submit=form.querySelector('button[type="submit"]');if(submit)submit.disabled=!account;
 }
 async function submitWalletRequest(event,kind){
