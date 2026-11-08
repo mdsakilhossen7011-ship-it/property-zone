@@ -251,6 +251,7 @@
  </div>
  <button class="btn" onclick="logout()">Log out</button>
 </section>
+ <button class="btn" style="margin-top:10px" onclick="showView('walletHistory')">View Deposit / Withdraw History</button>
 <section id="dashboardFeature" class="view"><div class="panel" style="max-width:760px;margin:24px auto"><div class="eyebrow">DASHBOARD SERVICE</div><h2 id="dashboardFeatureTitle">Service</h2><p class="muted" id="dashboardFeatureText"></p><button class="btn primary" onclick="showView('dashboard')">← Back to Dashboard</button></div></section>
 
 <section id="depositWallet" class="view">
@@ -280,6 +281,7 @@
      <label for="withdrawNumber" id="withdrawAccountLabel">Your receiving bKash / Nagad number</label><input id="withdrawNumber" class="search" type="tel" inputmode="numeric" maxlength="11" required placeholder="01XXXXXXXXX"><button class="btn primary wallet-submit" type="submit">Submit Withdrawal Request →</button></form><p id="withdrawStatus" class="wallet-status" role="status"></p>
   </article></div>
  <div class="wallet-note">Requests are sent to the Prologis, Inc. (PLD) admin for review. bKash, Nagad and Binance are available request methods; this form records a request and does not transfer money automatically.</div>
+ <button class="btn" style="margin-top:10px" onclick="showView('walletHistory')">View Deposit / Withdraw History</button>
  <button class="btn" style="margin-top:16px" onclick="showView('dashboard')">← Back to Dashboard</button>
 </section>
 
@@ -443,7 +445,7 @@ async function loadWalletSettings(kind){
  info.textContent='Loading payment settings…';
  try{
   const f=await getFirebase(),snap=await f.firestore.getDoc(f.firestore.doc(f.db,'siteSettings','wallet'));
-  walletSettingsCache=snap.exists()?snap.data():{};
+  walletSettingsCache=snap.exists()?snap.data():{};updateWalletAmountPreview(kind);
   const enabled=kind==='deposit'?walletSettingsCache.depositEnabled===true:walletSettingsCache.withdrawEnabled===true;
   const message=kind==='deposit'?walletSettingsCache.depositMessage:walletSettingsCache.withdrawMessage;
   const method=document.getElementById(kind+'Method')?.value||'bKash';
