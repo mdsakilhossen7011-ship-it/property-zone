@@ -77,10 +77,12 @@ service cloud.firestore {
       allow get, list: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.keys().hasOnly(['uid','propertyId','propertyTitle','amountUSD','dailyRate','hourlyRate','status','startedAt','createdAt'])
+        && request.resource.data.keys().hasOnly(['uid','propertyId','propertyTitle','amountUSD','dailyRate','hourlyRate','termDays','maturityAt','status','startedAt','createdAt'])
         && validPackageAmount(request.resource.data.amountUSD)
         && request.resource.data.dailyRate == 0.02
         && request.resource.data.hourlyRate == 0.02 / 24
+        && request.resource.data.termDays == 30
+        && request.resource.data.maturityAt is timestamp
         && request.resource.data.status == 'active'
         && request.resource.data.startedAt is timestamp
         && request.resource.data.createdAt is timestamp
