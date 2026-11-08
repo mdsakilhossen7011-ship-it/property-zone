@@ -73,9 +73,39 @@ service cloud.firestore {
     match /propertyEnquiries/{enquiryId} {
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.propertyId is string
         && request.resource.data.message is string
-        && request.resource.data.status == "open";
+        && request.resource.data.status == "open"
+        && (
+          request.resource.data.propertyId is string
+          || (
+            request.resource.data.requestType in ["wallet-deposit", "wallet-withdraw"]
+            && request.resource.data.keys().hasOnly([
+              "requestType", "uid", "email", "name", "amountUSD", "paymentCurrency",
+              "paymentMethod", "walletNumber", "paymentAccount", "senderAccount",
+              "receivingAccount", "adminPayoutAccount", "transactionId", "message",
+              "status", "createdAt"
+            ])
+            && request.resource.data.amountUSD is number
+            && request.resource.data.amountUSD > 0
+            && request.resource.data.paymentCurrency == "USD"
+            && request.resource.data.paymentMethod in ["bKash", "Nagad", "Binance"]
+            && request.resource.data.walletNumber is string
+            && request.resource.data.walletNumber.size() >= 3
+            && request.resource.data.walletNumber.size() <= 100
+            && request.resource.data.createdAt is timestamp
+            && (
+              (request.resource.data.requestType == "wallet-deposit"
+                && request.resource.data.senderAccount is string
+                && request.resource.data.receivingAccount is string
+                && request.resource.data.receivingAccount.size() > 0
+                && request.resource.data.transactionId is string
+                && request.resource.data.transactionId.size() > 0)
+              || (request.resource.data.requestType == "wallet-withdraw"
+                && request.resource.data.adminPayoutAccount is string
+                && request.resource.data.adminPayoutAccount.size() > 0)
+            )
+          )
+        );
       allow get, list: if isAdmin();
       allow update, delete: if isAdmin();
     }
