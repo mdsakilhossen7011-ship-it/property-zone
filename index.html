@@ -393,13 +393,331 @@ function openProperty(id){
  '<div id="propertyPackageList" style="display:none;margin-top:18px">'+
  '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">'+
  [1000,2000,5000,10000,20000,50000,100000].map(function(amount){return '<div class="panel" style="padding:16px;border:1px solid var(--line)"><div class="eyebrow">PACKAGE</div><h3 style="font-size:23px;margin:7px 0">'+amount.toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0})+'</h3><p style="margin:5px 0;color:var(--gold2);font-weight:800">2% Daily · 30 Days</p><p class="muted" style="margin:5px 0">Daily calculation: $'+(amount*0.02).toLocaleString('en-US',{maximumFractionDigits:2})+'</p><button class="btn primary" type="button" style="width:100%" onclick="requestPropertyPurchase(\''+pid+'\','+amount+')">Select Package</button></div>';}).join('')+
- '</div><p class="notice" style="margin-top:14px">Online payment is not activated. Selecting a package sends a request to the Prologis, Inc. (PLD) team; it does not charge money or confirm a purchase.</p><p id="purchaseRequestStatus" class="muted" role="status"></p></div></div>'+
+ '</div><div id="propertyInvestedBalance" class="status" style="margin-top:14px">Invested Balance: Open this section to load your active package balance.</div><p class="notice" style="margin-top:14px">Online payment is not activated. Selecting a package sends a request to the Prologis, Inc. (PLD) team; it does not charge money or confirm a purchase.</p><p id="purchaseRequestStatus" class="muted" role="status"></p></div></div>'+
  '<div class="hero"><div><div class="eyebrow">'+escapeHTML(p.status)+' · '+escapeHTML(p.type)+'</div><h1>'+escapeHTML(p.name)+'</h1><p class="muted">⌖ '+escapeHTML(p.loc)+'</p><p class="muted">'+escapeHTML(p.desc)+'</p></div><div class="heroart">'+image+'</div></div>'+
  '<div class="panel" style="margin-top:18px"><h3>Ask about this property</h3><form onsubmit="sendPropertyEnquiry(event,\''+pid+'\')"><label for="propertyEnquiryMessage">YOUR MESSAGE</label><textarea id="propertyEnquiryMessage" class="search" rows="3" maxlength="1200" required placeholder="I am interested in this property…"></textarea><button class="btn primary" type="submit">Send enquiry</button></form><p id="propertyEnquiryStatus" class="muted" role="status"></p></div>'+
  '<button class="btn" type="button" onclick="toggleSavedProperty(\''+pid+'\')">'+(isPropertySaved(p.id)?'♥ Remove from saved':'♡ Save property')+'</button>';
  showView('details');
 }
-function showPropertyPackages(propertyId){const list=document.getElementById('propertyPackageList');if(!list)return;list.style.display='block';document.getElementById('buyPropertyButton').textContent='✓ PACKAGES AVAILABLE';}
+async function showPropertyPackages(propertyId){
+ const list=document.getElementById('propertyPackageList'),balanceBox=document.getElementById('propertyInvestedBalance'),buyButton=document.getElementById('buyPropertyButton');
+ if(!list)return;
+ list.style.display='block';
+ if(buyButton)buyButton.textContent='✓ PACKAGES AVAILABLE';
+ if(!balanceBox)return;
+ const money=n=>'
+async function requestPropertyPurchase(propertyId,packageAmount){
+ const status=document.getElementById('purchaseRequestStatus'),p=properties.find(x=>x.id===propertyId);
+ if(!p||!status)return;
+ if(!currentUser){setStatus('Please log in to activate a package.',true);showView('login');return;}
+ const allowed=[1000,2000,5000,10000,20000,50000,100000];
+ if(!allowed.includes(Number(packageAmount))){status.textContent='Invalid package selected.';return;}
+ const buttons=document.querySelectorAll('#propertyPackageList button');buttons.forEach(b=>b.disabled=true);
+ status.textContent='Checking wallet balance and activating package…';
+ try{
+  const f=await getFirebase(),fs=f.firestore,walletRef=fs.doc(f.db,'wallets',currentUser.uid),packageRef=fs.doc(fs.collection(f.db,'activePackages'));
+  await fs.runTransaction(f.db,async tx=>{
+   const walletSnap=await tx.get(walletRef);
+   const balance=walletSnap.exists()?Number(walletSnap.data().balanceUSD||0):0;
+   if(balance<packageAmount)throw new Error('Insufficient wallet balance. Please deposit funds first.');
+   tx.update(walletRef,{balanceUSD:balance-packageAmount,updatedAt:fs.serverTimestamp()});
+   tx.set(packageRef,{uid:currentUser.uid,propertyId,propertyTitle:p.name,amountUSD:packageAmount,dailyRate:0.02,hourlyRate:0.02/24,termDays:30,maturityAt:new Date(Date.now()+30*24*60*60*1000),status:'active',startedAt:fs.serverTimestamp(),createdAt:fs.serverTimestamp()});
+  });
+  status.textContent='Package activated successfully. $'+packageAmount.toLocaleString('en-US')+' has been deducted from your wallet.';
+  await loadDashboardStats();await loadWalletAndEarnings();
+ }catch(e){status.textContent=e.message||'Could not activate package.';}
+ finally{buttons.forEach(b=>b.disabled=false);}
+}
+
+
+function selectWalletMethod(kind,method,button){
+ const field=document.getElementById(kind+'Method');if(!field)return;field.value=method;
+ document.querySelectorAll('[data-wallet-method="'+kind+'"]').forEach(el=>el.classList.toggle('selected',el===button));
+ const account=document.getElementById(kind+'Number'),label=document.getElementById(kind+'AccountLabel');if(!account||!label)return;
+ if(method==='Binance'){label.textContent='Binance Pay ID / UID';account.type='text';account.inputMode='text';account.maxLength=100;account.placeholder='Enter Binance Pay ID or UID';}
+ else{label.textContent=kind==='deposit'?'Your payment number (from which you sent the money)':'Your receiving bKash / Nagad number';account.type='tel';account.inputMode='numeric';account.maxLength=11;account.placeholder='01XXXXXXXXX';}
+ refreshWalletPaymentInfo(kind);
+}
+async function loadWalletSettings(kind){
+ const info=document.getElementById(kind==='deposit'?'depositPaymentInfo':'withdrawPaymentInfo'),form=document.querySelector('#'+(kind==='deposit'?'depositWallet':'withdrawWallet')+' form'),status=document.getElementById(kind+'Status');
+ if(!info||!form)return;
+ info.textContent='Loading payment settings…';
+ try{
+  const f=await getFirebase(),snap=await f.firestore.getDoc(f.firestore.doc(f.db,'siteSettings','wallet'));
+  walletSettingsCache=snap.exists()?snap.data():{};
+  const enabled=kind==='deposit'?walletSettingsCache.depositEnabled===true:walletSettingsCache.withdrawEnabled===true;
+  const message=kind==='deposit'?walletSettingsCache.depositMessage:walletSettingsCache.withdrawMessage;
+  const method=document.getElementById(kind+'Method')?.value||'bKash';
+  const accounts=kind==='deposit'?walletSettingsCache.depositAccounts:walletSettingsCache.withdrawAccounts;
+  const account=String(accounts?.[method]||'').trim();
+  const title=kind==='deposit'?'Deposit is currently unavailable':'Withdraw is currently unavailable';
+  if(!enabled){info.textContent=message||title;form.hidden=true;return;}
+  form.hidden=false;
+  const heading=String(kind==='deposit'?walletSettingsCache.depositLabelText||'Cash In Number':walletSettingsCache.withdrawLabelText||'Cash Out Number').trim();
+  info.textContent=(account?heading+' · '+method+': '+account:(message||'Admin has not configured this payment method yet.'))+' · Rate: '+(walletExchangeRate()?'৳'+walletExchangeRate().toFixed(2)+' per $1':'Not set')+(kind==='withdraw'?' · Minimum: ৳'+Math.max(500,Number(walletSettingsCache.minimumWithdrawBDT||500)).toLocaleString('en-US'):'');
+  const submit=form.querySelector('button[type="submit"]');
+  if(submit)submit.disabled=!account;
+ }catch(e){info.textContent='Could not load payment settings. Please try again later.';form.hidden=true;console.warn('Wallet settings could not load:',e);}
+}
+function refreshWalletPaymentInfo(kind){
+ const info=document.getElementById(kind==='deposit'?'depositPaymentInfo':'withdrawPaymentInfo'),form=document.querySelector('#'+(kind==='deposit'?'depositWallet':'withdrawWallet')+' form');
+ if(!info||!form||!walletSettingsCache)return;
+ const enabled=kind==='deposit'?walletSettingsCache.depositEnabled===true:walletSettingsCache.withdrawEnabled===true;
+ const message=kind==='deposit'?walletSettingsCache.depositMessage:walletSettingsCache.withdrawMessage;
+ const method=document.getElementById(kind+'Method')?.value||'bKash';
+ const accounts=kind==='deposit'?walletSettingsCache.depositAccounts:walletSettingsCache.withdrawAccounts;
+ const account=String(accounts?.[method]||'').trim();
+ if(!enabled){info.textContent=message||(kind==='deposit'?'Deposit is currently unavailable':'Withdraw is currently unavailable');form.hidden=true;return;}
+ form.hidden=false;
+ const heading=String(kind==='deposit'?walletSettingsCache.depositLabelText||'Cash In Number':walletSettingsCache.withdrawLabelText||'Cash Out Number').trim();
+ info.textContent=account?heading+' · '+method+': '+account:(message||'Admin has not configured this payment method yet.');
+ const submit=form.querySelector('button[type="submit"]');if(submit)submit.disabled=!account;
+}
+function walletExchangeRate(){const rate=Number(walletSettingsCache?.exchangeRateBDT);return Number.isFinite(rate)&&rate>0?rate:0;}
+function updateWalletAmountPreview(kind){const input=document.getElementById(kind+'Amount'),preview=document.getElementById(kind+'AmountPreview'),rate=walletExchangeRate(),bdt=Number(input?.value||0);if(!preview)return;if(!rate){preview.textContent='USD equivalent unavailable. Admin exchange rate is not set.';return;}if(!Number.isFinite(bdt)||bdt<=0){preview.textContent='USD equivalent: $0.00';return;}preview.textContent='Approx. USD equivalent: $'+(Math.round((bdt/rate)*100)/100).toFixed(2)+' · Rate: ৳'+rate.toFixed(2)+' per $1';}
+function setWithdrawAllAmount(){const el=document.getElementById('withdrawAmount'),balanceEl=document.getElementById('dashWalletBalance'),status=document.getElementById('withdrawStatus'),rate=walletExchangeRate();if(!el||!balanceEl)return;if(!rate){if(status)status.textContent='Admin exchange rate is not set yet.';return;}const usd=Number(String(balanceEl.textContent||'').replace(/[^0-9.]/g,''));if(Number.isFinite(usd)&&usd>0){el.value=String(Math.floor(usd*rate));updateWalletAmountPreview('withdraw');if(status)status.textContent='Your full available balance has been converted to BDT.';}else if(status)status.textContent='No available balance to withdraw yet;';}
+async function submitWalletRequest(event,kind){
+ event.preventDefault();if(!currentUser){setStatus('Please log in first.',true);showView('login');return;}
+ const isDeposit=kind==='deposit',amountBDT=Number(document.getElementById(isDeposit?'depositAmount':'withdrawAmount').value),method=document.getElementById(isDeposit?'depositMethod':'withdrawMethod').value,account=document.getElementById(isDeposit?'depositNumber':'withdrawNumber').value.trim(),trx=isDeposit?document.getElementById('depositTrx').value.trim():'',status=document.getElementById(kind+'Status'),form=event.currentTarget,submit=form.querySelector('button[type="submit"]');
+ await loadWalletSettings(kind);
+ const settings=walletSettingsCache||{},rate=Number(settings.exchangeRateBDT),minimum=Math.max(500,Number(settings.minimumWithdrawBDT||500)),enabled=isDeposit?settings.depositEnabled===true:settings.withdrawEnabled===true,accounts=isDeposit?settings.depositAccounts:settings.withdrawAccounts,officialAccount=String(accounts?.[method]||'').trim();
+ if(!enabled){status.textContent=(isDeposit?settings.depositMessage:settings.withdrawMessage)||'This service is currently unavailable.';return;}
+ if(!officialAccount){status.textContent='This payment method is not configured by admin yet.';return;}
+ if(!Number.isFinite(rate)||rate<=0){status.textContent='Admin exchange rate is not configured yet.';return;}
+ if(!Number.isSafeInteger(amountBDT)||amountBDT<=0){status.textContent='Enter a valid amount in BDT.';return;}
+ if(!isDeposit&&amountBDT<minimum){status.textContent='Minimum withdrawal is ৳'+minimum.toLocaleString('en-US')+'. Requests below this amount are not accepted.';return;}
+ if(method==='Binance'?account.length<3||account.length>100:!/^01[0-9]{9}$/.test(account)){status.textContent=method==='Binance'?'Enter a valid Binance Pay ID or UID.':'Enter a valid 11-digit Bangladesh wallet number.';return;}
+ if(isDeposit&&!trx){status.textContent='Enter the payment Transaction ID.';return;}
+ const amountUSD=Math.round((amountBDT/rate)*100)/100;
+ if(!Number.isFinite(amountUSD)||amountUSD<=0){status.textContent='Could not calculate the USD equivalent.';return;}
+ submit.disabled=true;status.textContent='Submitting your request…';
+ try{
+  const f=await getFirebase(),fs=f.firestore;
+  if(!isDeposit){const wallet=await fs.getDoc(fs.doc(f.db,'wallets',currentUser.uid)),balance=wallet.exists()?Number(wallet.data().balanceUSD||0):0;if(balance+0.000001<amountUSD)throw new Error('Your available wallet balance is not enough for this withdrawal.');}
+  const payload={requestType:isDeposit?'wallet-deposit':'wallet-withdraw',uid:currentUser.uid,email:currentUser.email||'',name:currentUser.displayName||'',amountBDT,exchangeRateBDT:rate,amountUSD,paymentCurrency:'BDT',paymentMethod:method,walletNumber:account,paymentAccount:account,senderAccount:isDeposit?account:'',receivingAccount:isDeposit?officialAccount:'',adminPayoutAccount:isDeposit?'':officialAccount,transactionId:trx,message:(isDeposit?'DEPOSIT':'WITHDRAWAL')+' request: ৳'+amountBDT.toLocaleString('en-US')+' (USD $'+amountUSD.toFixed(2)+') at ৳'+rate+' per USD via '+method+'. '+(isDeposit?'Sender: '+account+' · Paid to: '+officialAccount+' · TrxID: '+trx:'User payout account: '+account+' · Admin payout info: '+officialAccount),status:'pending',createdAt:fs.serverTimestamp()};
+  await fs.addDoc(fs.collection(f.db,'propertyEnquiries'),payload);
+  status.textContent=(isDeposit?'Deposit':'Withdrawal')+' request submitted. Status: Pending admin review.';form.reset();
+  const field=document.getElementById(kind+'Method');if(field)field.value='bKash';
+  document.querySelectorAll('[data-wallet-method="'+kind+'"]').forEach(el=>el.classList.toggle('selected',el.dataset.value==='bKash'));
+  const accountInput=document.getElementById(kind+'Number'),accountLabel=document.getElementById(kind+'AccountLabel');if(accountInput){accountInput.type='tel';accountInput.inputMode='numeric';accountInput.maxLength=11;accountInput.placeholder='01XXXXXXXXX';}if(accountLabel)accountLabel.textContent=isDeposit?'Your payment number (from which you sent the money)':'Your receiving bKash / Nagad number';
+  updateWalletAmountPreview(kind);refreshWalletPaymentInfo(kind);
+ }catch(error){status.textContent='Request failed: '+error.message;}finally{submit.disabled=false;}
+}
+
+async function loadWalletHistory(){
+ const box=document.getElementById('walletHistoryList');if(!box||!currentUser)return;box.innerHTML='<p class="muted">Loading your wallet history…</p>';
+ try{
+  const f=await getFirebase(),fs=f.firestore,snap=await fs.getDocs(fs.query(fs.collection(f.db,'propertyEnquiries'),fs.where('uid','==',currentUser.uid)));
+  const rows=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.requestType==='wallet-deposit'||x.requestType==='wallet-withdraw').sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+  box.replaceChildren();if(!rows.length){box.innerHTML='<p class="muted">No deposit or withdrawal requests yet.</p>';return;}
+  rows.forEach(item=>{const row=document.createElement('article');row.style.cssText='padding:14px 0;border-bottom:1px solid var(--line)';const title=document.createElement('strong');title.textContent=(item.requestType==='wallet-deposit'?'DEPOSIT':'WITHDRAW')+' · '+(item.amountBDT?'৳'+Number(item.amountBDT).toLocaleString('en-US'):'Legacy request')+(item.amountUSD?' · $'+Number(item.amountUSD).toFixed(2):'');const state=document.createElement('p');state.style.cssText='margin:6px 0;font-weight:800';const raw=item.status||'pending';state.textContent='Status: '+(raw==='approved'||raw==='success'?'Success':raw==='open'||raw==='pending'?'Pending':raw.charAt(0).toUpperCase()+raw.slice(1));const detail=document.createElement('p');detail.className='muted';detail.textContent=(item.paymentMethod||'')+' · '+(item.createdAt?.toDate?item.createdAt.toDate().toLocaleString():'Recently submitted')+(item.transactionId?' · TrxID: '+item.transactionId:'');row.append(title,state,detail);box.appendChild(row);});
+ }catch(e){box.textContent='Could not load wallet history: '+e.message;}
+}
+let walletEarningsRefreshTimer=null;
+async function loadWalletAndEarnings(){
+ if(!currentUser)return;
+ try{
+  const f=await getFirebase(),fs=f.firestore;
+  const wallet=await fs.getDoc(fs.doc(f.db,'wallets',currentUser.uid));
+  const balance=wallet.exists()?Number(wallet.data().balanceUSD||0):0;
+  const snap=await fs.getDocs(fs.query(fs.collection(f.db,'activePackages'),fs.where('uid','==',currentUser.uid),fs.where('status','==','active')));
+  const now=Date.now(),dayStart=new Date();dayStart.setHours(0,0,0,0);
+  let hourly=0,today=0,total=0;
+  snap.docs.forEach(d=>{
+   const p=d.data(),amount=Number(p.amountUSD||0),started=p.startedAt?.toMillis?.()||now;
+   if(!Number.isFinite(amount)||amount<=0)return;
+   const maturity=started+30*24*60*60*1000,earningEnd=Math.min(now,maturity),perHour=earningEnd>now-1?amount*0.02/24:0;hourly+=perHour;
+   today+=amount*0.02/24*Math.max(0,earningEnd-Math.max(started,dayStart.getTime()))/3600000;
+   total+=amount*0.02/24*Math.max(0,earningEnd-started)/3600000;
+  });
+  const money=n=>'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('dashWalletBalance').textContent=money(balance);
+  document.getElementById('dashHourlyEarning').textContent=money(hourly);
+  document.getElementById('dashTodayEarning').textContent=money(today);
+  document.getElementById('dashTotalEarning').textContent=money(total);
+ }catch(e){['dashWalletBalance','dashHourlyEarning','dashTodayEarning','dashTotalEarning'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='—'});console.warn('Wallet and earnings could not load:',e);}
+}
+function startWalletEarningsRefresh(){
+ if(walletEarningsRefreshTimer)clearInterval(walletEarningsRefreshTimer);
+ loadWalletAndEarnings();
+ walletEarningsRefreshTimer=setInterval(()=>{
+  if(currentUser&&document.getElementById('dashboard')?.classList.contains('active'))loadWalletAndEarnings();
+ },60000);
+}
+function updateDashboard(){const name=currentUser?.displayName||'Member';const email=currentUser?.email||'—';document.getElementById('profileName').textContent=name;document.getElementById('profileEmail').textContent=email;const verified=!!currentUser?.emailVerified;const verifyButton=`<button type="button" class="verify-now-btn" onclick="showView('login');setStatus('Log in to resend your email verification link.',true)">Verify Now</button>`;const profileVerified=document.getElementById('profileVerified');profileVerified.className=verified?'email-verified':'email-unverified';profileVerified.innerHTML=verified?'✓ Email verified':verifyButton;document.getElementById('profileHeroName').textContent=name;document.getElementById('profileHeroEmail').textContent=email;document.getElementById('profileAvatar').textContent=name.split(/\\s+/).map(x=>x[0]||'').slice(0,2).join('').toUpperCase()||'PZ';const heroStatus=document.getElementById('profileHeroStatus');heroStatus.className='profile-badge '+(verified?'email-verified':'email-unverified');heroStatus.innerHTML=verified?'● Account verified':verifyButton;document.getElementById('accountStatus').textContent=verified?'Your account is verified.':'Email verification is required. Please verify your email to access your account.';document.getElementById('profileNameInput').value=name;const welcome=document.getElementById('dashWelcome');if(welcome)welcome.textContent=name.split(/\\s+/)[0]||'Member';const dashStatus=document.getElementById('dashAccountStatus');if(dashStatus){dashStatus.textContent=currentUser?.emailVerified?'Email verified':'Verify Now';dashStatus.className=currentUser?.emailVerified?'email-verified':'email-unverified';if(!currentUser?.emailVerified){dashStatus.style.cursor='pointer';dashStatus.onclick=()=>{showView('login');setStatus('Log in to resend your email verification link.',true)};}else{dashStatus.style.cursor='default';dashStatus.onclick=null;}}const dashDetail=document.getElementById('dashAccountDetail');if(dashDetail)dashDetail.textContent=email+' · '+(currentUser?.emailVerified?'Verified account':'Please verify your email');syncNavigation()}
+function openDashboardFeature(title,description){document.getElementById('dashboardFeatureTitle').textContent=title;document.getElementById('dashboardFeatureText').textContent=description;showView('dashboardFeature')}
+ function profileTab(tab,button){document.getElementById('profileOverview').classList.toggle('hidden',tab!=='overview');document.getElementById('profileProperties').classList.toggle('hidden',tab!=='properties');document.querySelectorAll('.profile-tab').forEach(x=>x.classList.remove('active'));button.classList.add('active')}
+function toggleProfileEdit(force){const box=document.getElementById('profileEditBox');box.classList.toggle('hidden',force===false?true:force===true?false:!box.classList.contains('hidden'))}
+async function saveProfileName(){try{const name=document.getElementById('profileNameInput').value.trim();if(!name)throw new Error('Enter your name.');if(!currentUser)throw new Error('Please log in again.');const f=await getFirebase();await f.updateProfile(currentUser,{displayName:name});currentUser= f.auth.currentUser;updateDashboard();toggleProfileEdit(false);setStatus('Profile name updated.')}catch(e){setStatus(e.message||'Could not update profile name.',true)}}
+function setStatus(msg,isError=false){const el=document.getElementById('globalStatus');el.style.display='block';el.textContent=msg;el.style.color=isError?'#ffb4a8':'var(--gold2)'}
+function clearStatus(){const el=document.getElementById('globalStatus');el.style.display='none';el.textContent=''}
+async function getFirebase(){if(window.pzFirebase)return window.pzFirebase;const [appMod,authMod,firestoreMod]=await Promise.all([import('https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js'),import('https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js')]);const config={apiKey:"AIzaSyDRLWFf4ISfQdoZp7JaQAWwwKCoL_aV6No",authDomain:"property-zone-17121.firebaseapp.com",projectId:"property-zone-17121",storageBucket:"property-zone-17121.firebasestorage.app",messagingSenderId:"631227640032",appId:"1:631227640032:web:855536883072ccfe3b8885"};const app=appMod.initializeApp(config);const auth=authMod.getAuth(app);const db=firestoreMod.getFirestore(app);window.pzFirebase={auth,db,firestore:firestoreMod,createUserWithEmailAndPassword:authMod.createUserWithEmailAndPassword,signInWithEmailAndPassword:authMod.signInWithEmailAndPassword,updateProfile:authMod.updateProfile,sendEmailVerification:authMod.sendEmailVerification,sendPasswordResetEmail:authMod.sendPasswordResetEmail,onAuthStateChanged:authMod.onAuthStateChanged,signOut:authMod.signOut};window.pzFirebase.onAuthStateChanged(auth,async u=>{currentUser=null;currentMemberStatus=null;if(u&&!u.emailVerified){authReady=true;syncNavigation();const appMain=document.getElementById('appMain');if(appMain)appMain.style.visibility='visible';showView('login',false,true);return;}if(u){currentUser=u;currentMemberStatus='active';}syncNavigation();authReady=true;const appMain=document.getElementById('appMain');if(appMain)appMain.style.visibility='visible';let requestedView=decodeURIComponent(location.hash.slice(1));if(!requestedView){try{requestedView=sessionStorage.getItem('pz_current_view')||''}catch(e){requestedView=''}}const requestedElement=document.getElementById(requestedView);const initialView=(requestedElement&&requestedElement.classList.contains('view'))?requestedView:'home';showView(initialView,false,true);/* Keep the opening loader visible for the full 3-second intro. */});loadPublicWebsiteSettings(db,firestoreMod);loadPublicOffers(db,firestoreMod);loadPublicProperties(db,firestoreMod);return window.pzFirebase}
+async function loadPublicProperties(db,fs){const grid=document.getElementById('propertyGrid');if(!grid)return;grid.innerHTML='<p class="muted">Loading verified properties…</p>';try{const snap=await fs.getDocs(fs.query(fs.collection(db,'properties'),fs.where('status','==','published')));properties=snap.docs.map(d=>{const x=d.data();return{id:d.id,name:x.title||'Property listing',loc:x.location||'Location not provided',type:x.type||'Property',desc:x.description||'',price:x.price||'Price on request',imageUrl:x.imageUrl||'',status:x.availability||'Available',isSample:x.isSample===true}});updatePropertyTypeOptions();renderProperties();renderSavedProperties();}catch(e){properties=[];renderProperties();console.warn('Property listings could not load:',e);grid.innerHTML='<p class="muted">Property listings are temporarily unavailable. Please try again later.</p>';}}
+async function loadPublicOffers(db,fs){
+ const grid=document.getElementById("publicOfferGrid");if(!grid)return;
+ try{
+  const snap=await fs.getDocs(fs.query(fs.collection(db,"offers"),fs.where("status","==","published")));
+  if(snap.empty){grid.innerHTML='<p class="muted">No special offers are available right now. Please check back soon.</p>';return;}
+  grid.innerHTML="";
+  snap.forEach(docSnap=>{
+   const o=docSnap.data(),card=document.createElement("article");card.className="card";card.style.overflow="hidden";
+   if(o.imageUrl){const img=document.createElement("img");img.src=o.imageUrl;img.alt=o.title||"Offer";img.loading="lazy";img.style.cssText="width:100%;height:170px;object-fit:cover;display:block";img.onerror=()=>img.remove();card.appendChild(img);}
+   const body=document.createElement("div");body.style.padding="16px";
+   const title=document.createElement("h3");title.textContent=o.title||"Special Offer";title.style.cssText="margin:0 0 8px;font:22px Georgia";
+   const desc=document.createElement("p");desc.className="muted";desc.textContent=o.description||"";desc.style.whiteSpace="pre-wrap";
+   body.append(title,desc);
+   if(o.buttonUrl){try{const u=new URL(o.buttonUrl);if(["https:","http:"].includes(u.protocol)){const link=document.createElement("a");link.className="btn primary";link.href=u.href;link.target="_blank";link.rel="noopener noreferrer";link.textContent=o.buttonText||"Learn more";link.style.display="inline-block";link.style.marginTop="8px";body.appendChild(link);}}catch(e){}}
+   card.appendChild(body);grid.appendChild(card);
+  });
+ }catch(e){grid.innerHTML='<p class="muted">Offers are temporarily unavailable.</p>';console.warn("Public offers could not load:",e);}
+}
+async function loadPublicWebsiteSettings(db,fs){
+ try{
+  const snap=await fs.getDoc(fs.doc(db,'siteSettings','general'));
+  if(!snap.exists())return;
+  const s=snap.data();
+  {
+   document.title='Prologis, Inc. (PLD) | Property Marketplace';
+   const brand=document.getElementById('siteBrandName');if(brand)brand.textContent='PROLOGIS, INC. (PLD)';
+  }
+  if(s.description){const meta=document.getElementById('siteMetaDescription');if(meta)meta.content=s.description;}
+  if(s.logoUrl){
+   const logo=document.getElementById('siteBrandLogo');
+   if(logo){logo.innerHTML='';const img=document.createElement('img');img.src=s.logoUrl;img.alt='Website logo';img.style.cssText='width:100%;height:100%;object-fit:contain;border-radius:inherit';logo.appendChild(img);logo.style.background='transparent';}
+  }
+  if(s.faviconUrl){
+   let fav=document.querySelector('link[rel="icon"]');if(!fav){fav=document.createElement('link');fav.rel='icon';document.head.appendChild(fav);}fav.href=s.faviconUrl;
+  }
+  const contact=document.getElementById('siteContactDetails');
+  if(contact){
+   contact.replaceChildren();
+   const links=[];
+   if(s.contactEmail){const email=document.createElement('a');email.href='mailto:'+s.contactEmail;email.textContent=s.contactEmail;email.style.color='var(--gold2)';links.push(email);}
+   if(s.contactPhone){const phone=document.createElement('a');phone.href='tel:'+String(s.contactPhone).replace(/[^+0-9]/g,'');phone.textContent=s.contactPhone;phone.style.color='var(--gold2)';links.push(phone);}
+   links.forEach((link,index)=>{if(index){contact.appendChild(document.createTextNode(' · '));}contact.appendChild(link);});
+   contact.style.display=links.length?'inline':'none';
+  }
+ }catch(e){console.warn('Public website settings could not be loaded:',e);}
+}
+async function ensureMemberProfile(f,user,referralCode='',phoneNumber=''){
+ const fs=f.firestore,memberRef=fs.doc(f.db,'members',user.uid),snap=await fs.getDoc(memberRef);
+ if(snap.exists())return snap.data();
+ const usedCode=(referralCode||'').trim().toUpperCase();
+ if(usedCode){
+  const referralSnap=await fs.getDoc(fs.doc(f.db,'referralCodes',usedCode));
+  if(!referralSnap.exists()||referralSnap.data().active!==true)throw new Error('Referral code is invalid or inactive. Check the code and try again.');
+ }
+ const name=(user.displayName||user.email.split('@')[0]||'Member').trim(),ownCode=('PZ'+user.uid.replace(/[^a-z0-9]/gi,'').slice(0,8)).toUpperCase();
+ const memberData={uid:user.uid,name,email:user.email,phoneNumber,status:'active',referralCode:ownCode,referredByCode:usedCode,createdAt:fs.serverTimestamp(),updatedAt:fs.serverTimestamp()};
+ await fs.setDoc(memberRef,memberData);
+ const ownCodeRef=fs.doc(f.db,'referralCodes',ownCode),ownCodeSnap=await fs.getDoc(ownCodeRef);
+ if(!ownCodeSnap.exists())await fs.setDoc(ownCodeRef,{code:ownCode,active:true,createdAt:fs.serverTimestamp()});
+ if(usedCode)await fs.setDoc(fs.doc(f.db,'referralRegistrations',usedCode,'members',user.uid),{createdAt:fs.serverTimestamp()});
+ return memberData;
+}
+async function registerWithEmail(){clearStatus();let f=null;try{const first=document.getElementById('regFirst').value.trim(),last=document.getElementById('regLast').value.trim(),email=document.getElementById('regEmail').value.trim(),phone=document.getElementById('regPhone').value.trim().replace(/[\s()-]/g,''),pw=document.getElementById('regPassword').value,confirm=document.getElementById('regConfirm').value,ref=(document.getElementById('regReferral').value.trim()||new URLSearchParams(location.search).get('ref')||'').trim();if(!first||!last)throw new Error('Enter first and last name.');if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Enter a valid email address.');if(!/^\+?[0-9]{8,16}$/.test(phone))throw new Error('Enter a valid phone number (8–16 digits).');if(pw.length<8)throw new Error('Password must be at least 8 characters.');if(pw!==confirm)throw new Error('Passwords do not match.');f=await getFirebase();if(ref){const referral=await f.firestore.getDoc(f.firestore.doc(f.db,'referralCodes',ref.toUpperCase()));if(!referral.exists()||referral.data().active!==true)throw new Error('Referral code is invalid or inactive. Check the code and try again.');}const result=await f.createUserWithEmailAndPassword(f.auth,email,pw);await f.updateProfile(result.user,{displayName:first+' '+last});await ensureMemberProfile(f,result.user,ref,phone);await f.sendEmailVerification(result.user);await f.signOut(f.auth);currentUser=null;currentMemberStatus=null;syncNavigation();showView('login');setStatus('Account created. A verification link was sent to your email. Verify it before logging in.');}catch(e){if(f?.auth?.currentUser&&!f.auth.currentUser.emailVerified){try{await f.signOut(f.auth)}catch(signOutError){console.warn('Could not clear unverified session:',signOutError)}}const msg=e.code==='auth/email-already-in-use'?'This email already has an account. Please log in, or use Forgot password to reset its password.':(e.message||'Could not create account. Please try again.');setStatus(msg,true)}}
+
+/* Website language switcher - robust text and dynamic content translation */
+const PZ_TRANSLATIONS={
+ "Menu":"মেনু","Home":"হোম","Properties":"প্রপার্টি","My Profile":"আমার প্রোফাইল","Dashboard":"ড্যাশবোর্ড","Admin Panel":"অ্যাডমিন প্যানেল","Refer & Commission":"রেফার ও কমিশন","Support Inbox":"সাপোর্ট ইনবক্স","Help & Support":"সাহায্য ও সাপোর্ট","Login":"লগইন","Join Now":"নিবন্ধন করুন","Logout":"লগআউট","Website Language":"ওয়েবসাইটের ভাষা",
+ "PROPERTY MARKETPLACE":"প্রপার্টি মার্কেটপ্লেস","Find Your":"খুঁজুন","Next Property":"পরবর্তী প্রপার্টি","Explore Properties":"প্রপার্টি দেখুন","Browse verified property opportunities in one place. Manage your member account with email verification. Online payments are not active yet.":"এক জায়গায় যাচাইকৃত প্রপার্টির সুযোগ দেখুন। ইমেইল যাচাইয়ের মাধ্যমে আপনার সদস্য অ্যাকাউন্ট পরিচালনা করুন। অনলাইন পেমেন্ট এখনো চালু হয়নি।","Own the view.":"নিজের পছন্দের দৃশ্য উপভোগ করুন।","Explore the future.":"ভবিষ্যতের সম্ভাবনা দেখুন।",
+ "Verified listings published":"যাচাইকৃত প্রপার্টি প্রকাশিত","Email verification required":"ইমেইল যাচাই প্রয়োজন","Payments not activated":"পেমেন্ট চালু হয়নি","LATEST PROMOTIONS":"সর্বশেষ অফার","Offers & Special Deals":"অফার ও বিশেষ সুবিধা","Loading current offers…":"বর্তমান অফার লোড হচ্ছে…","Available Properties":"উপলব্ধ প্রপার্টি","Verified listings only":"শুধু যাচাইকৃত তালিকা","Search properties":"প্রপার্টি খুঁজুন","All property types":"সব ধরনের প্রপার্টি","Clear Filters":"ফিল্টার মুছুন","View Details":"বিস্তারিত দেখুন","Buy Now":"এখনই কিনুন","Save Property":"প্রপার্টি সংরক্ষণ করুন","Saved Properties":"সংরক্ষিত প্রপার্টি",
+ "Today’s Earning":"আজকের আয়","Today's Earning":"আজকের আয়","Total Earning":"মোট আয়","Deposit":"ডিপোজিট","Withdraw":"উত্তোলন","Profile":"প্রোফাইল","Personal Information":"ব্যক্তিগত তথ্য","Account Settings":"অ্যাকাউন্ট সেটিংস","Email verified":"ইমেইল যাচাইকৃত","Verify Now":"এখনই যাচাই করুন","Account verified":"অ্যাকাউন্ট যাচাইকৃত","Recent Activity":"সাম্প্রতিক কার্যক্রম","My Properties":"আমার প্রপার্টি","Edit Profile":"প্রোফাইল সম্পাদনা","Save Changes":"পরিবর্তন সংরক্ষণ","Cancel":"বাতিল",
+ "First Name":"নামের প্রথম অংশ","Last Name":"নামের শেষ অংশ","Email Address":"ইমেইল ঠিকানা","Phone Number":"ফোন নম্বর","Password":"পাসওয়ার্ড","Confirm Password":"পাসওয়ার্ড নিশ্চিত করুন","Forgot Password?":"পাসওয়ার্ড ভুলে গেছেন?","Create Account":"অ্যাকাউন্ট তৈরি করুন","Welcome":"স্বাগতম","Welcome back":"আবারও স্বাগতম","Loading verified properties…":"যাচাইকৃত প্রপার্টি লোড হচ্ছে…","No properties found.":"কোনো প্রপার্টি পাওয়া যায়নি।","Price on request":"দাম জানতে যোগাযোগ করুন","Location":"অবস্থান","Property Type":"প্রপার্টির ধরন","All":"সব","Available":"উপলব্ধ","Pending":"অপেক্ষমাণ","Approved":"অনুমোদিত","Rejected":"বাতিল","Submit":"জমা দিন","Submit Property":"প্রপার্টি জমা দিন","Referral":"রেফারেল","Referral Code":"রেফারেল কোড","Copy":"কপি","Copied":"কপি হয়েছে","Notice":"নোটিশ","Notifications":"বিজ্ঞপ্তি","Activity Log":"কার্যক্রমের ইতিহাস","Support":"সাপোর্ট","Contact Us":"যোগাযোগ করুন","Choose your package":"আপনার প্যাকেজ বেছে নিন","Investment Packages":"প্যাকেজসমূহ","Amount":"পরিমাণ","Status":"অবস্থা","Date":"তারিখ","Actions":"কাজ","No special offers are available right now. Please check back soon.":"এই মুহূর্তে কোনো বিশেষ অফার নেই। পরে আবার দেখুন।",
+ "Enter your email address":"আপনার ইমেইল ঠিকানা লিখুন","Enter your password":"আপনার পাসওয়ার্ড লিখুন","Email":"ইমেইল","Phone":"ফোন","Name":"নাম","Submit":"জমা দিন","Loading…":"লোড হচ্ছে…","Please wait…":"অপেক্ষা করুন…","No data available":"কোনো তথ্য পাওয়া যায়নি","Member":"সদস্য","Earnings":"আয়","Commission":"কমিশন","Property":"প্রপার্টি","Details":"বিস্তারিত","Back":"ফিরে যান","Close":"বন্ধ করুন","Send":"পাঠান","Message":"বার্তা","Type your message":"আপনার বার্তা লিখুন"
+};
+let pzLanguage='en',pzTranslationObserver=null;
+function pzApplyTranslation(value){
+ let result=String(value??'');
+ if(pzLanguage==='en')return result;
+ const entries=Object.entries(PZ_TRANSLATIONS).sort((a,b)=>b[0].length-a[0].length);
+ for(const [en,bn] of entries){
+  const escaped=en.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  result=result.replace(new RegExp(escaped,'gi'),match=>{
+   if(match===match.toUpperCase())return bn;
+   return bn;
+  });
+ }
+ return result;
+}
+function pzTranslateText(root=document.body){
+ if(!root)return;
+ const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+ let node;
+ while((node=walker.nextNode())){
+  if(!node.parentElement||node.parentElement.closest('script,style,textarea,input,[contenteditable="true"]'))continue;
+  if(node.__pzEnglish===undefined)node.__pzEnglish=node.nodeValue;
+  const translated=pzApplyTranslation(node.__pzEnglish);if(node.nodeValue!==translated)node.nodeValue=translated;
+ }
+ root.querySelectorAll('input[placeholder],textarea[placeholder],option,[aria-label],button[title]').forEach(el=>{
+  for(const attr of ['placeholder','aria-label','title']){
+   if(!el.hasAttribute(attr))continue;
+   const key='pzEnglish'+attr;
+   if(el.dataset[key]===undefined)el.dataset[key]=el.getAttribute(attr);
+   el.setAttribute(attr,pzApplyTranslation(el.dataset[key]));
+  }
+  if(el.tagName==='OPTION'){
+   if(el.dataset.pzEnglish===undefined)el.dataset.pzEnglish=el.textContent;
+   el.textContent=pzApplyTranslation(el.dataset.pzEnglish);
+  }
+ });
+}
+function setWebsiteLanguage(lang){
+ pzLanguage=lang==='bn'?'bn':'en';
+ try{localStorage.setItem('pz_website_language',pzLanguage)}catch(e){}
+ document.documentElement.lang=pzLanguage;
+ pzTranslateText(document.body);
+ const bn=document.getElementById('languageBangla'),en=document.getElementById('languageEnglish');
+ if(bn)bn.classList.toggle('primary',pzLanguage==='bn');
+ if(en)en.classList.toggle('primary',pzLanguage==='en');
+}
+(function initWebsiteLanguage(){
+ try{pzLanguage=localStorage.getItem('pz_website_language')==='bn'?'bn':'en'}catch(e){pzLanguage='en'}
+ const apply=()=>setWebsiteLanguage(pzLanguage);
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
+ if(window.MutationObserver){
+  pzTranslationObserver=new MutationObserver(records=>{
+   for(const record of records){
+    record.addedNodes.forEach(node=>{
+     if(node.nodeType===Node.TEXT_NODE){
+      if(node.__pzEnglish===undefined)node.__pzEnglish=node.nodeValue;
+      if(pzLanguage==='bn'){
+       const translated=pzApplyTranslation(node.__pzEnglish);
+       if(node.nodeValue!==translated)node.nodeValue=translated;
+      }
+     }else if(node.nodeType===Node.ELEMENT_NODE){
+      pzTranslateText(node);
+     }
+    });
+   }
+  });
+  // Observe only added/removed nodes. Watching characterData here creates
+  // a self-triggering loop because translation itself changes text nodes.
+  pzTranslationObserver.observe(document.body,{childList:true,subtree:true});
+ }
+})();
+
+async function loginEmailPassword(){const button=document.getElementById('loginButton');if(button?.disabled)return;const original=button?.innerHTML||'Login';const started=Date.now();if(button){button.disabled=true;button.innerHTML='<span class="login-spinner" aria-hidden="true"></span> Logging in…';}clearStatus();let loginError=null;try{const f=await getFirebase(),email=document.getElementById('loginEmail').value.trim(),pw=document.getElementById('loginPassword').value;if(!email||!pw)throw new Error('Enter email and password.');const result=await f.signInWithEmailAndPassword(f.auth,email,pw);if(!result.user.emailVerified){try{await f.sendEmailVerification(result.user)}catch(verificationError){console.warn('Could not resend verification email:',verificationError)}await f.signOut(f.auth);throw new Error('Your email is not verified. A verification link has been sent again. Check your inbox and spam folder.');}const adminSnap=await f.firestore.getDoc(f.firestore.doc(f.db,'admins',result.user.uid));const adminData=adminSnap.exists()?adminSnap.data():null;if(adminData?.role==='admin'&&adminData?.active===true){currentMemberStatus='active';}else{await ensureMemberProfile(f,result.user,'');currentMemberStatus='active';}currentUser=result.user;syncNavigation();updateDashboard();setStatus('Logged in successfully.');showView('home')}catch(e){loginError=e;setStatus(e.message||'Login failed.',true)}finally{const remaining=Math.max(0,3000-(Date.now()-started));await new Promise(resolve=>setTimeout(resolve,remaining));if(button){button.disabled=false;button.innerHTML=original;}}}
+async function resetLoginPassword(){clearStatus();try{const email=document.getElementById('loginEmail').value.trim();if(!email)throw new Error('Enter your email address in the Email field first.');if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Enter a valid email address.');const f=await getFirebase();await f.sendPasswordResetEmail(f.auth,email);setStatus('Password reset email sent. Open your inbox and follow the link.');}catch(e){setStatus(e.message||'Could not send password reset email.',true)}}
+async function refreshMemberStatus(){if(!currentUser)return;try{const f=await getFirebase(),snap=await f.firestore.getDoc(f.firestore.doc(f.db,'members',currentUser.uid));if(!snap.exists())throw new Error('Member profile not found.');currentMemberStatus=snap.data().status||'pending';const heading=document.getElementById('approvalHeading'),message=document.getElementById('approvalMessage');if(currentMemberStatus==='active'){if(heading)heading.textContent='Account Activated';if(message)message.textContent='Your account is active. You can now access member services.';setStatus('Your account is active.');showView('dashboard');}else if(currentMemberStatus==='inactive'){if(heading)heading.textContent='Account Inactive';if(message)message.textContent='Your account is inactive. Please contact Prologis, Inc. (PLD) support.';setStatus('Your account is inactive.',true);}else{setStatus('Your account is still waiting for admin approval.');}}catch(e){setStatus('Could not check approval: '+e.message,true)}}
+async function logout(){try{const f=await getFirebase();await f.signOut(f.auth);currentUser=null;currentMemberStatus=null;syncNavigation();showView('home');setStatus('You are logged out.')}catch(e){setStatus(e.message,true)}}
+renderProperties();
+syncNavigation();getFirebase().catch(e=>{const main=document.getElementById('appMain'),loader=document.getElementById('pzBootLoader');if(main)main.style.visibility='visible';setStatus('Could not connect to account service: '+(e&&e.message?e.message:'Please check your internet connection.'),true)});
+</script>
+</body></html>
++Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+ if(!currentUser){balanceBox.textContent='Invested Balance: Log in to view your active package balance.';return;}
+ balanceBox.textContent='Invested Balance: Loading…';
+ try{
+  const f=await getFirebase(),fs=f.firestore;
+  const snap=await fs.getDocs(fs.query(fs.collection(f.db,'activePackages'),fs.where('uid','==',currentUser.uid)));
+  const invested=snap.docs.reduce((sum,d)=>{const p=d.data();return p.propertyId===propertyId&&p.status==='active'?sum+Math.max(0,Number(p.amountUSD)||0):sum;},0);
+  balanceBox.textContent='Invested Balance (this property): '+money(invested);
+ }catch(e){
+  balanceBox.textContent='Invested Balance: Could not load right now. Please try again.';
+  console.warn('Property invested balance could not load:',e);
+ }
+}
 async function requestPropertyPurchase(propertyId,packageAmount){
  const status=document.getElementById('purchaseRequestStatus'),p=properties.find(x=>x.id===propertyId);
  if(!p||!status)return;
