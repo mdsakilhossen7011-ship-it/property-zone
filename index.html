@@ -943,7 +943,7 @@ function pzTranslateAttributes(el){
  for(const attr of ['placeholder','aria-label','title','alt','value']){
   if(!el.hasAttribute(attr))continue;
   if(attr==='value'&&!['BUTTON','INPUT'].includes(el.tagName))continue;
-  const attrKey=attr.replace(/-([a-z])/g,(_,letter)=>letter.toUpperCase());const key='pzEnglish'+attrKey,translatedKey='pzTranslated'+attrKey,current=el.getAttribute(attr);
+  const key='pzEnglish'+attr,translatedKey='pzTranslated'+attr,current=el.getAttribute(attr);
   if(el.dataset[key]===undefined||(el.dataset[translatedKey]!==undefined&&current!==el.dataset[translatedKey]))el.dataset[key]=current;
   const translated=pzApplyTranslation(el.dataset[key]);
   if(current!==translated)el.setAttribute(attr,translated);
@@ -1021,7 +1021,3 @@ renderProperties();
 syncNavigation();getFirebase().catch(e=>{const main=document.getElementById('appMain'),loader=document.getElementById('pzBootLoader');if(main)main.style.visibility='visible';authReady=true;syncNavigation();setStatus('Could not connect to account service: '+(e&&e.message?e.message:'Please check your internet connection.'),true)});
 </script>
 </body></html>
-
-<!-- Pages deployment retry 2026-11-10 -->
-
-<!-- Retry Pages after GitHub service recovery 2026-11-10 -->
