@@ -417,11 +417,11 @@ function openProperty(id){
  document.getElementById('detailContent').innerHTML=
  '<div class="panel" style="margin:14px 0;padding:18px;border:2px solid var(--gold);background:var(--panel2)">'+
  '<div class="eyebrow">CHOOSE YOUR PACKAGE</div><h2 style="margin:8px 0;color:var(--gold2)">Investment Packages</h2>'+
- '<p class="muted">Each package runs for 30 days. At maturity, the original package amount and up to 30 days of calculated earnings are credited to your Main Wallet for withdrawal.</p>'+
+  '<p class="muted">প্রতিটি প্যাকেজ ৩০ দিনের জন্য। মেয়াদ শেষে মূল প্যাকেজের টাকা ও নির্ধারিত আয় Main Wallet-এ যোগ হবে।</p>'+
  '<button class="btn primary" style="width:100%;min-height:52px;font-size:17px;font-weight:800" type="button" id="buyPropertyButton" onclick="showPropertyPackages(\''+pid+'\')">🛒 BUY NOW — VIEW PACKAGES</button>'+
  '<div id="propertyPackageList" style="display:none;margin-top:18px">'+
  '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">'+
- [10,25,50,100,200,500,1000].map(function(amount){const daily=amount*0.02;return '<div class="panel" style="padding:16px;border:1px solid var(--line)"><div class="eyebrow">PACKAGE</div><h3 style="font-size:23px;margin:7px 0">'+amount.toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0})+'</h3><p style="margin:5px 0;color:var(--gold2);font-weight:800">2% Daily · 30 Days</p><p class="muted" style="margin:5px 0">Daily calculation: $'+daily.toLocaleString('en-US',{maximumFractionDigits:2})+'</p><button class="btn primary" type="button" onclick="requestPropertyPurchase(&quot;'+pid+'&quot;,'+amount+')">Select package</button><p id="packageRequestStatus'+amount+'" class="muted" role="status"></p></div>';}).join('')+'</div><div id="propertyInvestedBalance" class="status" style="margin-top:14px">Invested Balance: Open this section to load your active package balance.</div><p class="notice" style="margin-top:14px">Online payment is not activated. Selecting a package sends a request to the Prologis, Inc. (PLD) team; it does not charge money or confirm a purchase.</p><p id="purchaseRequestStatus" class="muted" role="status"></p></div></div>'+
+  [1000,2000,5000,10000,20000,50000].map(function(amount){const daily=amount*0.02;return '<div class="panel" style="padding:16px;border:1px solid var(--line)"><div class="eyebrow">PACKAGE</div><h3 style="font-size:23px;margin:7px 0">৳'+amount.toLocaleString('en-US')+'</h3><p style="margin:5px 0;color:var(--gold2);font-weight:800">2% Daily · 30 Days</p><p class="muted" style="margin:5px 0">Daily calculation: ৳'+daily.toLocaleString('en-US',{maximumFractionDigits:2})+'</p><button class="btn primary" type="button" onclick="requestPropertyPurchase(&quot;'+pid+'&quot;,'+amount+')">Select package</button><p id="packageRequestStatus'+amount+'" class="muted" role="status"></p></div>';}).join('')+'</div><div id="propertyInvestedBalance" class="status" style="margin-top:14px">Invested Balance: Open this section to load your active package balance.</div><p class="notice" style="margin-top:14px">অনলাইনে পেমেন্ট এখনো চালু হয়নি। প্যাকেজ নির্বাচন করলে টিমের কাছে অনুরোধ যাবে; স্বয়ংক্রিয়ভাবে টাকা কাটা বা প্যাকেজ নিশ্চিত হবে না।</p><p id="purchaseRequestStatus" class="muted" role="status"></p></div></div>'+
  '<div class="hero"><div><div class="eyebrow">'+escapeHTML(p.status)+' · '+escapeHTML(p.type)+'</div><h1>'+escapeHTML(p.name)+'</h1><p class="muted">⌖ '+escapeHTML(p.loc)+'</p><p class="muted">'+escapeHTML(p.desc)+'</p></div><div class="heroart">'+image+'</div></div>'+
  '<div class="panel" style="margin-top:18px"><h3>Ask about this property</h3><form onsubmit="sendPropertyEnquiry(event,\''+pid+'\')"><label for="propertyEnquiryMessage">YOUR MESSAGE</label><textarea id="propertyEnquiryMessage" class="search" rows="3" maxlength="1200" required placeholder="I am interested in this property…"></textarea><button class="btn primary" type="submit">Send enquiry</button></form><p id="propertyEnquiryStatus" class="muted" role="status"></p></div>'+
  '<button class="btn" type="button" onclick="toggleSavedProperty(\''+pid+'\')">'+(isPropertySaved(p.id)?'♥ Remove from saved':'♡ Save property')+'</button>';
@@ -440,35 +440,41 @@ async function showPropertyPackages(propertyId){
  try{
   const f=await getFirebase(),fs=f.firestore;
   const snap=await fs.getDocs(fs.query(fs.collection(f.db,'activePackages'),fs.where('uid','==',currentUser.uid)));
-  let invested=0;
-  snap.forEach(d=>{const p=d.data();if(p.propertyId===propertyId&&p.status==='active')invested+=Math.max(0,Number(p.amountUSD)||0);});
-  balanceBox.textContent='Invested Balance (this property): $'+invested.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+   let invested=0;
+   const rate=walletExchangeRate();
+   snap.forEach(d=>{const p=d.data();if(p.propertyId===propertyId&&p.status==='active')invested+=Math.max(0,Number(p.amountBDT)||(Number(p.amountUSD||0)*rate));});
+   balanceBox.textContent='Invested Balance (this property): ৳'+invested.toLocaleString('en-US',{maximumFractionDigits:0});
  }catch(e){
   balanceBox.textContent='Invested Balance: Could not load right now. Please try again.';
   console.warn('Property invested balance could not load:',e);
  }
 }
 async function requestPropertyPurchase(propertyId,packageAmount){
- const status=document.getElementById('packageRequestStatus'+packageAmount),p=properties.find(x=>x.id===propertyId);
- if(!p||!status)return;
- if(!currentUser){setStatus('Please log in to activate a package.',true);showView('login');return;}
- const allowed=[1000,2000,5000,10000,20000,50000,100000];
- if(!allowed.includes(Number(packageAmount))){status.textContent='Invalid package selected.';return;}
- const buttons=document.querySelectorAll('#propertyPackageList button');buttons.forEach(b=>b.disabled=true);
- status.textContent='Checking wallet balance and activating package…';
- try{
-  const f=await getFirebase(),fs=f.firestore,walletRef=fs.doc(f.db,'wallets',currentUser.uid),packageRef=fs.doc(fs.collection(f.db,'activePackages'));
-  await fs.runTransaction(f.db,async tx=>{
-   const walletSnap=await tx.get(walletRef);
-   const balance=walletSnap.exists()?Number(walletSnap.data().balanceUSD||0):0;
-   if(balance<packageAmount)throw new Error('Insufficient wallet balance. Please deposit funds first.');
-   tx.update(walletRef,{balanceUSD:balance-packageAmount,updatedAt:fs.serverTimestamp()});
-   tx.set(packageRef,{uid:currentUser.uid,propertyId,propertyTitle:p.name,amountUSD:packageAmount,dailyRate:0.02,hourlyRate:0.02/24,termDays:30,maturityAt:new Date(Date.now()+30*24*60*60*1000),status:'active',startedAt:fs.serverTimestamp(),createdAt:fs.serverTimestamp()});
-  });
-  status.textContent='Package activated successfully. $'+packageAmount.toLocaleString('en-US')+' has been deducted from your wallet.';
-  await loadDashboardStats();await loadWalletAndEarnings();
- }catch(e){status.textContent=e.message||'Could not activate package.';}
- finally{buttons.forEach(b=>b.disabled=false);}
+  const status=document.getElementById('packageRequestStatus'+packageAmount),p=properties.find(x=>x.id===propertyId);
+  if(!p||!status)return;
+  if(!currentUser){setStatus('Please log in to activate a package.',true);showView('login');return;}
+  const allowed=[1000,2000,5000,10000,20000,50000];
+  if(!allowed.includes(Number(packageAmount))){status.textContent='Invalid package selected.';return;}
+  const buttons=document.querySelectorAll('#propertyPackageList button');buttons.forEach(b=>b.disabled=true);
+  status.textContent='প্যাকেজ ও ওয়ালেট ব্যালেন্স যাচাই হচ্ছে…';
+  try{
+   await loadWalletSettings('deposit');
+   const rate=walletExchangeRate();
+   if(!rate)throw new Error('Admin exchange rate is not configured yet.');
+   const amountUSD=Math.round((Number(packageAmount)/rate)*100)/100;
+   if(!Number.isFinite(amountUSD)||amountUSD<=0)throw new Error('প্যাকেজের USD হিসাব করা যায়নি।');
+   const f=await getFirebase(),fs=f.firestore,walletRef=fs.doc(f.db,'wallets',currentUser.uid),packageRef=fs.doc(fs.collection(f.db,'activePackages'));
+   await fs.runTransaction(f.db,async tx=>{
+    const walletSnap=await tx.get(walletRef);
+    const balance=walletSnap.exists()?Number(walletSnap.data().balanceUSD||0):0;
+    if(balance+0.000001<amountUSD)throw new Error('Insufficient wallet balance. Please deposit funds first.');
+    tx.update(walletRef,{balanceUSD:balance-amountUSD,updatedAt:fs.serverTimestamp()});
+    tx.set(packageRef,{uid:currentUser.uid,propertyId,propertyTitle:p.name,amountBDT:Number(packageAmount),amountUSD,exchangeRateBDT:rate,dailyRate:0.02,hourlyRate:0.02/24,termDays:30,maturityAt:new Date(Date.now()+30*24*60*60*1000),status:'active',startedAt:fs.serverTimestamp(),createdAt:fs.serverTimestamp()});
+   });
+   status.textContent='৳'+Number(packageAmount).toLocaleString('en-US')+' প্যাকেজ চালু হয়েছে।';
+   await loadDashboardStats();await loadWalletAndEarnings();
+  }catch(e){status.textContent=e.message||'Could not activate package.';}
+  finally{buttons.forEach(b=>b.disabled=false);}
 }
 
 
