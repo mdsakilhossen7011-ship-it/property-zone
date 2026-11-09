@@ -158,7 +158,7 @@
 <div class="language-menu" style="margin:5px 4px 8px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:#17140f">
  <div style="color:var(--muted);font-size:10px;margin-bottom:4px" data-i18n="Website Language">Website Language</div>
  <div style="display:flex;gap:5px">
-  <button type="button" class="btn ghost" id="languageBangla" onclick="setWebsiteLanguage('bn')" style="flex:1;padding:5px 7px;font-size:11px;min-height:30px">🇧🇩 বাংলা</button>
+  <button type="button" class="btn ghost" id="languageBangla" onclick="setWebsiteLanguage('bn')" style="flex:1;padding:5px 7px;font-size:11px;min-height:30px">🇧🇩 Bangla</button>
   <button type="button" class="btn ghost" id="languageEnglish" onclick="setWebsiteLanguage('en')" style="flex:1;padding:5px 7px;font-size:11px;min-height:30px">🇬🇧 English</button>
  </div>
 </div>
@@ -273,7 +273,7 @@
 </section>
 
 <section id="withdrawWallet" class="view">
- <div class="wallet-intro"><div class="eyebrow">PROLOGIS, INC. (PLD) WALLET</div><h2 style="margin:8px 0;color:#9bcfff">Withdraw to Your Wallet</h2><p class="muted" style="margin:0">Choose your payout method and use the Cash Out Number below. Enter amount in Bangladeshi Taka (BDT ৳). USD equivalent uses the admin-set exchange rate.</p><div id="withdrawPaymentInfo" class="wallet-note" style="margin:16px 0 0">Loading Cash Out Number…</div></div>
+ <div class="wallet-intro"><div class="eyebrow">PROLOGIS, INC. (PLD) WALLET</div><h2 style="margin:8px 0;color:#9bcfff">Withdraw to Your Wallet</h2><p class="muted" style="margin:0">Choose your payout method and use the Cash Out Number below. Enter the amount in Bangladeshi Taka (BDT ৳).</p><div id="withdrawPaymentInfo" class="wallet-note" style="margin:16px 0 0">Loading Cash Out Number…</div></div>
  <div class="wallet-methods wallet-methods-top" aria-label="Select withdraw payment method">
 <button class="wallet-method selected" type="button" data-wallet-method="withdraw" data-value="bKash" onclick="selectWalletMethod('withdraw','bKash',this)"><span class="bkash-mark">bKash</span></button>
 <button class="wallet-method" type="button" data-wallet-method="withdraw" data-value="Nagad" onclick="selectWalletMethod('withdraw','Nagad',this)"><span class="nagad-mark">Nagad</span></button>
@@ -282,7 +282,7 @@
 <button class="wallet-method" type="button" data-wallet-method="withdraw" data-value="Binance" onclick="selectWalletMethod('withdraw','Binance',this)"><span class="binance-mark">BINANCE</span></button>
 </div>
  <div class="wallet-grid" style="grid-template-columns:minmax(0,1fr);max-width:760px"><article class="wallet-card withdraw"><div class="wallet-card-head"><div class="wallet-card-title"><div class="wallet-symbol">↗</div><div><h3>Withdraw</h3><div class="wallet-sub">Request a payout</div></div></div><span class="wallet-pill">PAYOUT</span></div>
-   <form onsubmit="submitWalletRequest(event,'withdraw')"><label for="withdrawAmount">Withdrawal amount (BDT ৳)</label><button class="btn" type="button" style="margin:6px 0 10px" onclick="setWithdrawAllAmount()">Withdraw All Available Balance</button><input id="withdrawAmount" class="search" type="number" min="1" step="1" required placeholder="Minimum set by admin" oninput="updateWalletAmountPreview('withdraw')"><input type="hidden" id="withdrawMethod" value="bKash"><p id="withdrawAmountPreview" class="wallet-status">USD equivalent: waiting for exchange rate</p>
+   <form onsubmit="submitWalletRequest(event,'withdraw')"><label for="withdrawAmount">Withdrawal amount (BDT ৳)</label><button class="btn" type="button" style="margin:6px 0 10px" onclick="setWithdrawAllAmount()">Withdraw All Available Balance</button><input id="withdrawAmount" class="search" type="number" min="1" step="1" required placeholder="Minimum set by admin" oninput="updateWalletAmountPreview('withdraw')"><input type="hidden" id="withdrawMethod" value="bKash"><p id="withdrawAmountPreview" class="wallet-status">Amount: ৳0</p>
      <label for="withdrawNumber" id="withdrawAccountLabel">Your receiving bKash / Nagad number</label><input id="withdrawNumber" class="search" type="tel" inputmode="numeric" maxlength="11" required placeholder="01XXXXXXXXX"><button class="btn primary wallet-submit" type="submit">Submit Withdrawal Request →</button></form><p id="withdrawStatus" class="wallet-status" role="status"></p>
   </article></div>
  <div class="wallet-note">Requests are sent to the Prologis, Inc. (PLD) admin for review. bKash, Nagad, Rocket, Bank Account and Binance are available request methods; this form records a request and does not transfer money automatically.</div>
@@ -677,15 +677,171 @@ async function registerWithEmail(){clearStatus();let f=null;try{const first=docu
 
 /* Website language switcher - robust text and dynamic content translation */
 const PZ_TRANSLATIONS={
- "Menu":"মেনু","Add image":"ছবি যোগ করুন","Selected image: ":"ছবি নির্বাচিত: ","Please select an image file.":"শুধু ছবির ফাইল নির্বাচন করুন।","Image must be smaller than 8 MB.":"ছবির সাইজ ৮ MB-এর কম হতে হবে।","Please choose a smaller image and try again.":"ছবিটি ছোট করে আবার চেষ্টা করুন।","Image sent":"ছবি পাঠানো হয়েছে","Checking package and wallet balance…":"প্যাকেজ ও ওয়ালেট ব্যালেন্স যাচাই হচ্ছে…","Could not calculate the package amount.":"প্যাকেজের টাকার হিসাব করা যায়নি।","Package of ":"৳"," activated successfully.":" প্যাকেজ সফলভাবে চালু হয়েছে।","Home":"হোম","Properties":"প্রপার্টি","My Profile":"আমার প্রোফাইল","Dashboard":"ড্যাশবোর্ড","Admin Panel":"অ্যাডমিন প্যানেল","Refer & Commission":"রেফার ও কমিশন","Support Inbox":"সাপোর্ট ইনবক্স","Help & Support":"সাহায্য ও সাপোর্ট","Login":"লগইন","Sign In":"নতুন অ্যাকাউন্ট","Logout":"লগআউট","Website Language":"ওয়েবসাইটের ভাষা",
+ "Menu":"মেনু","Add image":"ছবি যোগ করুন","Selected image: ":"ছবি নির্বাচিত: ","Please select an image file.":"শুধু ছবির ফাইল নির্বাচন করুন।","Image must be smaller than 8 MB.":"ছবির সাইজ ৮ MB-এর কম হতে হবে।","Please choose a smaller image and try again.":"ছবিটি ছোট করে আবার চেষ্টা করুন।","Image sent":"ছবি পাঠানো হয়েছে","Checking package and wallet balance…":"প্যাকেজ ও ওয়ালেট ব্যালেন্স যাচাই হচ্ছে…","Could not calculate the package amount.":"প্যাকেজের টাকার হিসাব করা যায়নি।","Package of ৳":"প্যাকেজের পরিমাণ ৳"," activated successfully.":" প্যাকেজ সফলভাবে চালু হয়েছে।","Home":"হোম","Properties":"প্রপার্টি","My Profile":"আমার প্রোফাইল","Dashboard":"ড্যাশবোর্ড","Admin Panel":"অ্যাডমিন প্যানেল","Refer & Commission":"রেফার ও কমিশন","Support Inbox":"সাপোর্ট ইনবক্স","Help & Support":"সাহায্য ও সাপোর্ট","Login":"লগইন","Sign In":"নতুন অ্যাকাউন্ট","Logout":"লগআউট","Website Language":"ওয়েবসাইটের ভাষা",
  "PROPERTY MARKETPLACE":"প্রপার্টি মার্কেটপ্লেস","Find Your":"খুঁজুন","Next Property":"পরবর্তী প্রপার্টি","Explore Properties":"প্রপার্টি দেখুন","Browse verified property opportunities in one place. Manage your member account with email verification. Online payments are not active yet.":"এক জায়গায় যাচাইকৃত প্রপার্টির সুযোগ দেখুন। ইমেইল যাচাইয়ের মাধ্যমে আপনার সদস্য অ্যাকাউন্ট পরিচালনা করুন। অনলাইন পেমেন্ট এখনো চালু হয়নি।","Own the view.":"নিজের পছন্দের দৃশ্য উপভোগ করুন।","Explore the future.":"ভবিষ্যতের সম্ভাবনা দেখুন।",
  "Verified listings published":"যাচাইকৃত প্রপার্টি প্রকাশিত","Email verification required":"ইমেইল যাচাই প্রয়োজন","Payments not activated":"পেমেন্ট চালু হয়নি","LATEST PROMOTIONS":"সর্বশেষ অফার","Offers & Special Deals":"অফার ও বিশেষ সুবিধা","Loading current offers…":"বর্তমান অফার লোড হচ্ছে…","Available Properties":"উপলব্ধ প্রপার্টি","Verified listings only":"শুধু যাচাইকৃত তালিকা","Search properties":"প্রপার্টি খুঁজুন","All property types":"সব ধরনের প্রপার্টি","Clear Filters":"ফিল্টার মুছুন","View Details":"বিস্তারিত দেখুন","Buy Now":"এখনই কিনুন","Save Property":"প্রপার্টি সংরক্ষণ করুন","Saved Properties":"সংরক্ষিত প্রপার্টি",
  "Today’s Earning":"আজকের আয়","Today's Earning":"আজকের আয়","Total Earning":"মোট আয়","Deposit":"ডিপোজিট","Withdraw":"উত্তোলন","Profile":"প্রোফাইল","Personal Information":"ব্যক্তিগত তথ্য","Account Settings":"অ্যাকাউন্ট সেটিংস","Email verified":"ইমেইল যাচাইকৃত","Verify Now":"এখনই যাচাই করুন","Account verified":"অ্যাকাউন্ট যাচাইকৃত","Recent Activity":"সাম্প্রতিক কার্যক্রম","My Properties":"আমার প্রপার্টি","Edit Profile":"প্রোফাইল সম্পাদনা","Save Changes":"পরিবর্তন সংরক্ষণ","Cancel":"বাতিল",
  "First Name":"নামের প্রথম অংশ","Last Name":"নামের শেষ অংশ","Email Address":"ইমেইল ঠিকানা","Phone Number":"ফোন নম্বর","Password":"পাসওয়ার্ড","Confirm Password":"পাসওয়ার্ড নিশ্চিত করুন","Forgot Password?":"পাসওয়ার্ড ভুলে গেছেন?","Create Account":"অ্যাকাউন্ট তৈরি করুন","Welcome":"স্বাগতম","Welcome back":"আবারও স্বাগতম","Loading verified properties…":"যাচাইকৃত প্রপার্টি লোড হচ্ছে…","No properties found.":"কোনো প্রপার্টি পাওয়া যায়নি।","Price on request":"দাম জানতে যোগাযোগ করুন","Location":"অবস্থান","Property Type":"প্রপার্টির ধরন","All":"সব","Available":"উপলব্ধ","Pending":"অপেক্ষমাণ","Approved":"অনুমোদিত","Rejected":"বাতিল","Submit":"জমা দিন","Submit Property":"প্রপার্টি জমা দিন","Referral":"রেফারেল","Referral Code":"রেফারেল কোড","Copy":"কপি","Copied":"কপি হয়েছে","Notice":"নোটিশ","Notifications":"বিজ্ঞপ্তি","Activity Log":"কার্যক্রমের ইতিহাস","Support":"সাপোর্ট","Contact Us":"যোগাযোগ করুন","Choose your package":"আপনার প্যাকেজ বেছে নিন","Investment Packages":"বিনিয়োগ প্যাকেজসমূহ","Each package is valid for 30 days. At the end of the term, the original package amount and the specified earnings will be added to your Main Wallet.":"প্রতিটি প্যাকেজের মেয়াদ ৩০ দিন। মেয়াদ শেষে মূল প্যাকেজের টাকা ও নির্ধারিত আয় মূল ওয়ালেটে যোগ হবে।","CHOOSE YOUR PACKAGE":"আপনার প্যাকেজ বেছে নিন","BUY NOW — VIEW PACKAGES":"এখনই কিনুন — প্যাকেজ দেখুন","PACKAGE":"প্যাকেজ","2% Daily · 30 Days":"দৈনিক ২% · ৩০ দিন","Daily calculation:":"দৈনিক হিসাব:","Select package":"প্যাকেজ নির্বাচন করুন","Invested Balance: Open this section to load your active package balance.":"বিনিয়োগকৃত ব্যালেন্স: সক্রিয় প্যাকেজের ব্যালেন্স দেখতে এই অংশ খুলুন।","Online payments are not active yet. Selecting a package will send a request to the team; no money will be deducted and the package will not be confirmed automatically.":"অনলাইন পেমেন্ট এখনো চালু হয়নি। প্যাকেজ নির্বাচন করলে টিমের কাছে অনুরোধ যাবে; স্বয়ংক্রিয়ভাবে টাকা কাটা বা প্যাকেজ নিশ্চিত হবে না।","Amount":"পরিমাণ","Status":"অবস্থা","Date":"তারিখ","Actions":"কাজ","No special offers are available right now. Please check back soon.":"এই মুহূর্তে কোনো বিশেষ অফার নেই। পরে আবার দেখুন।",
  "Enter your email address":"আপনার ইমেইল ঠিকানা লিখুন","Enter your password":"আপনার পাসওয়ার্ড লিখুন","Email":"ইমেইল","Phone":"ফোন","Name":"নাম","Submit":"জমা দিন","Loading…":"লোড হচ্ছে…","Please wait…":"অপেক্ষা করুন…","No data available":"কোনো তথ্য পাওয়া যায়নি","Member":"সদস্য","Earnings":"আয়","Commission":"কমিশন","Property":"প্রপার্টি","Details":"বিস্তারিত","Back":"ফিরে যান","Close":"বন্ধ করুন","Send":"পাঠান","Message":"বার্তা","Type your message":"আপনার বার্তা লিখুন","YOUR PROPERTY JOURNEY STARTS HERE":"আপনার প্রপার্টি যাত্রা শুরু হোক এখান থেকে","Find a place":"আপনার পছন্দের জায়গা খুঁজুন","belong.":"যেখানে আপনি স্বাচ্ছন্দ্যে থাকবেন।","Explore property opportunities, discover new offers and manage everything from one simple place.":"প্রপার্টির সুযোগ খুঁজুন, নতুন অফার দেখুন এবং সবকিছু এক জায়গা থেকে পরিচালনা করুন।","A smarter way to explore property opportunities":"প্রপার্টির সুযোগ খোঁজার আরও সহজ উপায়","READY TO GET STARTED?":"শুরু করতে প্রস্তুত?","Your next opportunity could be one click away.":"আপনার পরবর্তী সুযোগ হতে পারে মাত্র এক ক্লিক দূরে।","Explore the latest property listings today.":"আজই সর্বশেষ প্রপার্টির তালিকা দেখুন।","View properties":"প্রপার্টি দেখুন","Search name, location, type, description or price…":"নাম, অবস্থান, ধরন, বিবরণ বা দাম দিয়ে খুঁজুন…","Filter by property type":"প্রপার্টির ধরন অনুযায়ী বাছাই","All property types":"সব ধরনের প্রপার্টি","Default order":"সাধারণ ক্রম","Price: low to high":"কম দাম থেকে বেশি দাম","Price: high to low":"বেশি দাম থেকে কম দাম","Name: A to Z":"নাম: ক থেকে ঁ","Clear filters":"ফিল্টার মুছুন","Filter by availability":"প্রাপ্যতা অনুযায়ী বাছাই","Upcoming":"আসন্ন","Showing all properties":"সব প্রপার্টি দেখানো হচ্ছে","Showing ":"দেখানো হচ্ছে "," of ":"টির মধ্যে "," properties":"টি প্রপার্টি","← Back to properties":"← প্রপার্টিতে ফিরে যান","Member Login":"সদস্য লগইন","Email address":"ইমেইল ঠিকানা","Sign in with your email and password. Your email must be verified first.":"আপনার ইমেইল ও পাসওয়ার্ড দিয়ে প্রবেশ করুন। আগে ইমেইল যাচাই করতে হবে।","New here?":"এখানে নতুন?","Create account":"অ্যাকাউন্ট তৈরি করুন","Become a member":"সদস্য হোন","Choose a username":"একটি ইউজারনেম দিন","First name":"নামের প্রথম অংশ","Last name":"নামের শেষ অংশ","Create password (min. 8 characters)":"পাসওয়ার্ড তৈরি করুন (কমপক্ষে ৮ অক্ষর)","Confirm password":"পাসওয়ার্ড নিশ্চিত করুন","Referral code (optional)":"রেফারেল কোড (ঐচ্ছিক)","Create Account & Send Verification Email":"অ্যাকাউন্ট তৈরি করে যাচাইকরণ ইমেইল পাঠান","We will send a verification link to your email. Verify your email before logging in.":"আপনার ইমেইলে যাচাইকরণ লিংক পাঠানো হবে। লগইনের আগে ইমেইল যাচাই করুন।","Wallet Balance":"ওয়ালেট ব্যালেন্স","Available USD balance":"উপলব্ধ ডলার ব্যালেন্স","Hourly Earning":"প্রতি ঘণ্টার আয়","From active packages · 2% daily":"সক্রিয় প্যাকেজ থেকে · দৈনিক ২%","Estimated earnings today":"আজকের আনুমানিক আয়","Estimated since activation":"চালুর পর থেকে আনুমানিক আয়","Add funds to your wallet · USD":"আপনার ওয়ালেটে টাকা যোগ করুন · ডলার","Request a payout · USD":"টাকা উত্তোলনের অনুরোধ · ডলার","Saved on this device":"এই ডিভাইসে সংরক্ষিত","Referral count":"রেফারেলের সংখ্যা","QUICK ACCESS":"দ্রুত প্রবেশ","Dashboard Services":"ড্যাশবোর্ডের সেবা","Browse Properties":"প্রপার্টি দেখুন","Explore available listings":"উপলব্ধ তালিকা দেখুন","Add Property":"প্রপার্টি যোগ করুন","Submit a property for admin review":"অ্যাডমিনের পর্যালোচনার জন্য প্রপার্টি জমা দিন","Referral program overview":"রেফারেল প্রোগ্রামের বিবরণ","Account updates and alerts":"অ্যাকাউন্টের আপডেট ও সতর্কবার্তা","Manage account preferences":"অ্যাকাউন্টের পছন্দসমূহ পরিচালনা করুন","Account Profile":"অ্যাকাউন্ট প্রোফাইল","Update your name and view email status":"নাম পরিবর্তন ও ইমেইলের অবস্থা দেখুন","RECENT ACTIVITY":"সাম্প্রতিক কার্যক্রম","Activity Overview":"কার্যক্রমের সারসংক্ষেপ","Loading your recent activity…":"সাম্প্রতিক কার্যক্রম লোড হচ্ছে…","ACCOUNT STATUS":"অ্যাকাউন্টের অবস্থা","Email account":"ইমেইল অ্যাকাউন্ট","Your account verification status will appear here.":"আপনার অ্যাকাউন্ট যাচাইয়ের অবস্থা এখানে দেখা যাবে।","Account Details":"অ্যাকাউন্টের বিস্তারিত","Log out":"লগআউট","DASHBOARD SERVICE":"ড্যাশবোর্ড সেবা","← Back to Dashboard":"← ড্যাশবোর্ডে ফিরে যান","Add Funds to Your Wallet":"আপনার ওয়ালেটে টাকা যোগ করুন","Send your payment using the selected method and the Cash In Number below. Enter amount in Bangladeshi Taka (BDT ৳). USD equivalent uses the admin-set exchange rate.":"নিচের ক্যাশ-ইন নম্বর ও নির্বাচিত পদ্ধতি ব্যবহার করে টাকা পাঠান। টাকার পরিমাণ বাংলাদেশি টাকায় (৳) লিখুন। ডলারের হিসাব অ্যাডমিন নির্ধারিত বিনিময় হার অনুযায়ী হবে।","Select deposit payment method":"ডিপোজিটের পেমেন্ট পদ্ধতি নির্বাচন করুন","Add funds to your account":"আপনার অ্যাকাউন্টে টাকা যোগ করুন","ADD FUNDS":"টাকা যোগ করুন","Deposit amount (BDT ৳)":"ডিপোজিটের পরিমাণ (বাংলাদেশি টাকা ৳)","Deposit amount":"ডিপোজিটের পরিমাণ","Withdrawal amount":"উত্তোলনের পরিমাণ","Amount: ৳0":"পরিমাণ: ৳০","Your payment number (from which you sent the money)":"আপনি যে নম্বর থেকে টাকা পাঠিয়েছেন","Transaction ID (TrxID)":"লেনদেন আইডি (TrxID)","Enter payment TrxID":"পেমেন্টের TrxID লিখুন","Submit Deposit Request →":"ডিপোজিটের অনুরোধ জমা দিন →","Requests are sent to the Prologis, Inc. (PLD) admin for review. bKash, Nagad, Rocket, Bank Account and Binance are available request methods; this form records a request and does not transfer money automatically.":"অনুরোধগুলো পর্যালোচনার জন্য অ্যাডমিনের কাছে পাঠানো হয়। bKash, Nagad, Rocket, Bank Account ও Binance পদ্ধতি ব্যবহার করা যায়। এই ফর্ম শুধু অনুরোধ জমা দেয়, স্বয়ংক্রিয়ভাবে টাকা পাঠায় না।","View Deposit / Withdraw History":"ডিপোজিট / উত্তোলনের ইতিহাস দেখুন","Withdraw to Your Wallet":"আপনার ওয়ালেটে উত্তোলন করুন","Choose your payout method and use the Cash Out Number below. Enter amount in Bangladeshi Taka (BDT ৳). USD equivalent uses the admin-set exchange rate.":"নিচের ক্যাশ-আউট নম্বর ব্যবহার করে উত্তোলনের পদ্ধতি বেছে নিন। টাকার পরিমাণ বাংলাদেশি টাকায় (৳) লিখুন। ডলারের হিসাব অ্যাডমিন নির্ধারিত বিনিময় হার অনুযায়ী হবে।","Select withdraw payment method":"উত্তোলনের পেমেন্ট পদ্ধতি নির্বাচন করুন","PAYOUT":"উত্তোলন","Withdrawal amount (BDT ৳)":"উত্তোলনের পরিমাণ (বাংলাদেশি টাকা ৳)","Withdraw All Available Balance":"সম্পূর্ণ ব্যালেন্স উত্তোলন করুন","Minimum set by admin":"অ্যাডমিন নির্ধারিত সর্বনিম্ন পরিমাণ","Your receiving bKash / Nagad number":"যে bKash / Nagad নম্বরে টাকা নেবেন","Submit Withdrawal Request →":"উত্তোলনের অনুরোধ জমা দিন →","Every request and its current review status.":"প্রতিটি অনুরোধ ও তার বর্তমান পর্যালোচনার অবস্থা।","PROLOGIS, INC. (PLD) MEMBER":"PROLOGIS, INC. (PLD) সদস্য","Sign in to view your account":"অ্যাকাউন্ট দেখতে লগইন করুন","● Account status":"● অ্যাকাউন্টের অবস্থা","Edit profile":"প্রোফাইল সম্পাদনা","◉ Overview":"◉ সারসংক্ষেপ","♧ Referrals":"♧ রেফারেলসমূহ","Profile Information":"প্রোফাইলের তথ্য","Full Name":"পুরো নাম","Email Verification":"ইমেইল যাচাই","Display name":"প্রদর্শিত নাম","Your full name":"আপনার পুরো নাম","Save name":"নাম সংরক্ষণ","Member Account":"সদস্য অ্যাকাউন্ট","Sign in to view your account.":"আপনার অ্যাকাউন্ট দেখতে লগইন করুন।","Your account details are private":"আপনার অ্যাকাউন্টের তথ্য গোপনীয়","Profile wallet actions":"প্রোফাইলের ওয়ালেট কার্যক্রম","Add funds · USD":"টাকা যোগ করুন · ডলার","Request payout · USD":"উত্তোলনের অনুরোধ · ডলার","Your account activity will appear here when these features are available.":"এই সুবিধাগুলো চালু হলে আপনার অ্যাকাউন্টের কার্যক্রম এখানে দেখা যাবে।","You have not added any properties yet. Property submission will be available after the member listing feature is enabled.":"আপনি এখনো কোনো প্রপার্টি যোগ করেননি। সদস্যদের প্রপার্টি জমা দেওয়ার সুবিধা চালু হলে এটি ব্যবহার করতে পারবেন।","Browse properties":"প্রপার্টি দেখুন","YOUR SHORTLIST":"আপনার পছন্দের তালিকা","Your saved listings are stored on this device and browser.":"আপনার সংরক্ষিত তালিকা এই ডিভাইস ও ব্রাউজারে রাখা হয়।","Loading saved properties…":"সংরক্ষিত প্রপার্টি লোড হচ্ছে…","MEMBER PROPERTY SUBMISSION":"সদস্যের প্রপার্টি জমা","Submit a Property":"একটি প্রপার্টি জমা দিন","Submit accurate details for admin review. A listing will appear publicly only after approval.":"অ্যাডমিনের পর্যালোচনার জন্য সঠিক তথ্য দিন। অনুমোদনের পরেই তালিকাটি সবার জন্য প্রকাশিত হবে।","PROPERTY NAME *":"প্রপার্টির নাম *","LOCATION *":"অবস্থান *","PROPERTY TYPE *":"প্রপার্টির ধরন *","PRICE / PRICE RANGE (USD) *":"দাম / দামের সীমা (ডলার) *","IMAGE URL (OPTIONAL)":"ছবির লিংক (ঐচ্ছিক)","DESCRIPTION *":"বিবরণ *","Send for review":"পর্যালোচনার জন্য পাঠান","PROLOGIS, INC. (PLD) · LIVE CHAT":"PROLOGIS, INC. (PLD) · সরাসরি চ্যাট","Live Support":"লাইভ সাপোর্ট","Chat directly with our support team. You and the admin can both send messages here.":"আমাদের সাপোর্ট টিমের সঙ্গে সরাসরি কথা বলুন। আপনি ও অ্যাডমিন দুজনেই এখানে বার্তা পাঠাতে পারবেন।","Log in to start your conversation.":"কথা শুরু করতে লগইন করুন।","Type a message…":"বার্তা লিখুন…","PARTNER PROGRAM":"অংশীদার কর্মসূচি","Share your personal referral link. Referral counts and commission balances will update after the referral records and payment rules are activated.":"আপনার ব্যক্তিগত রেফারেল লিংক শেয়ার করুন। রেফারেল রেকর্ড ও পেমেন্টের নিয়ম চালু হলে রেফারেলের সংখ্যা এবং কমিশন আপডেট হবে।","Confirmed commission only":"শুধু নিশ্চিত কমিশন","Copy referral link":"রেফারেল লিংক কপি করুন","Loading your referral details…":"আপনার রেফারেলের তথ্য লোড হচ্ছে…","Only genuine referrals are counted. No commission is promised or payable until the program terms and eligible transactions are formally enabled.":"শুধু প্রকৃত রেফারেল গণনা করা হবে। প্রোগ্রামের নিয়ম ও যোগ্য লেনদেন চালু না হওয়া পর্যন্ত কমিশনের নিশ্চয়তা বা পেমেন্ট নেই।","Back to Home":"হোমে ফিরে যান","No properties match these filters. Try another search or clear filters.":"এই ফিল্টারে কোনো প্রপার্টি পাওয়া যায়নি। অন্যভাবে খুঁজুন অথবা ফিল্টার মুছে দিন।","View details":"বিস্তারিত দেখুন","Save":"সংরক্ষণ","Saved":"সংরক্ষিত","Sample listing":"নমুনা তালিকা","Listed property":"তালিকাভুক্ত প্রপার্টি","No property activity yet. Your submissions will appear here.":"এখনো কোনো প্রপার্টির কার্যক্রম নেই। আপনার জমা দেওয়া তথ্য এখানে দেখা যাবে।","Submitted properties":"জমা দেওয়া প্রপার্টি","No submissions yet":"এখনো কিছু জমা দেওয়া হয়নি","Registered referrals":"নিবন্ধিত রেফারেল","No referral code yet":"এখনো কোনো রেফারেল কোড নেই","Referral count unavailable":"রেফারেলের সংখ্যা পাওয়া যাচ্ছে না","Could not load submissions":"জমা দেওয়া তথ্য লোড করা যায়নি","Recent activity is temporarily unavailable.":"সাম্প্রতিক কার্যক্রম সাময়িকভাবে পাওয়া যাচ্ছে না।","Property submission":"প্রপার্টি জমা","Status: ":"অবস্থা: ","pending":"অপেক্ষমাণ","approved":"অনুমোদিত","rejected":"প্রত্যাখ্যাত","active":"সক্রিয়","inactive":"নিষ্ক্রিয়","Loading Cash In Number…":"ক্যাশ-ইন নম্বর লোড হচ্ছে…","Loading Cash Out Number…":"ক্যাশ-আউট নম্বর লোড হচ্ছে…","This service is currently unavailable.":"এই সেবা বর্তমানে চালু নেই।","This payment method is not configured by admin yet.":"এই পেমেন্ট পদ্ধতিটি অ্যাডমিন এখনো সেট করেননি।","Admin exchange rate is not configured yet.":"অ্যাডমিন এখনো বিনিময় হার নির্ধারণ করেননি।","Enter a valid amount in BDT.":"সঠিক টাকার পরিমাণ লিখুন।","Minimum withdrawal is ৳":"সর্বনিম্ন উত্তোলন ৳","Requests below this amount are not accepted.":"এর চেয়ে কম পরিমাণের অনুরোধ গ্রহণ করা হয় না।","Enter a valid Binance Pay ID or UID.":"সঠিক Binance Pay ID বা UID লিখুন।","Enter your bank name and account number.":"আপনার ব্যাংকের নাম ও অ্যাকাউন্ট নম্বর লিখুন।","Enter your 12-digit Rocket account number, including the check digit.":"চেক ডিজিটসহ ১২ সংখ্যার Rocket অ্যাকাউন্ট নম্বর লিখুন।","Enter a valid 11-digit Bangladesh wallet number.":"সঠিক ১১ সংখ্যার বাংলাদেশি ওয়ালেট নম্বর লিখুন।","Invalid Transaction ID format. Please check your TrxID.":"লেনদেন আইডির ফরম্যাট সঠিক নয়। TrxID যাচাই করুন।","Could not calculate the USD equivalent.":"ডলারের সমপরিমাণ হিসাব করা যায়নি।","Submitting your request…":"আপনার অনুরোধ জমা হচ্ছে…","Your available wallet balance is not enough for this withdrawal.":"এই উত্তোলনের জন্য আপনার ওয়ালেটে পর্যাপ্ত ব্যালেন্স নেই।","Deposit request submitted. Status: Pending admin review.":"ডিপোজিটের অনুরোধ জমা হয়েছে। অবস্থা: অ্যাডমিনের পর্যালোচনার অপেক্ষায়।","Withdrawal request submitted. Status: Pending admin review.":"উত্তোলনের অনুরোধ জমা হয়েছে। অবস্থা: অ্যাডমিনের পর্যালোচনার অপেক্ষায়।","Enter your email address in the Email field first.":"আগে ইমেইল ঘরে আপনার ইমেইল ঠিকানা লিখুন।","Password reset email sent. Open your inbox and follow the link.":"পাসওয়ার্ড রিসেটের ইমেইল পাঠানো হয়েছে। ইনবক্সে গিয়ে লিংক অনুসরণ করুন।","Could not send password reset email.":"পাসওয়ার্ড রিসেটের ইমেইল পাঠানো যায়নি।","Logged in successfully.":"সফলভাবে লগইন হয়েছে।","Incorrect email or password. Please try again.":"ইমেইল বা পাসওয়ার্ড ভুল। আবার চেষ্টা করুন।","Account created. A verification link was sent to your email. Verify it before logging in.":"অ্যাকাউন্ট তৈরি হয়েছে। আপনার ইমেইলে যাচাইকরণ লিংক পাঠানো হয়েছে। লগইনের আগে যাচাই করুন।","Your email is not verified. A verification link has been sent again. Check your inbox and spam folder.":"আপনার ইমেইল যাচাই করা হয়নি। আবার যাচাইকরণ লিংক পাঠানো হয়েছে। ইনবক্স ও স্প্যাম ফোল্ডার দেখুন।","Please log in to view your account.":"আপনার অ্যাকাউন্ট দেখতে লগইন করুন।","Please log in first.":"আগে লগইন করুন।","You are logged out.":"আপনি লগআউট করেছেন।","Your account is active.":"আপনার অ্যাকাউন্ট সক্রিয়।","Your account is inactive.":"আপনার অ্যাকাউন্ট নিষ্ক্রিয়।","Your account is still waiting for admin approval.":"আপনার অ্যাকাউন্ট এখনো অ্যাডমিনের অনুমোদনের অপেক্ষায় আছে।","Could not check approval: ":"অনুমোদন যাচাই করা যায়নি: ","Please check your internet connection.":"আপনার ইন্টারনেট সংযোগ পরীক্ষা করুন।","Offer publishing will be enabled after secure Firebase admin setup.":"নিরাপদ Firebase অ্যাডমিন সেটআপের পর অফার প্রকাশের সুবিধা চালু হবে।","Your full available balance has been converted to BDT.":"আপনার সম্পূর্ণ ব্যালেন্স বাংলাদেশি টাকায় রূপান্তর করা হয়েছে।","No available balance to withdraw yet;":"এখনো উত্তোলনের মতো কোনো ব্যালেন্স নেই।","Verified":"যাচাইকৃত","Not verified":"যাচাই হয়নি","No data available":"কোনো তথ্য পাওয়া যায়নি","Bank Account":"ব্যাংক অ্যাকাউন্ট","Settings":"সেটিংস",
  "LOADING PROLOGIS, INC. (PLD)":"PROLOGIS, INC. (PLD) লোড হচ্ছে","YOUR PROPERTY JOURNEY STARTS HERE":"আপনার প্রপার্টি যাত্রা শুরু হোক এখান থেকে","Find a place":"আপনার পছন্দের জায়গা খুঁজুন","to belong.":"যেখানে আপনি স্বাচ্ছন্দ্যে থাকবেন।","Explore property opportunities, discover new offers and manage everything from one simple place.":"প্রপার্টির সুযোগ খুঁজুন, নতুন অফার দেখুন এবং সবকিছু এক জায়গা থেকে পরিচালনা করুন।","DISCOVER":"আবিষ্কার করুন","Your next chapter.":"আপনার জীবনের পরবর্তী অধ্যায়।","Looking for your next property?":"আপনার পরবর্তী প্রপার্টি খুঁজছেন?","Browse available listings and find an opportunity.":"উপলব্ধ তালিকা দেখুন এবং সুযোগ খুঁজে নিন।","Start exploring":"দেখা শুরু করুন","Explore":"ঘুরে দেখুন","Browse property opportunities":"প্রপার্টির সুযোগগুলো দেখুন","Discover":"আবিষ্কার করুন","See the latest offers and updates":"সর্বশেষ অফার ও আপডেট দেখুন","Manage":"পরিচালনা করুন","Keep your member account in one place":"আপনার সদস্য অ্যাকাউন্ট এক জায়গায় রাখুন","STAY IN THE LOOP":"সব আপডেটের সঙ্গে থাকুন","Latest updates":"সর্বশেষ আপডেট","NEWS & ANNOUNCEMENTS":"খবর ও ঘোষণা","Loading notices…":"নোটিশ লোড হচ্ছে…","HANDPICKED FOR YOU":"আপনার জন্য বাছাই করা","Offers & special deals":"অফার ও বিশেষ সুবিধা","FEATURED OFFERS":"বিশেষ অফার","Loading current offers…":"বর্তমান অফার লোড হচ্ছে…","View properties ↗":"প্রপার্টি দেখুন ↗","Create Account":"অ্যাকাউন্ট তৈরি করুন","Referral program overview":"রেফারেল প্রোগ্রামের বিবরণ","Deposit & Withdraw History":"ডিপোজিট ও উত্তোলনের ইতিহাস","Loading history…":"ইতিহাস লোড হচ্ছে…","Recent Activity":"সাম্প্রতিক কার্যক্রম","Your account activity will appear here when these features are available.":"এই সুবিধাগুলো চালু হলে আপনার অ্যাকাউন্টের কার্যক্রম এখানে দেখা যাবে।","Apartment":"অ্যাপার্টমেন্ট","House":"বাড়ি","Land":"জমি","Commercial":"বাণিজ্যিক","Office":"অফিস","Other":"অন্যান্য","Manage offers, members and property submissions from one place.":"এক জায়গা থেকে অফার, সদস্য ও প্রপার্টি জমা পরিচালনা করুন।","Overview":"সারসংক্ষেপ","Total Users":"মোট ব্যবহারকারী","Published Offers":"প্রকাশিত অফার","Manage Offers":"অফার পরিচালনা","Create an offer that will appear in the Latest Offers area for members after the database connection is enabled.":"ডেটাবেস সংযোগ চালু হলে সদস্যদের সর্বশেষ অফার অংশে দেখানোর জন্য অফার তৈরি করুন।","Offer Title":"অফারের শিরোনাম","Discount / Bonus":"ছাড় / বোনাস","Start Date":"শুরুর তারিখ","End Date":"শেষ তারিখ","Offer Image URL":"অফারের ছবির লিংক","Publish Offer · Setup required":"অফার প্রকাশ · সেটআপ প্রয়োজন","Other Management":"অন্যান্য ব্যবস্থাপনা","Manage Users":"ব্যবহারকারী পরিচালনা","Member list and account status · Setup pending":"সদস্য তালিকা ও অ্যাকাউন্টের অবস্থা · সেটআপ বাকি","Manage Properties":"প্রপার্টি পরিচালনা","Approve or reject listings · Setup pending":"তালিকা অনুমোদন বা বাতিল · সেটআপ বাকি","Referral tracking and commission controls · Setup pending":"রেফারেল ও কমিশন নিয়ন্ত্রণ · সেটআপ বাকি","Announcements":"ঘোষণা","Publish notices to all members · Setup pending":"সব সদস্যের জন্য নোটিশ প্রকাশ · সেটআপ বাকি","Back to Dashboard":"ড্যাশবোর্ডে ফিরে যান","Today's Earning":"আজকের আয়","Confirmed commission only":"শুধু নিশ্চিত কমিশন","YOUR REFERRAL CODE":"আপনার রেফারেল কোড","YOUR REFERRAL LINK":"আপনার রেফারেল লিংক","© 2026 Prologis, Inc. (PLD) · Property marketplace · Verified listings only · Payments are not active.":"© ২০২৬ Prologis, Inc. (PLD) · প্রপার্টি মার্কেটপ্লেস · শুধু যাচাইকৃত তালিকা · পেমেন্ট চালু নেই।",
- "Member Dashboard":"সদস্য ড্যাশবোর্ড","My Account":"আমার অ্যাকাউন্ট","Wallet":"ওয়ালেট","Wallet History":"ওয়ালেটের ইতিহাস","Deposit History":"ডিপোজিটের ইতিহাস","Withdraw History":"উত্তোলনের ইতিহাস","Payment Method":"পেমেন্ট পদ্ধতি","Select payment method":"পেমেন্ট পদ্ধতি নির্বাচন করুন","Account Number":"অ্যাকাউন্ট নম্বর","Payment Number":"পেমেন্ট নম্বর","Cash In Number":"ক্যাশ-ইন নম্বর","Cash Out Number":"ক্যাশ-আউট নম্বর","Amount":"পরিমাণ","Submit Request":"অনুরোধ জমা দিন","Transaction ID":"লেনদেন আইডি","Referral Code":"রেফারেল কোড","Referral Link":"রেফারেল লিংক","Commission Balance":"কমিশন ব্যালেন্স","Total Referrals":"মোট রেফারেল","No recent activity":"সাম্প্রতিক কোনো কার্যক্রম নেই","No notifications":"কোনো বিজ্ঞপ্তি নেই","Mark as read":"পড়া হয়েছে হিসেবে চিহ্নিত করুন","Loading profile…":"প্রোফাইল লোড হচ্ছে…","Loading dashboard…":"ড্যাশবোর্ড লোড হচ্ছে…","Please enter your name.":"আপনার নাম লিখুন।","Please enter a valid email address.":"সঠিক ইমেইল ঠিকানা লিখুন।","Password is required.":"পাসওয়ার্ড দিতে হবে।","Passwords do not match.":"পাসওয়ার্ড দুটি মিলছে না।","Account created successfully.":"অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে।","Something went wrong. Please try again.":"সমস্যা হয়েছে। আবার চেষ্টা করুন।","No offers available right now.":"এই মুহূর্তে কোনো অফার নেই।","No announcements yet.":"এখনো কোনো ঘোষণা নেই।","No properties available right now.":"এই মুহূর্তে কোনো প্রপার্টি নেই।","Search":"খুঁজুন","Filter":"ফিল্টার","Update":"আপডেট","Delete":"মুছে ফেলুন","Edit":"সম্পাদনা","Confirm":"নিশ্চিত করুন","Continue":"চালিয়ে যান","Previous":"আগের","Next":"পরের","Page":"পৃষ্ঠা","of":"এর মধ্যে","Status":"অবস্থা","Date":"তারিখ","Time":"সময়","Details":"বিস্তারিত","Description":"বিবরণ","Location":"অবস্থান","Price":"দাম","Type":"ধরন","Actions":"কার্যক্রম","Success":"সফল","Error":"ত্রুটি","Warning":"সতর্কতা","Loading":"লোড হচ্ছে","No results found":"কোনো ফলাফল পাওয়া যায়নি","Try again":"আবার চেষ্টা করুন","Welcome":"স্বাগতম","Welcome back!":"আবারও স্বাগতম!","English":"ইংরেজি","Bangla":"বাংলা","বাংলা":"বাংলা"
-};
+ "Member Dashboard":"সদস্য ড্যাশবোর্ড","My Account":"আমার অ্যাকাউন্ট","Wallet":"ওয়ালেট","Wallet History":"ওয়ালেটের ইতিহাস","Deposit History":"ডিপোজিটের ইতিহাস","Withdraw History":"উত্তোলনের ইতিহাস","Payment Method":"পেমেন্ট পদ্ধতি","Select payment method":"পেমেন্ট পদ্ধতি নির্বাচন করুন","Account Number":"অ্যাকাউন্ট নম্বর","Payment Number":"পেমেন্ট নম্বর","Cash In Number":"ক্যাশ-ইন নম্বর","Cash Out Number":"ক্যাশ-আউট নম্বর","Amount":"পরিমাণ","Submit Request":"অনুরোধ জমা দিন","Transaction ID":"লেনদেন আইডি","Referral Code":"রেফারেল কোড","Referral Link":"রেফারেল লিংক","Commission Balance":"কমিশন ব্যালেন্স","Total Referrals":"মোট রেফারেল","No recent activity":"সাম্প্রতিক কোনো কার্যক্রম নেই","No notifications":"কোনো বিজ্ঞপ্তি নেই","Mark as read":"পড়া হয়েছে হিসেবে চিহ্নিত করুন","Loading profile…":"প্রোফাইল লোড হচ্ছে…","Loading dashboard…":"ড্যাশবোর্ড লোড হচ্ছে…","Please enter your name.":"আপনার নাম লিখুন।","Please enter a valid email address.":"সঠিক ইমেইল ঠিকানা লিখুন।","Password is required.":"পাসওয়ার্ড দিতে হবে।","Passwords do not match.":"পাসওয়ার্ড দুটি মিলছে না।","Account created successfully.":"অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে।","Something went wrong. Please try again.":"সমস্যা হয়েছে। আবার চেষ্টা করুন।","No offers available right now.":"এই মুহূর্তে কোনো অফার নেই।","No announcements yet.":"এখনো কোনো ঘোষণা নেই।","No properties available right now.":"এই মুহূর্তে কোনো প্রপার্টি নেই।","Search":"খুঁজুন","Filter":"ফিল্টার","Update":"আপডেট","Delete":"মুছে ফেলুন","Edit":"সম্পাদনা","Confirm":"নিশ্চিত করুন","Continue":"চালিয়ে যান","Previous":"আগের","Next":"পরের","Page":"পৃষ্ঠা","of":"এর মধ্যে","Status":"অবস্থা","Date":"তারিখ","Time":"সময়","Details":"বিস্তারিত","Description":"বিবরণ","Location":"অবস্থান","Price":"দাম","Type":"ধরন","Actions":"কার্যক্রম","Success":"সফল","Error":"ত্রুটি","Warning":"সতর্কতা","Loading":"লোড হচ্ছে","No results found":"কোনো ফলাফল পাওয়া যায়নি","Try again":"আবার চেষ্টা করুন","Welcome":"স্বাগতম","Welcome back!":"আবারও স্বাগতম!","English":"ইংরেজি","Bangla":"বাংলা","Open menu":"মেনু খুলুন",
+  "Close menu":"মেনু বন্ধ করুন",
+  "A smarter way to explore property opportunities":"প্রপার্টির সুযোগ খোঁজার আরও সহজ উপায়",
+  "Looking for your next property?":"আপনার পরবর্তী প্রপার্টি খুঁজছেন?",
+  "Start exploring":"দেখা শুরু করুন",
+  "Browse property opportunities":"প্রপার্টির সুযোগগুলো দেখুন",
+  "See the latest offers and updates":"সর্বশেষ অফার ও আপডেট দেখুন",
+  "Keep your member account in one place":"আপনার সদস্য অ্যাকাউন্ট এক জায়গায় রাখুন",
+  "STAY IN THE LOOP":"সব আপডেটের সঙ্গে থাকুন",
+  "Latest updates":"সর্বশেষ আপডেট",
+  "NEWS & ANNOUNCEMENTS":"খবর ও ঘোষণা",
+  "HANDPICKED FOR YOU":"আপনার জন্য বাছাই করা",
+  "FEATURED OFFERS":"বিশেষ অফার",
+  "READY TO GET STARTED?":"শুরু করতে প্রস্তুত?",
+  "Your next opportunity could be one click away.":"আপনার পরবর্তী সুযোগ হতে পারে মাত্র এক ক্লিক দূরে।",
+  "Explore the latest property listings today.":"আজই সর্বশেষ প্রপার্টির তালিকা দেখুন।",
+  "Sort properties":"প্রপার্টি সাজান",
+  "Default order":"সাধারণ ক্রম",
+  "Price: low to high":"কম দাম থেকে বেশি দাম",
+  "Price: high to low":"বেশি দাম থেকে কম দাম",
+  "Name: A to Z":"নাম অনুযায়ী: ক থেকে ঁ",
+  "Clear filters":"ফিল্টার মুছুন",
+  "Filter by availability":"প্রাপ্যতা অনুযায়ী বাছাই",
+  "Showing all properties":"সব প্রপার্টি দেখানো হচ্ছে",
+  "← Back to properties":"← প্রপার্টিতে ফিরে যান",
+  "Forgot password?":"পাসওয়ার্ড ভুলে গেছেন?",
+  "New here?":"এখানে নতুন?",
+  "Create account":"অ্যাকাউন্ট তৈরি করুন",
+  "Become a member":"সদস্য হোন",
+  "Choose a username":"একটি ইউজারনেম দিন",
+  "Create password (min. 8 characters)":"পাসওয়ার্ড তৈরি করুন (কমপক্ষে ৮ অক্ষর)",
+  "Confirm password":"পাসওয়ার্ড নিশ্চিত করুন",
+  "Referral code (optional)":"রেফারেল কোড (ঐচ্ছিক)",
+  "Create Account & Send Verification Email":"অ্যাকাউন্ট তৈরি করে যাচাইকরণ ইমেইল পাঠান",
+  "We will send a verification link to your email. Verify your email before logging in.":"আপনার ইমেইলে যাচাইকরণ লিংক পাঠানো হবে। লগইনের আগে ইমেইল যাচাই করুন।",
+  "Available USD balance":"উপলব্ধ ডলার ব্যালেন্স",
+  "Hourly Earning":"প্রতি ঘণ্টার আয়",
+  "From active packages · 2% daily":"সক্রিয় প্যাকেজ থেকে · দৈনিক ২%",
+  "Estimated earnings today":"আজকের আনুমানিক আয়",
+  "Estimated since activation":"চালুর পর থেকে আনুমানিক আয়",
+  "Add funds to your wallet · USD":"আপনার ওয়ালেটে টাকা যোগ করুন · ডলার",
+  "Request a payout · USD":"টাকা উত্তোলনের অনুরোধ · ডলার",
+  "Saved on this device":"এই ডিভাইসে সংরক্ষিত",
+  "Referral count":"রেফারেলের সংখ্যা",
+  "QUICK ACCESS":"দ্রুত প্রবেশ",
+  "Dashboard Services":"ড্যাশবোর্ডের সেবা",
+  "Explore available listings":"উপলব্ধ তালিকা দেখুন",
+  "Submit a property for admin review":"অ্যাডমিনের পর্যালোচনার জন্য প্রপার্টি জমা দিন",
+  "Referral program overview":"রেফারেল প্রোগ্রামের বিবরণ",
+  "Account updates and alerts":"অ্যাকাউন্টের আপডেট ও সতর্কবার্তা",
+  "Manage account preferences":"অ্যাকাউন্টের পছন্দসমূহ পরিচালনা করুন",
+  "Account Profile":"অ্যাকাউন্ট প্রোফাইল",
+  "Update your name and view email status":"নাম পরিবর্তন ও ইমেইলের অবস্থা দেখুন",
+  "RECENT ACTIVITY":"সাম্প্রতিক কার্যক্রম",
+  "Activity Overview":"কার্যক্রমের সারসংক্ষেপ",
+  "Loading your recent activity…":"সাম্প্রতিক কার্যক্রম লোড হচ্ছে…",
+  "ACCOUNT STATUS":"অ্যাকাউন্টের অবস্থা",
+  "Email account":"ইমেইল অ্যাকাউন্ট",
+  "Your account verification status will appear here.":"আপনার অ্যাকাউন্ট যাচাইয়ের অবস্থা এখানে দেখা যাবে।",
+  "Account Details":"অ্যাকাউন্টের বিস্তারিত",
+  "Log out":"লগআউট",
+  "DASHBOARD SERVICE":"ড্যাশবোর্ড সেবা",
+  "Add Funds to Your Wallet":"আপনার ওয়ালেটে টাকা যোগ করুন",
+  "Select deposit payment method":"ডিপোজিটের পেমেন্ট পদ্ধতি নির্বাচন করুন",
+  "Add funds to your account":"আপনার অ্যাকাউন্টে টাকা যোগ করুন",
+  "ADD FUNDS":"টাকা যোগ করুন",
+  "Deposit amount (BDT ৳)":"ডিপোজিটের পরিমাণ (বাংলাদেশি টাকা ৳)",
+  "Amount: ৳0":"পরিমাণ: ৳০",
+  "e.g. 1000":"যেমন: ১০০০",
+  "Your payment number (from which you sent the money)":"আপনি যে নম্বর থেকে টাকা পাঠিয়েছেন",
+  "Transaction ID (TrxID)":"লেনদেন আইডি (TrxID)",
+  "Enter payment TrxID":"পেমেন্টের TrxID লিখুন",
+  "Submit Deposit Request →":"ডিপোজিটের অনুরোধ জমা দিন →",
+  "View Deposit / Withdraw History":"ডিপোজিট / উত্তোলনের ইতিহাস দেখুন",
+  "Withdraw to Your Wallet":"আপনার ওয়ালেট থেকে টাকা উত্তোলন",
+  "Select withdraw payment method":"উত্তোলনের পেমেন্ট পদ্ধতি নির্বাচন করুন",
+  "PAYOUT":"উত্তোলন",
+  "Withdrawal amount (BDT ৳)":"উত্তোলনের পরিমাণ (বাংলাদেশি টাকা ৳)",
+  "Withdraw All Available Balance":"সম্পূর্ণ ব্যালেন্স উত্তোলন করুন",
+  "Minimum set by admin":"অ্যাডমিন নির্ধারিত সর্বনিম্ন পরিমাণ",
+  "Your receiving bKash / Nagad number":"যে bKash / Nagad নম্বরে টাকা নেবেন",
+  "Submit Withdrawal Request →":"উত্তোলনের অনুরোধ জমা দিন →",
+  "Bangla":"বাংলা",
+  "English":"ইংরেজি",
+  "Selected image: ":"নির্বাচিত ছবি: ",
+  "Please select an image file.":"একটি ছবির ফাইল নির্বাচন করুন।",
+  "Image must be smaller than 8 MB.":"ছবির আকার ৮ MB-এর কম হতে হবে।",
+  "Checking package and wallet balance…":"প্যাকেজ ও ওয়ালেট ব্যালেন্স যাচাই হচ্ছে…",
+  "Could not calculate the package amount.":"প্যাকেজের টাকার হিসাব করা যায়নি।",
+  "Package of ৳":"প্যাকেজের পরিমাণ ৳",
+  " activated successfully.":" সফলভাবে চালু হয়েছে।",
+  "Your referral code is ready to share.":"আপনার রেফারেল কোড শেয়ার করার জন্য প্রস্তুত।",
+  "Could not load referral code: ":"রেফারেল কোড লোড করা যায়নি: ",
+  "Referral link is not ready yet.":"রেফারেল লিংক এখনো প্রস্তুত নয়।",
+  "Referral link copied.":"রেফারেল লিংক কপি হয়েছে।",
+  "Chat connection error: ":"চ্যাট সংযোগে সমস্যা: ",
+  "Could not receive replies: ":"উত্তর পাওয়া যায়নি: ",
+  "Chat setup failed: ":"চ্যাট সেটআপ করা যায়নি: ",
+  "Could not connect to support: ":"সাপোর্টে সংযোগ করা যায়নি: ",
+  "Please log in to use live support.":"লাইভ সাপোর্ট ব্যবহার করতে লগইন করুন।",
+  "Message could not be sent: ":"বার্তা পাঠানো যায়নি: ",
+  "Please log in to send a property enquiry.":"প্রপার্টি সম্পর্কে অনুরোধ পাঠাতে লগইন করুন।",
+  "Write a message first.":"আগে একটি বার্তা লিখুন।",
+  "Your enquiry has been sent to the admin team.":"আপনার অনুরোধ অ্যাডমিন টিমের কাছে পাঠানো হয়েছে।",
+  "Could not send enquiry: ":"অনুরোধ পাঠানো যায়নি: ",
+  "Fill in all required fields.":"সব প্রয়োজনীয় ঘর পূরণ করুন।",
+  "Property submitted. It will be reviewed by an admin before publication.":"প্রপার্টি জমা হয়েছে। প্রকাশের আগে অ্যাডমিন এটি পর্যালোচনা করবেন।",
+  "Submission failed: ":"জমা দেওয়া যায়নি: ",
+  "Please log in to save properties.":"প্রপার্টি সংরক্ষণ করতে লগইন করুন।",
+  "Property saved.":"প্রপার্টি সংরক্ষিত হয়েছে।",
+  "Property removed from saved list.":"সংরক্ষিত তালিকা থেকে প্রপার্টি সরানো হয়েছে।",
+  "Invested Balance: Loading…":"বিনিয়োগকৃত ব্যালেন্স লোড হচ্ছে…",
+  "Invested Balance (this property): ৳":"বিনিয়োগকৃত ব্যালেন্স (এই প্রপার্টি): ৳",
+  "Please log in to activate a package.":"প্যাকেজ চালু করতে লগইন করুন।",
+  "Invalid package selected.":"ভুল প্যাকেজ নির্বাচন করা হয়েছে।",
+  "Insufficient wallet balance. Please deposit funds first.":"ওয়ালেটে পর্যাপ্ত ব্যালেন্স নেই। আগে ডিপোজিট করুন।",
+  "Could not activate package.":"প্যাকেজ চালু করা যায়নি।",
+  "Loading payment settings…":"পেমেন্ট সেটিংস লোড হচ্ছে…",
+  "Deposit is currently unavailable":"ডিপোজিট সেবা বর্তমানে চালু নেই",
+  "Withdraw is currently unavailable":"উত্তোলন সেবা বর্তমানে চালু নেই",
+  "Admin has not configured this payment method yet.":"অ্যাডমিন এখনো এই পেমেন্ট পদ্ধতি সেট করেননি।",
+  "Not set":"নির্ধারণ করা হয়নি",
+  "Could not load payment settings. Please try again later.":"পেমেন্ট সেটিংস লোড করা যায়নি। পরে আবার চেষ্টা করুন।",
+  "Wallet settings could not load:":"ওয়ালেট সেটিংস লোড করা যায়নি:",
+  "Admin exchange rate is not set yet.":"অ্যাডমিন এখনো বিনিময় হার নির্ধারণ করেননি।",
+  "Request failed: ":"অনুরোধ ব্যর্থ হয়েছে: ",
+  "Legacy request":"পুরোনো অনুরোধ",
+  "Recently submitted":"সম্প্রতি জমা দেওয়া হয়েছে",
+  "Could not load wallet history: ":"ওয়ালেটের ইতিহাস লোড করা যায়নি: ",
+  "Wallet and earnings could not load: ":"ওয়ালেট ও আয়ের তথ্য লোড করা যায়নি: ",
+  "Your account is verified.":"আপনার অ্যাকাউন্ট যাচাইকৃত।",
+  "Email verification is required. Please verify your email to access your account.":"অ্যাকাউন্ট ব্যবহার করতে ইমেইল যাচাই করতে হবে।",
+  "Log in to resend your email verification link.":"যাচাইকরণ লিংক আবার পাঠাতে লগইন করুন।",
+  "Verified account":"যাচাইকৃত অ্যাকাউন্ট",
+  "Please verify your email":"আপনার ইমেইল যাচাই করুন",
+  "Enter your name.":"আপনার নাম লিখুন।",
+  "Please log in again.":"আবার লগইন করুন।",
+  "Profile name updated.":"প্রোফাইলের নাম আপডেট হয়েছে।",
+  "Could not update profile name.":"প্রোফাইলের নাম আপডেট করা যায়নি।",
+  "Location not provided":"অবস্থান দেওয়া হয়নি",
+  "Special Offer":"বিশেষ অফার",
+  "Learn more":"আরও জানুন",
+  "Public offers could not load:":"পাবলিক অফার লোড করা যায়নি:",
+  "Could not repair saved referral registration:":"সংরক্ষিত রেফারেল নিবন্ধন ঠিক করা যায়নি:",
+  "Referral code is invalid or inactive. Check the code and try again.":"রেফারেল কোডটি সঠিক নয় অথবা সক্রিয় নেই। কোডটি পরীক্ষা করে আবার চেষ্টা করুন।",
+  "Enter first and last name.":"নাম ও পদবি লিখুন।",
+  "Password must be at least 8 characters.":"পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।",
+  "This email already has an account. Please log in, or use Forgot password to reset its password.":"এই ইমেইলে আগে থেকেই অ্যাকাউন্ট আছে। লগইন করুন অথবা পাসওয়ার্ড রিসেট করুন।",
+  "Could not create account. Please try again.":"অ্যাকাউন্ট তৈরি করা যায়নি। আবার চেষ্টা করুন।",
+  "Enter email and password.":"ইমেইল ও পাসওয়ার্ড লিখুন।",
+  "Could not resend verification email:":"যাচাইকরণ ইমেইল আবার পাঠানো যায়নি:",
+  "Login failed.":"লগইন ব্যর্থ হয়েছে।",
+  "Account Activated":"অ্যাকাউন্ট সক্রিয় হয়েছে",
+  "Your account is active. You can now access member services.":"আপনার অ্যাকাউন্ট সক্রিয়। এখন সদস্যদের সেবা ব্যবহার করতে পারবেন।",
+  "Account Inactive":"অ্যাকাউন্ট নিষ্ক্রিয়",
+  "Your account is inactive. Please contact Prologis, Inc. (PLD) support.":"আপনার অ্যাকাউন্ট নিষ্ক্রিয়। Prologis, Inc. (PLD) সাপোর্টে যোগাযোগ করুন।",
+  "বাংলা":"বাংলা"
+ };
 let pzLanguage='en',pzTranslationObserver=null;
 function pzApplyTranslation(value){
  let result=String(value??'');
@@ -702,6 +858,24 @@ function pzApplyTranslation(value){
  }
  return result;
 }
+function pzTranslateAttributes(el){
+ if(!el||el.nodeType!==Node.ELEMENT_NODE)return;
+ for(const attr of ['placeholder','aria-label','title','alt','value']){
+  if(!el.hasAttribute(attr))continue;
+  if(attr==='value'&&!['BUTTON','INPUT'].includes(el.tagName))continue;
+  const key='pzEnglish'+attr,translatedKey='pzTranslated'+attr,current=el.getAttribute(attr);
+  if(el.dataset[key]===undefined||(el.dataset[translatedKey]!==undefined&&current!==el.dataset[translatedKey]))el.dataset[key]=current;
+  const translated=pzApplyTranslation(el.dataset[key]);
+  if(current!==translated)el.setAttribute(attr,translated);
+  el.dataset[translatedKey]=translated;
+ }
+ if(el.tagName==='OPTION'){
+  if(el.dataset.pzEnglish===undefined||(el.dataset.pzTranslatedValue!==undefined&&el.textContent!==el.dataset.pzTranslatedValue))el.dataset.pzEnglish=el.textContent;
+  const translated=pzApplyTranslation(el.dataset.pzEnglish);
+  if(el.textContent!==translated)el.textContent=translated;
+  el.dataset.pzTranslatedValue=translated;
+ }
+}
 function pzTranslateText(root=document.body){
  if(!root)return;
  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
@@ -710,20 +884,12 @@ function pzTranslateText(root=document.body){
   if(!node.parentElement||node.parentElement.closest('script,style,textarea,input,[contenteditable="true"]'))continue;
   if(node.__pzEnglish===undefined)node.__pzEnglish=node.nodeValue;
   else if(node.__pzTranslatedValue!==undefined&&node.nodeValue!==node.__pzTranslatedValue)node.__pzEnglish=node.nodeValue;
-  const translated=pzApplyTranslation(node.__pzEnglish);if(node.nodeValue!==translated)node.nodeValue=translated;node.__pzTranslatedValue=translated;
+  const translated=pzApplyTranslation(node.__pzEnglish);
+  if(node.nodeValue!==translated)node.nodeValue=translated;
+  node.__pzTranslatedValue=translated;
  }
- root.querySelectorAll('input[placeholder],textarea[placeholder],option,[aria-label],button[title]').forEach(el=>{
-  for(const attr of ['placeholder','aria-label','title']){
-   if(!el.hasAttribute(attr))continue;
-   const key='pzEnglish'+attr;
-   if(el.dataset[key]===undefined)el.dataset[key]=el.getAttribute(attr);
-   el.setAttribute(attr,pzApplyTranslation(el.dataset[key]));
-  }
-  if(el.tagName==='OPTION'){
-   if(el.dataset.pzEnglish===undefined)el.dataset.pzEnglish=el.textContent;
-   el.textContent=pzApplyTranslation(el.dataset.pzEnglish);
-  }
- });
+ if(root.nodeType===Node.ELEMENT_NODE)pzTranslateAttributes(root);
+ root.querySelectorAll('*').forEach(pzTranslateAttributes);
 }
 function setWebsiteLanguage(lang){
  pzLanguage=lang==='bn'?'bn':'en';
@@ -740,23 +906,27 @@ function setWebsiteLanguage(lang){
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
  if(window.MutationObserver){
   pzTranslationObserver=new MutationObserver(records=>{
-   for(const record of records){
-    if(record.type==='characterData'&&record.target){const changed=record.target;if(changed.__pzTranslatedValue!==changed.nodeValue){changed.__pzEnglish=changed.nodeValue;const translated=pzApplyTranslation(changed.__pzEnglish);if(changed.nodeValue!==translated)changed.nodeValue=translated;changed.__pzTranslatedValue=translated;}}
-    record.addedNodes.forEach(node=>{
-     if(node.nodeType===Node.TEXT_NODE){
-      if(node.__pzEnglish===undefined)node.__pzEnglish=node.nodeValue;
-      const translated=pzApplyTranslation(node.__pzEnglish);
-      if(node.nodeValue!==translated)node.nodeValue=translated;
-      node.__pzTranslatedValue=translated;
-     }else if(node.nodeType===Node.ELEMENT_NODE){
-      pzTranslateText(node);
-     }
-    });
-   }
-  });
-  // Translate newly rendered text and text updated by live account data.
-  // The translated-value marker prevents the observer from translating its own updates repeatedly.
-  pzTranslationObserver.observe(document.body,{childList:true,subtree:true,characterData:true});
+  for(const record of records){
+   if(record.type==='characterData'&&record.target){
+    const changed=record.target;
+    if(changed.__pzTranslatedValue!==changed.nodeValue){
+     changed.__pzEnglish=changed.nodeValue;
+     const translated=pzApplyTranslation(changed.__pzEnglish);
+     if(changed.nodeValue!==translated)changed.nodeValue=translated;
+     changed.__pzTranslatedValue=translated;
+    }
+   }else if(record.type==='attributes'&&record.target)pzTranslateAttributes(record.target);
+   record.addedNodes?.forEach(node=>{
+    if(node.nodeType===Node.TEXT_NODE){
+     if(node.__pzEnglish===undefined)node.__pzEnglish=node.nodeValue;
+     const translated=pzApplyTranslation(node.__pzEnglish);
+     if(node.nodeValue!==translated)node.nodeValue=translated;
+     node.__pzTranslatedValue=translated;
+    }else if(node.nodeType===Node.ELEMENT_NODE)pzTranslateText(node);
+   });
+  }
+ });
+ pzTranslationObserver.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['placeholder','aria-label','title','alt','value']});
  }
 })();
 
