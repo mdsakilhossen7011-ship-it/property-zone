@@ -405,7 +405,7 @@ html.pz-lang-loading body{visibility:hidden}
  }catch(e){wanted='home';}
  let target=document.getElementById(wanted);
  if(!target||!target.classList.contains('view'))target=document.getElementById('home');
- if(target){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));target.classList.add('active');}
+ if(target){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));target.classList.add('active');}window.scrollTo(0,0);
 })();
 </script>
 <script>
