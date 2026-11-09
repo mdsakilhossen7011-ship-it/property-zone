@@ -419,7 +419,7 @@ function openProperty(id){
  document.getElementById('detailContent').innerHTML=
  '<div class="panel" style="margin:14px 0;padding:18px;border:2px solid var(--gold);background:var(--panel2)">'+
  '<div class="eyebrow">CHOOSE YOUR PACKAGE</div><h2 style="margin:8px 0;color:var(--gold2)">Investment Packages</h2>'+
-  '<p class="muted">প্রতিটি প্যাকেজ ৩০ দিনের জন্য। মেয়াদ শেষে মূল প্যাকেজের টাকা ও নির্ধারিত আয় Main Wallet-এ যোগ হবে।</p>'+
+  '<p class="muted">'+(pzLanguage==='bn'?'প্রতিটি প্যাকেজ ৩০ দিনের জন্য। মেয়াদ শেষে মূল প্যাকেজের টাকা ও নির্ধারিত আয় Main Wallet-এ যোগ হবে.':'Each package is valid for 30 days. At the end of the term, the original package amount and the specified earnings will be added to your Main Wallet.')+'</p>'+
  '<button class="btn primary" style="width:100%;min-height:52px;font-size:17px;font-weight:800" type="button" id="buyPropertyButton" onclick="showPropertyPackages(\''+pid+'\')">🛒 BUY NOW — VIEW PACKAGES</button>'+
  '<div id="propertyPackageList" style="display:none;margin-top:18px">'+
  '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">'+
