@@ -354,7 +354,31 @@
 <div id="globalStatus" class="status" role="status" aria-live="polite" style="display:none"></div>
 </main><footer>© 2026 Prologis, Inc. (PLD) · Property marketplace · Verified listings only · Payments are not active.<span id="siteContactDetails" style="display:none;margin-left:8px"></span></footer>
 <script>
-(function(){const main=document.getElementById('appMain'),loader=document.getElementById('pzBootLoader');if(main)main.style.visibility='visible';if(loader){loader.style.display='none';loader.style.opacity='0';loader.style.visibility='hidden';loader.setAttribute('aria-hidden','true')}let wanted='';try{const referralCode=(new URLSearchParams(location.search).get('ref')||'').trim().toUpperCase();const hashView=decodeURIComponent(location.hash.slice(1));const hashTarget=document.getElementById(hashView);if(hashTarget&&hashTarget.classList.contains('view')){wanted=hashView;}else if(!hashView){try{const savedView=sessionStorage.getItem('pz_current_view')||'';const savedTarget=document.getElementById(savedView);if(savedTarget&&savedTarget.classList.contains('view'))wanted=savedView;}catch(e){}}if(!wanted&&referralCode){wanted='register';}const referralInput=document.getElementById('regReferral');if(referralInput)referralInput.value=referralCode;history.replaceState({pzView:'register'},'','#register');}else if(!wanted){wanted='home';}}catch(e){wanted='home';}let target=document.getElementById(wanted);if(!target||!target.classList.contains('view'))target=document.getElementById('home');if(target){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));target.classList.add('active')}})();
+(function(){
+ const main=document.getElementById('appMain'),loader=document.getElementById('pzBootLoader');
+ if(main)main.style.visibility='visible';
+ if(loader){loader.style.display='none';loader.style.opacity='0';loader.style.visibility='hidden';loader.setAttribute('aria-hidden','true');}
+ let wanted='';
+ try{
+  const referralCode=(new URLSearchParams(location.search).get('ref')||'').trim().toUpperCase();
+  const hashView=decodeURIComponent(location.hash.slice(1));
+  const hashTarget=document.getElementById(hashView);
+  if(hashTarget&&hashTarget.classList.contains('view'))wanted=hashView;
+  else if(referralCode){
+   wanted='register';
+   const referralInput=document.getElementById('regReferral');
+   if(referralInput)referralInput.value=referralCode;
+   history.replaceState({pzView:'register'},'','#register');
+  }else{
+   const savedView=sessionStorage.getItem('pz_current_view')||'';
+   const savedTarget=document.getElementById(savedView);
+   wanted=savedTarget&&savedTarget.classList.contains('view')?savedView:'home';
+  }
+ }catch(e){wanted='home';}
+ let target=document.getElementById(wanted);
+ if(!target||!target.classList.contains('view'))target=document.getElementById('home');
+ if(target){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));target.classList.add('active');}
+})();
 </script>
 <script>
 let properties=[];let filter="All",currentUser=null,currentMemberStatus=null,authReady=false;let walletSettingsCache=null;
