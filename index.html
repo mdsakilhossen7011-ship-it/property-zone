@@ -682,11 +682,7 @@ function pzApplyTranslation(value){
  if(pzLanguage==='en')return result;
  const entries=Object.entries(PZ_TRANSLATIONS).sort((a,b)=>b[0].length-a[0].length);
  for(const [en,bn] of entries){
-  const escaped=en.replace(/[.*+?^${}()|[\]\\]/g,'\\  const escaped=en.replace(/[.*+?^${}()|[\]\\]/g,'\\  const escaped=en.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-  result=result.replace(new RegExp(escaped,'gi'),match=>{');');
-  const left=/^[A-Za-z0-9]/.test(en)?'(?<![A-Za-z0-9])':'';
-  const right=/[A-Za-z0-9]$/.test(en)?'(?![A-Za-z0-9])':'';
-  result=result.replace(new RegExp(left+escaped+right,'gi'),match=>{
+  const escaped=en.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
   const left=/^[A-Za-z0-9]/.test(en)?'(?<![A-Za-z0-9])':'';
   const right=/[A-Za-z0-9]$/.test(en)?'(?![A-Za-z0-9])':'';
   result=result.replace(new RegExp(left+escaped+right,'gi'),match=>{
