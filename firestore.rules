@@ -177,8 +177,9 @@ service cloud.firestore {
             || (isAdmin() && request.resource.data.senderRole == 'admin'))
           && request.resource.data.senderUid == request.auth.uid
           && request.resource.data.text is string
-          && request.resource.data.text.size() > 0
           && request.resource.data.text.size() <= 2000
+          && (request.resource.data.text.size() > 0
+            || (request.resource.data.imageData is string && request.resource.data.imageData.size() > 0))
           && request.resource.data.createdAt is timestamp
           && exists(/databases/$(database)/documents/supportChats/$(chatId));
         allow get, list: if signedIn() && (request.auth.uid == chatId || isAdmin());
