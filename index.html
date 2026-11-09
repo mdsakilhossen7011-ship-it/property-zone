@@ -182,10 +182,10 @@ html.pz-lang-loading body{visibility:hidden}
 <aside class="side-menu" id="sideMenu" aria-hidden="true"><div class="menu-heading"><strong>Menu</strong><button class="menu-close" onclick="closeMenu()" aria-label="Close menu">×</button></div>
 <button class="menu-item" onclick="menuGo('home')"><span class="menu-icon">⌂</span><span>Home</span></button>
 <button class="menu-item" onclick="menuGo('properties')"><span class="menu-icon">▦</span><span>Properties</span></button>
-<button class="menu-item" id="menuProfile" style="display:none" onclick="menuGo('profile')"><span class="menu-icon">♙</span><span>My Profile</span></button>
-<button class="menu-item" id="menuDashboard" style="display:none" onclick="menuGo('dashboard')"><span class="menu-icon">▤</span><span>Dashboard</span></button>
-<button class="menu-item" id="menuDeposit" style="display:none" onclick="menuGo('depositWallet')"><span class="menu-icon">＋</span><span>Deposit</span></button>
-<button class="menu-item" id="menuWithdraw" style="display:none" onclick="menuGo('withdrawWallet')"><span class="menu-icon">↗</span><span>Withdraw</span></button>
+<button class="menu-item" id="menuProfile" onclick="menuGo('profile')"><span class="menu-icon">♙</span><span>My Profile</span></button>
+<button class="menu-item" id="menuDashboard" onclick="menuGo('dashboard')"><span class="menu-icon">▤</span><span>Dashboard</span></button>
+<button class="menu-item" id="menuDeposit" onclick="menuGo('depositWallet')"><span class="menu-icon">＋</span><span>Deposit</span></button>
+<button class="menu-item" id="menuWithdraw" onclick="menuGo('withdrawWallet')"><span class="menu-icon">↗</span><span>Withdraw</span></button>
 <button class="menu-item" id="menuAdmin" style="display:none" onclick="menuGo('admin')"><span class="menu-icon">⚙</span><span>Admin Panel</span></button>
 <button class="menu-item" onclick="menuGo('referral')"><span class="menu-icon">♧</span><span>Refer &amp; Commission</span></button>
 <button class="menu-item" onclick="menuGo('livechat')"><span class="menu-icon">▤</span><span>Support Inbox</span></button>
@@ -447,7 +447,7 @@ function toggleMenu(){const open=!document.getElementById('sideMenu').classList.
 function closeMenu(){const menu=document.getElementById('sideMenu');if(!menu)return;menu.classList.remove('open');document.getElementById('menuBackdrop').classList.remove('open');document.getElementById('menuToggle').setAttribute('aria-expanded','false');menu.setAttribute('aria-hidden','true')}
 function menuGo(id){showView(id)}
 
-function syncNavigation(){const loggedIn=!!currentUser;const setMenu=(id,show)=>{const el=document.getElementById(id);if(el)el.style.display=show?'':'none'};setMenu('menuLogin',!loggedIn);setMenu('menuJoin',!loggedIn);setMenu('menuProfile',loggedIn);setMenu('menuDashboard',loggedIn);setMenu('menuDeposit',loggedIn);setMenu('menuWithdraw',loggedIn);setMenu('menuAdmin',loggedIn&&currentUserIsAdmin);setMenu('menuLogout',loggedIn)}
+function syncNavigation(){const loggedIn=!!currentUser;const setMenu=(id,show)=>{const el=document.getElementById(id);if(el)el.style.display=show?'':'none'};setMenu('menuLogin',!loggedIn);setMenu('menuJoin',!loggedIn);setMenu('menuAdmin',loggedIn&&currentUserIsAdmin);setMenu('menuLogout',loggedIn)}
 function openProperty(id){
  const p=properties.find(x=>x.id===id);if(!p)return;
  const pid=escapeHTML(p.id);
