@@ -615,7 +615,14 @@ async function loadPublicWebsiteSettings(db,fs){
 }
 async function ensureMemberProfile(f,user,referralCode='',phoneNumber=''){
  const fs=f.firestore,memberRef=fs.doc(f.db,'members',user.uid),snap=await fs.getDoc(memberRef);
- if(snap.exists())return snap.data();
+ if(snap.exists()){
+  const existing=snap.data()||{},savedCode=String(existing.referredByCode||'').trim().toUpperCase();
+  if(savedCode){
+   try{await fs.setDoc(fs.doc(f.db,'referralRegistrations',savedCode,'members',user.uid),{createdAt:fs.serverTimestamp()},{merge:true});}
+   catch(referralRepairError){console.warn('Could not repair saved referral registration:',referralRepairError);}
+  }
+  return existing;
+ }
  const usedCode=(referralCode||'').trim().toUpperCase();
  if(usedCode && usedCode!=='PZWYYMWLBZ'){
   const referralSnap=await fs.getDoc(fs.doc(f.db,'referralCodes',usedCode));
