@@ -137,6 +137,22 @@
 @media(max-width:760px){.home-hero{grid-template-columns:1fr;gap:22px;padding:25px 0 20px;min-height:0}.home-hero h1{font-size:56px;margin:18px 0 14px}.home-hero-copy>p{font-size:13px}.home-visual{height:245px}.home-search-strip{align-items:flex-start;flex-direction:column;padding:15px}.home-search-strip button{width:100%}.home-benefits{gap:8px;margin:15px 0 28px}.home-benefits>div{grid-template-columns:1fr;gap:5px;padding:12px 10px}.home-benefits>div>span{grid-row:auto;font-size:17px}.home-benefits strong{font-size:12px}.home-benefits small{font-size:9px;line-height:1.4}.home-section-heading h2{font-size:27px}.home-section-heading>span{font-size:8px}.home-bottom-banner{align-items:flex-start;flex-direction:column;padding:19px}.home-bottom-banner h2{font-size:23px}.home-bottom-banner button{width:100%}}
 @media(max-width:390px){.home-hero h1{font-size:48px}.home-visual{height:215px}.home-benefits>div{padding:10px 8px}.home-benefits small{font-size:8px}}
 
+
+/* Branded payment method icons */
+.wallet-methods-top{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.wallet-methods-top .wallet-method{min-height:76px;min-width:0;padding:9px 5px;flex-direction:column;gap:4px;font-size:12px;line-height:1.1;white-space:nowrap}
+.wallet-brand-icon{width:27px;height:27px;flex:0 0 27px;display:grid;place-items:center;border-radius:8px;font-size:18px;font-weight:900;line-height:1;color:#fff}
+.wallet-brand-icon svg{width:22px;height:22px;display:block;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.bkash-icon{background:#e2136e;border-radius:8px;font-style:italic}
+.nagad-icon{background:#f47b20;border-radius:8px}
+.rocket-icon{background:#6e3bb8;border-radius:50%;font-size:16px}
+.bank-icon{background:#285c9a;color:#fff}
+.binance-icon{background:#f3ba2f;color:#17130a}
+.binance-icon svg{fill:currentColor;stroke:none;width:23px;height:23px}
+.wallet-methods-top .bkash-mark,.wallet-methods-top .nagad-mark{font-size:12px}
+.wallet-methods-top .rocket-mark{color:#fff;font-size:12px;font-weight:850}
+.wallet-methods-top .binance-mark{font-size:11px;letter-spacing:.3px}
+@media(max-width:420px){.wallet-methods-top{gap:6px}.wallet-methods-top .wallet-method{min-height:72px;padding:8px 2px;font-size:11px}.wallet-brand-icon{width:25px;height:25px;flex-basis:25px}.wallet-methods-top .binance-mark{font-size:10px}}
 </style>
 </head>
 <body>
@@ -257,11 +273,11 @@
 <section id="depositWallet" class="view">
  <div class="wallet-intro"><div class="eyebrow">PROLOGIS, INC. (PLD) WALLET</div><h2 style="margin:8px 0;color:var(--gold2)">Add Funds to Your Wallet</h2><p class="muted" style="margin:0">Send your payment using the selected method and the Cash In Number below. Enter amount in Bangladeshi Taka (BDT ৳). The amount is shown in Bangladeshi Taka (BDT ৳).</p><div id="depositPaymentInfo" class="wallet-note" style="margin:16px 0 0">Loading Cash In Number…</div></div>
  <div class="wallet-methods wallet-methods-top" aria-label="Select deposit payment method">
-<button class="wallet-method selected" type="button" data-wallet-method="deposit" data-value="bKash" onclick="selectWalletMethod('deposit','bKash',this)"><span class="bkash-mark">bKash</span></button>
-<button class="wallet-method" type="button" data-wallet-method="deposit" data-value="Nagad" onclick="selectWalletMethod('deposit','Nagad',this)"><span class="nagad-mark">Nagad</span></button>
-<button class="wallet-method" type="button" data-wallet-method="deposit" data-value="Rocket" onclick="selectWalletMethod('deposit','Rocket',this)"><span>Rocket</span></button>
-<button class="wallet-method" type="button" data-wallet-method="deposit" data-value="Bank Account" onclick="selectWalletMethod('deposit','Bank Account',this)"><span>Bank Account</span></button>
-<button class="wallet-method" type="button" data-wallet-method="deposit" data-value="Binance" onclick="selectWalletMethod('deposit','Binance',this)"><span class="binance-mark">BINANCE</span></button>
+<button class="wallet-method selected" type="button" data-wallet-method="deposit" data-value="bKash" onclick="selectWalletMethod('deposit','bKash',this)"><span class="wallet-brand-icon bkash-icon" aria-hidden="true">b</span><span class="bkash-mark">bKash</span></button>
+<button class="wallet-method" type="button" data-wallet-method="deposit" data-value="Nagad" onclick="selectWalletMethod('deposit','Nagad',this)"><span class="wallet-brand-icon nagad-icon" aria-hidden="true">N</span><span class="nagad-mark">Nagad</span></button>
+<button class="wallet-method" type="button" data-wallet-method="deposit" data-value="Rocket" onclick="selectWalletMethod('deposit','Rocket',this)"><span class="wallet-brand-icon rocket-icon" aria-hidden="true">R</span><span class="rocket-mark">Rocket</span></button>
+<button class="wallet-method" type="button" data-wallet-method="deposit" data-value="Bank Account" onclick="selectWalletMethod('deposit','Bank Account',this)"><span class="wallet-brand-icon bank-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M3 9h18L12 4 3 9Zm2 2v7m4-7v7m6-7v7m4-7v7M3 20h18" /></svg></span><span>Bank Account</span></button>
+<button class="wallet-method" type="button" data-wallet-method="deposit" data-value="Binance" onclick="selectWalletMethod('deposit','Binance',this)"><span class="wallet-brand-icon binance-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m12 2 3.1 3.1L12 8.2 8.9 5.1 12 2Zm6.9 6.9L22 12l-3.1 3.1-3.1-3.1 3.1-3.1ZM12 15.8l3.1 3.1L12 22l-3.1-3.1 3.1-3.1ZM5.1 8.9 8.2 12l-3.1 3.1L2 12l3.1-3.1ZM12 9.1l2.9 2.9-2.9 2.9L9.1 12 12 9.1Z"/></svg></span><span class="binance-mark">BINANCE</span></button>
 </div>
  <div class="wallet-grid" style="grid-template-columns:minmax(0,1fr);max-width:760px"><article class="wallet-card deposit"><div class="wallet-card-head"><div class="wallet-card-title"><div class="wallet-symbol">＋</div><div><h3>Deposit</h3><div class="wallet-sub">Add funds to your account</div></div></div><span class="wallet-pill">ADD FUNDS</span></div>
    <form onsubmit="submitWalletRequest(event,'deposit')"><label for="depositAmount">Deposit amount (BDT ৳)</label><input id="depositAmount" class="search" type="number" min="1" step="1" required placeholder="e.g. 1000" oninput="updateWalletAmountPreview('deposit')"><p id="depositAmountPreview" class="wallet-status">Amount: ৳0</p><input type="hidden" id="depositMethod" value="bKash">
@@ -275,11 +291,11 @@
 <section id="withdrawWallet" class="view">
  <div class="wallet-intro"><div class="eyebrow">PROLOGIS, INC. (PLD) WALLET</div><h2 style="margin:8px 0;color:#9bcfff">Withdraw to Your Wallet</h2><p class="muted" style="margin:0">Choose your payout method and use the Cash Out Number below. Enter the amount in Bangladeshi Taka (BDT ৳).</p><div id="withdrawPaymentInfo" class="wallet-note" style="margin:16px 0 0">Loading Cash Out Number…</div></div>
  <div class="wallet-methods wallet-methods-top" aria-label="Select withdraw payment method">
-<button class="wallet-method selected" type="button" data-wallet-method="withdraw" data-value="bKash" onclick="selectWalletMethod('withdraw','bKash',this)"><span class="bkash-mark">bKash</span></button>
-<button class="wallet-method" type="button" data-wallet-method="withdraw" data-value="Nagad" onclick="selectWalletMethod('withdraw','Nagad',this)"><span class="nagad-mark">Nagad</span></button>
-<button class="wallet-method" type="button" data-wallet-method="withdraw" data-value="Rocket" onclick="selectWalletMethod('withdraw','Rocket',this)"><span>Rocket</span></button>
-<button class="wallet-method" type="button" data-wallet-method="withdraw" data-value="Bank Account" onclick="selectWalletMethod('withdraw','Bank Account',this)"><span>Bank Account</span></button>
-<button class="wallet-method" type="button" data-wallet-method="withdraw" data-value="Binance" onclick="selectWalletMethod('withdraw','Binance',this)"><span class="binance-mark">BINANCE</span></button>
+<button class="wallet-method" type="button" data-wallet-method="withdraw" data-value="bKash" onclick="selectWalletMethod('withdraw','bKash',this)"><span class="wallet-brand-icon bkash-icon" aria-hidden="true">b</span><span class="bkash-mark">bKash</span></button>
+<button class="wallet-method" type="button" data-wallet-method="withdraw" data-value="Nagad" onclick="selectWalletMethod('withdraw','Nagad',this)"><span class="wallet-brand-icon nagad-icon" aria-hidden="true">N</span><span class="nagad-mark">Nagad</span></button>
+<button class="wallet-method" type="button" data-wallet-method="withdraw" data-value="Rocket" onclick="selectWalletMethod('withdraw','Rocket',this)"><span class="wallet-brand-icon rocket-icon" aria-hidden="true">R</span><span class="rocket-mark">Rocket</span></button>
+<button class="wallet-method" type="button" data-wallet-method="withdraw" data-value="Bank Account" onclick="selectWalletMethod('withdraw','Bank Account',this)"><span class="wallet-brand-icon bank-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M3 9h18L12 4 3 9Zm2 2v7m4-7v7m6-7v7m4-7v7M3 20h18" /></svg></span><span>Bank Account</span></button>
+<button class="wallet-method" type="button" data-wallet-method="withdraw" data-value="Binance" onclick="selectWalletMethod('withdraw','Binance',this)"><span class="wallet-brand-icon binance-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m12 2 3.1 3.1L12 8.2 8.9 5.1 12 2Zm6.9 6.9L22 12l-3.1 3.1-3.1-3.1 3.1-3.1ZM12 15.8l3.1 3.1L12 22l-3.1-3.1 3.1-3.1ZM5.1 8.9 8.2 12l-3.1 3.1L2 12l3.1-3.1ZM12 9.1l2.9 2.9-2.9 2.9L9.1 12 12 9.1Z"/></svg></span><span class="binance-mark">BINANCE</span></button>
 </div>
  <div class="wallet-grid" style="grid-template-columns:minmax(0,1fr);max-width:760px"><article class="wallet-card withdraw"><div class="wallet-card-head"><div class="wallet-card-title"><div class="wallet-symbol">↗</div><div><h3>Withdraw</h3><div class="wallet-sub">Request a payout</div></div></div><span class="wallet-pill">PAYOUT</span></div>
    <form onsubmit="submitWalletRequest(event,'withdraw')"><label for="withdrawAmount">Withdrawal amount (BDT ৳)</label><button class="btn" type="button" style="margin:6px 0 10px" onclick="setWithdrawAllAmount()">Withdraw All Available Balance</button><input id="withdrawAmount" class="search" type="number" min="1" step="1" required placeholder="Minimum set by admin" oninput="updateWalletAmountPreview('withdraw')"><input type="hidden" id="withdrawMethod" value="bKash"><p id="withdrawAmountPreview" class="wallet-status">Amount: ৳0</p>
