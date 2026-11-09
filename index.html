@@ -901,14 +901,14 @@ const PZ_TRANSLATIONS={
 let pzLanguage='en',pzTranslationObserver=null;
 function pzApplyTranslation(value){
  let result=String(value??'');
- const entries=Object.entries(PZ_TRANSLATIONS).sort((a,b)=>b[0].length-a[0].length);
+ const entries=Object.entries(PZ_TRANSLATIONS).filter(([en,bn])=>en!==bn).sort((a,b)=>b[0].length-a[0].length);
+ const replaceLiteral=(source,target,caseInsensitive)=>{
+  const escaped=source.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const pattern=caseInsensitive?new RegExp(escaped,'gi'):new RegExp(escaped,'g');
+  result=result.replace(pattern,()=>target);
+ };
  if(pzLanguage==='bn'){
-  for(const [en,bn] of entries){
-   const escaped=en.split('').map(ch=>'.*+?^${}()|[]'.includes(ch)||ch==='\\'?'\\'+ch:ch).join('');
-   const left=/^[A-Za-z0-9]/.test(en)?'(?<![A-Za-z0-9])':'';
-   const right=/[A-Za-z0-9]$/.test(en)?'(?![A-Za-z0-9])':'';
-   result=result.replace(new RegExp(left+escaped+right,'gi'),()=>bn);
-  }
+  for(const [en,bn] of entries)replaceLiteral(en,bn,true);
  }else{
   const fixedBanglaToEnglish=[
    ['Garden View Family বাড়ি','Garden View Family House'],
@@ -920,7 +920,8 @@ function pzApplyTranslation(value){
    ['উপলব্ধ','Available'],
    ['বাড়ি','House']
   ].sort((a,b)=>b[0].length-a[0].length);
-  for(const [bn,en] of fixedBanglaToEnglish)result=result.replaceAll(bn,en);
+  for(const [bn,en] of fixedBanglaToEnglish)replaceLiteral(bn,en,false);
+  for(const [en,bn] of entries.sort((a,b)=>b[1].length-a[1].length))replaceLiteral(bn,en,false);
  }
  return result;
 }
