@@ -904,7 +904,7 @@ function pzApplyTranslation(value){
  const entries=Object.entries(PZ_TRANSLATIONS).sort((a,b)=>b[0].length-a[0].length);
  if(pzLanguage==='bn'){
   for(const [en,bn] of entries){
-   const escaped=en.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\$&');
+   const escaped=en.replace(/[.*+?^\${}()|[\]\\]/g,'\\   const escaped=en.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\$&');');
    const left=/^[A-Za-z0-9]/.test(en)?'(?<![A-Za-z0-9])':'';
    const right=/[A-Za-z0-9]$/.test(en)?'(?![A-Za-z0-9])':'';
    result=result.replace(new RegExp(left+escaped+right,'gi'),()=>bn);
@@ -915,7 +915,7 @@ function pzApplyTranslation(value){
    ['Purbachal, Dhaka · বাড়ি','Purbachal, Dhaka · House'],
    ['গার্ডেন ভিউ ফ্যামিলি বাড়ি','Garden View Family House'],
    ['বাগানঘেরা খোলামেলা শহরতলির পারিবারিক বাড়ির ধারণা।','Spacious suburban family home concept with landscaped outdoor space.'],
-   ['এটি কেবল একটি কাল্পনিক নমুনা; এটি যাচাইকৃত কোনো প্রপার্টির অফার নয়.','Fictional sample listing; this is not a verified property offer.'],
+   ['Fictional sample listing; this is not a verified property offer.','Fictional sample listing; this is not a verified property offer.'],
    ['নমুনা তালিকা','Sample listing'],
    ['উপলব্ধ','Available'],
    ['বাড়ি','House']
