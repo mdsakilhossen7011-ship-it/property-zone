@@ -396,7 +396,7 @@ html.pz-lang-loading body{visibility:hidden}
    wanted='register';
    const referralInput=document.getElementById('regReferral');
    if(referralInput)referralInput.value=referralCode;
-   history.replaceState({pzView:'register'},'','#register');
+   history.replaceState({pzView:'register'},'',location.pathname+location.search);window.scrollTo(0,0);
   }else{
    const savedView=sessionStorage.getItem('pz_current_view')||'';
    const savedTarget=document.getElementById(savedView);
