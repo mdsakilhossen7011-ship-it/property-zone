@@ -267,7 +267,7 @@ html.pz-lang-loading body{visibility:hidden}
   <div class="dash-stat"><span>My Properties</span><strong id="dashMyProperties">—</strong><small id="dashMyPropertiesNote">Loading submissions…</small></div>
   <div class="dash-stat"><span>Saved Properties</span><strong id="dashSavedProperties">0</strong><small>Saved on this device</small></div>
   <div class="dash-stat"><span>Referrals</span><strong id="dashReferrals">—</strong><small id="dashReferralsNote">Referral count</small></div>
-  <div class="dash-stat"><span>Commission</span><strong>$0.00</strong><small>Payments are not activated</small></div>
+  <div class="dash-stat"><span>Commission</span><strong>৳0.00</strong><small>Payments are not activated</small></div>
  </div>
  <div class="dash-section-title"><div><div class="eyebrow">QUICK ACCESS</div><h3>Dashboard Services</h3></div></div>
  <div class="dash-actions">
@@ -383,7 +383,7 @@ html.pz-lang-loading body{visibility:hidden}
   <button class="btn" onclick="showView('dashboard')">Back to Dashboard</button>
  </div>
 </section>
-<section id="referral" class="view"><div class="panel"><div class="eyebrow">PARTNER PROGRAM</div><h2>Refer &amp; Commission</h2><p class="muted">Share your personal referral link. Referral counts and commission balances will update after the referral records and payment rules are activated.</p><div class="dash-earnings"><div class="dash-earning-card"><span>Today's Earning</span><strong>$0.00</strong><small>Confirmed commission only</small></div><div class="dash-earning-card"><span>Total Earning</span><strong>$0.00</strong><small>Payments are not activated</small></div></div><div class="panel" style="margin:16px 0"><label for="myReferralCode">YOUR REFERRAL CODE</label><input id="myReferralCode" class="search" readonly value="Loading…"><label for="myReferralLink">YOUR REFERRAL LINK</label><input id="myReferralLink" class="search" readonly value="Loading…"><button class="btn primary" type="button" onclick="copyReferralLink()">Copy referral link</button><p id="referralStatus" class="muted" role="status">Loading your referral details…</p></div><p class="notice">Only genuine referrals are counted. No commission is promised or payable until the program terms and eligible transactions are formally enabled.</p><button class="btn" onclick="showView('home')">Back to Home</button></div></section>
+<section id="referral" class="view"><div class="panel"><div class="eyebrow">PARTNER PROGRAM</div><h2>Refer &amp; Commission</h2><p class="muted">Share your personal referral link. Referral counts and commission balances will update after the referral records and payment rules are activated.</p><div class="dash-earnings"><div class="dash-earning-card"><span>Today's Earning</span><strong>৳0.00</strong><small>Confirmed commission only</small></div><div class="dash-earning-card"><span>Total Earning</span><strong>৳0.00</strong><small>Payments are not activated</small></div></div><div class="panel" style="margin:16px 0"><label for="myReferralCode">YOUR REFERRAL CODE</label><input id="myReferralCode" class="search" readonly value="Loading…"><label for="myReferralLink">YOUR REFERRAL LINK</label><input id="myReferralLink" class="search" readonly value="Loading…"><button class="btn primary" type="button" onclick="copyReferralLink()">Copy referral link</button><p id="referralStatus" class="muted" role="status">Loading your referral details…</p></div><p class="notice">Only genuine referrals are counted. No commission is promised or payable until the program terms and eligible transactions are formally enabled.</p><button class="btn" onclick="showView('home')">Back to Home</button></div></section>
 <div id="globalStatus" class="status" role="status" aria-live="polite" style="display:none"></div>
 </main><footer>© 2026 Prologis, Inc. (PLD) · Property marketplace · Verified listings only · Payments are not active.<span id="siteContactDetails" style="display:none;margin-left:8px"></span></footer>
 <script>
@@ -572,7 +572,6 @@ async function submitWalletRequest(event,kind){
  if(!isDeposit&&amountBDT<minimum){status.textContent='Minimum withdrawal is ৳'+minimum.toLocaleString('en-US')+'. Requests below this amount are not accepted.';return;}
  if(method==='Binance'||method==='Bank Account'?account.length<3||account.length>100:method==='Rocket'?!/^01[0-9]{10}$/.test(account):!/^01[0-9]{9}$/.test(account)){status.textContent=method==='Binance'?'Enter a valid Binance Pay ID or UID.':method==='Bank Account'?'Enter your bank name and account number.':method==='Rocket'?'Enter your 12-digit Rocket account number, including the check digit.':'Enter a valid 11-digit Bangladesh wallet number.';return;}
  if(isDeposit&&!/^[A-Za-z0-9-]{6,100}$/.test(trx)){status.textContent='Invalid Transaction ID format. Please check your TrxID.';return;}
- if(!Number.isSafeInteger(amountBDT)||amountBDT<=0){status.textContent='Enter a valid whole BDT amount.';return;}
  submit.disabled=true;status.textContent='Submitting your request…';
  try{
   const f=await getFirebase(),fs=f.firestore;
