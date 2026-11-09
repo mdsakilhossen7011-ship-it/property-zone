@@ -478,7 +478,7 @@ function selectWalletMethod(kind,method,button){
  const account=document.getElementById(kind+'Number'),label=document.getElementById(kind+'AccountLabel');if(!account||!label)return;
  if(method==='Binance'){label.textContent='Binance Pay ID / UID';account.type='text';account.inputMode='text';account.maxLength=100;account.placeholder='Enter Binance Pay ID or UID';}
  else if(method==='Bank Account'){label.textContent=kind==='deposit'?'Your sending bank account details':'Your receiving bank account details';account.type='text';account.inputMode='text';account.maxLength=100;account.placeholder='Bank name and account number';}
- else{label.textContent=kind==='deposit'?'Your payment number (from which you sent the money)':'Your receiving '+method+' number';account.type='tel';account.inputMode='numeric';account.maxLength=11;account.placeholder='01XXXXXXXXX';}
+ else{label.textContent=kind==='deposit'?'Your payment number (from which you sent the money)':'Your receiving '+method+' number';account.type='tel';account.inputMode='numeric';account.maxLength=method==='Rocket'?12:11;account.placeholder=method==='Rocket'?'12-digit Rocket account number':'01XXXXXXXXX';}
  refreshWalletPaymentInfo(kind);
 }
 async function loadWalletSettings(kind){
@@ -529,7 +529,7 @@ async function submitWalletRequest(event,kind){
  if(!Number.isFinite(rate)||rate<=0){status.textContent='Admin exchange rate is not configured yet.';return;}
  if(!Number.isSafeInteger(amountBDT)||amountBDT<=0){status.textContent='Enter a valid amount in BDT.';return;}
  if(!isDeposit&&amountBDT<minimum){status.textContent='Minimum withdrawal is ৳'+minimum.toLocaleString('en-US')+'. Requests below this amount are not accepted.';return;}
- if(method==='Binance'||method==='Bank Account'?account.length<3||account.length>100:!/^01[0-9]{9}$/.test(account)){status.textContent=method==='Binance'?'Enter a valid Binance Pay ID or UID.':method==='Bank Account'?'Enter your bank name and account number.':'Enter a valid 11-digit Bangladesh wallet number.';return;}
+ if(method==='Binance'||method==='Bank Account'?account.length<3||account.length>100:method==='Rocket'?!/^01[0-9]{10}$/.test(account):!/^01[0-9]{9}$/.test(account)){status.textContent=method==='Binance'?'Enter a valid Binance Pay ID or UID.':method==='Bank Account'?'Enter your bank name and account number.':method==='Rocket'?'Enter your 12-digit Rocket account number, including the check digit.':'Enter a valid 11-digit Bangladesh wallet number.';return;}
  if(isDeposit&&!/^[A-Za-z0-9-]{6,100}$/.test(trx)){status.textContent='Invalid Transaction ID format. Please check your TrxID.';return;}
  const amountUSD=Math.round((amountBDT/rate)*100)/100;
  if(!Number.isFinite(amountUSD)||amountUSD<=0){status.textContent='Could not calculate the USD equivalent.';return;}
