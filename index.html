@@ -496,7 +496,6 @@ async function requestPropertyPurchase(propertyId,packageAmount){
   try{
    await loadWalletSettings('deposit');
    const rate=walletExchangeRate();
-   if(!rate)throw new Error('Admin exchange rate is not configured yet.');
    const amountBDT=Number(packageAmount);
    if(!Number.isSafeInteger(amountBDT)||amountBDT<=0)throw new Error('Invalid package amount.');
    const f=await getFirebase(),fs=f.firestore,walletRef=fs.doc(f.db,'wallets',currentUser.uid),packageRef=fs.doc(fs.collection(f.db,'activePackages'));
@@ -569,7 +568,6 @@ async function submitWalletRequest(event,kind){
  const settings=walletSettingsCache||{},rate=Number(settings.exchangeRateBDT),minimum=Math.max(500,Number(settings.minimumWithdrawBDT||500)),enabled=isDeposit?settings.depositEnabled===true:settings.withdrawEnabled===true,accounts=isDeposit?settings.depositAccounts:settings.withdrawAccounts,officialAccount=String(accounts?.[method]||'').trim();
  if(!enabled){status.textContent=(isDeposit?settings.depositMessage:settings.withdrawMessage)||'This service is currently unavailable.';return;}
  if(!officialAccount){status.textContent='This payment method is not configured by admin yet.';return;}
- if(!Number.isFinite(rate)||rate<=0){status.textContent='Admin exchange rate is not configured yet.';return;}
  if(!Number.isSafeInteger(amountBDT)||amountBDT<=0){status.textContent='Enter a valid amount in BDT.';return;}
  if(!isDeposit&&amountBDT<minimum){status.textContent='Minimum withdrawal is ৳'+minimum.toLocaleString('en-US')+'. Requests below this amount are not accepted.';return;}
  if(method==='Binance'||method==='Bank Account'?account.length<3||account.length>100:method==='Rocket'?!/^01[0-9]{10}$/.test(account):!/^01[0-9]{9}$/.test(account)){status.textContent=method==='Binance'?'Enter a valid Binance Pay ID or UID.':method==='Bank Account'?'Enter your bank name and account number.':method==='Rocket'?'Enter your 12-digit Rocket account number, including the check digit.':'Enter a valid 11-digit Bangladesh wallet number.';return;}
