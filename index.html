@@ -943,7 +943,7 @@ function pzTranslateAttributes(el){
  for(const attr of ['placeholder','aria-label','title','alt','value']){
   if(!el.hasAttribute(attr))continue;
   if(attr==='value'&&!['BUTTON','INPUT'].includes(el.tagName))continue;
-  const key='pzEnglish'+attr,translatedKey='pzTranslated'+attr,current=el.getAttribute(attr);
+  const attrKey=attr.replace(/-([a-z])/g,(_,letter)=>letter.toUpperCase());const key='pzEnglish'+attrKey,translatedKey='pzTranslated'+attrKey,current=el.getAttribute(attr);
   if(el.dataset[key]===undefined||(el.dataset[translatedKey]!==undefined&&current!==el.dataset[translatedKey]))el.dataset[key]=current;
   const translated=pzApplyTranslation(el.dataset[key]);
   if(current!==translated)el.setAttribute(attr,translated);
