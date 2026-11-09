@@ -735,10 +735,9 @@ function setWebsiteLanguage(lang){
     record.addedNodes.forEach(node=>{
      if(node.nodeType===Node.TEXT_NODE){
       if(node.__pzEnglish===undefined)node.__pzEnglish=node.nodeValue;
-      if(pzLanguage==='bn'){
-       const translated=pzApplyTranslation(node.__pzEnglish);
-       if(node.nodeValue!==translated)node.nodeValue=translated;
-      }
+      const translated=pzApplyTranslation(node.__pzEnglish);
+      if(node.nodeValue!==translated)node.nodeValue=translated;
+      node.__pzTranslatedValue=translated;
      }else if(node.nodeType===Node.ELEMENT_NODE){
       pzTranslateText(node);
      }
