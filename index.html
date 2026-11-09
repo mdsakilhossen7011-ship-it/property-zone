@@ -886,21 +886,41 @@ const PZ_TRANSLATIONS={
   "Could not connect to account service: ":"অ্যাকাউন্ট সেবায় সংযোগ করা যায়নি: ",
   "Prologis, Inc. (PLD) | Property Marketplace":"Prologis, Inc. (PLD) | প্রপার্টি মার্কেটপ্লেস",
   "Prologis, Inc. (PLD) property marketplace":"Prologis, Inc. (PLD) প্রপার্টি মার্কেটপ্লেস",
+  "Search name, location, type, description or price…":"নাম, অবস্থান, ধরন, বিবরণ বা দাম দিয়ে খুঁজুন…",
+  "My Property Submissions":"আমার জমা দেওয়া প্রপার্টি",
+  "You have not submitted any properties yet.":"আপনি এখনো কোনো প্রপার্টি জমা দেননি।",
+  "Choose your payout method and use the Cash Out Number below. Enter the amount in Bangladeshi Taka (BDT ৳).":"আপনার উত্তোলনের পদ্ধতি বেছে নিন এবং নিচের ক্যাশ-আউট নম্বর ব্যবহার করুন। বাংলাদেশি টাকায় (৳) পরিমাণ লিখুন।",
+  "Withdraw to Your Wallet":"আপনার ওয়ালেট থেকে টাকা উত্তোলন",
+  "Loading Cash Out Number…":"ক্যাশ-আউট নম্বর লোড হচ্ছে…",
+  "Garden View Family বাড়ি":"গার্ডেন ভিউ ফ্যামিলি বাড়ি",
+  "Purbachal, Dhaka · বাড়ি":"পূর্বাচল, ঢাকা · বাড়ি",
+  "Spacious suburban-হোম concept with landscaped outdoor space.":"বাগানঘেরা খোলামেলা শহরতলির পারিবারিক বাড়ির ধারণা।",
+  "Fictional illustrative content; this is not a যাচাইকৃত প্রপার্টি offer.":"এটি কেবল একটি কাল্পনিক নমুনা; এটি যাচাইকৃত কোনো প্রপার্টির অফার নয়।",
   "বাংলা":"বাংলা"
  };
 let pzLanguage='en',pzTranslationObserver=null;
 function pzApplyTranslation(value){
  let result=String(value??'');
- if(pzLanguage==='en')return result;
  const entries=Object.entries(PZ_TRANSLATIONS).sort((a,b)=>b[0].length-a[0].length);
- for(const [en,bn] of entries){
-  const escaped=en.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-  const left=/^[A-Za-z0-9]/.test(en)?'(?<![A-Za-z0-9])':'';
-  const right=/[A-Za-z0-9]$/.test(en)?'(?![A-Za-z0-9])':'';
-  result=result.replace(new RegExp(left+escaped+right,'gi'),match=>{
-   if(match===match.toUpperCase())return bn;
-   return bn;
-  });
+ if(pzLanguage==='bn'){
+  for(const [en,bn] of entries){
+   const escaped=en.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\$&');
+   const left=/^[A-Za-z0-9]/.test(en)?'(?<![A-Za-z0-9])':'';
+   const right=/[A-Za-z0-9]$/.test(en)?'(?![A-Za-z0-9])':'';
+   result=result.replace(new RegExp(left+escaped+right,'gi'),()=>bn);
+  }
+ }else{
+  const fixedBanglaToEnglish=[
+   ['Garden View Family বাড়ি','Garden View Family House'],
+   ['Purbachal, Dhaka · বাড়ি','Purbachal, Dhaka · House'],
+   ['গার্ডেন ভিউ ফ্যামিলি বাড়ি','Garden View Family House'],
+   ['বাগানঘেরা খোলামেলা শহরতলির পারিবারিক বাড়ির ধারণা।','Spacious suburban family home concept with landscaped outdoor space.'],
+   ['এটি কেবল একটি কাল্পনিক নমুনা; এটি যাচাইকৃত কোনো প্রপার্টির অফার নয়.','Fictional sample listing; this is not a verified property offer.'],
+   ['নমুনা তালিকা','Sample listing'],
+   ['উপলব্ধ','Available'],
+   ['বাড়ি','House']
+  ].sort((a,b)=>b[0].length-a[0].length);
+  for(const [bn,en] of fixedBanglaToEnglish)result=result.replaceAll(bn,en);
  }
  return result;
 }
