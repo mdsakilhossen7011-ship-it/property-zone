@@ -666,7 +666,8 @@ async function submitWalletRequest(event,kind){
  if(!enabled){status.textContent=(isDeposit?settings.depositMessage:settings.withdrawMessage)||'This service is currently unavailable.';return;}
  if(!officialAccount){status.textContent='This payment method is not configured by admin yet.';return;}
  if(!Number.isSafeInteger(amountBDT)||amountBDT<=0){status.textContent='Enter a valid amount in BDT.';return;}
- if(isDeposit&&amountBDT<minimumDeposit){status.textContent='Minimum deposit is ৳'+minimumDeposit.toLocaleString('en-US')+'. Requests below this amount are not accepted.';return;}\n if(!isDeposit&&amountBDT<minimumWithdraw){status.textContent='Minimum withdrawal is ৳'+minimumWithdraw.toLocaleString('en-US')+'. Requests below this amount are not accepted.';return;}
+ if(isDeposit&&amountBDT<minimumDeposit){status.textContent='Minimum deposit is ৳'+minimumDeposit.toLocaleString('en-US')+'. Requests below this amount are not accepted.';return;}
+ if(!isDeposit&&amountBDT<minimumWithdraw){status.textContent='Minimum withdrawal is ৳'+minimumWithdraw.toLocaleString('en-US')+'. Requests below this amount are not accepted.';return;}
  if(method==='Binance'||method==='Bank Account'?account.length<3||account.length>100:method==='Rocket'?!/^01[0-9]{10}$/.test(account):!/^01[0-9]{9}$/.test(account)){status.textContent=method==='Binance'?'Enter a valid Binance Pay ID or UID.':method==='Bank Account'?'Enter your bank name and account number.':method==='Rocket'?'Enter your 12-digit Rocket account number, including the check digit.':'Enter a valid 11-digit Bangladesh wallet number.';return;}
  if(isDeposit&&!/^[A-Za-z0-9-]{6,100}$/.test(trx)){status.textContent='Invalid Transaction ID format. Please check your TrxID.';return;}
  submit.disabled=true;status.textContent='Submitting your request…';
