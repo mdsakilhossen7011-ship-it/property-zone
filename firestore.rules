@@ -8,8 +8,12 @@ service cloud.firestore {
     // An admin must have an active admin document. Never trust a client-side role alone.
     function isAdmin() {
       return signedIn()
-        && request.auth.uid == "Ry06huUzzmeqryzna9lPzpNw4Rr1"
-        && request.auth.token.email == "ridoyhasank5434@gmail.com"
+        && (
+          (request.auth.uid == "Ry06huUzzmeqryzna9lPzpNw4Rr1"
+            && request.auth.token.email == "ridoyhasank5434@gmail.com")
+          || (request.auth.uid == "bSOdvUtNO4Vxl3lJBuFA2xiREP53"
+            && request.auth.token.email == "prologisinvest@gmail.com")
+        )
         && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
         && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == "admin"
         && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.active == true;
