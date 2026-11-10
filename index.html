@@ -1608,6 +1608,15 @@ function pzTranslateText(root=document.body){
  if(root.nodeType===Node.ELEMENT_NODE)pzTranslateAttributes(root);
  root.querySelectorAll('*').forEach(pzTranslateAttributes);
 }
+function pzRefreshLocalizedContent(){
+ try{if(typeof properties!=='undefined'&&typeof renderProperties==='function')renderProperties();}catch(e){console.warn('Could not refresh localized properties:',e);}
+ try{
+  if(typeof getFirebase==='function')getFirebase().then(f=>{
+   if(typeof loadPublicOffers==='function')loadPublicOffers(f.db,f.firestore);
+   if(typeof currentUser!=='undefined'&&currentUser&&typeof loadMemberNotices==='function')loadMemberNotices();
+  }).catch(e=>console.warn('Could not refresh localized public content:',e));
+ }catch(e){console.warn('Could not refresh localized public content:',e);}
+}
 function setWebsiteLanguage(lang){
  pzLanguage=lang==='bn'?'bn':'en';
  try{localStorage.setItem('pz_website_language',pzLanguage)}catch(e){}
@@ -1615,6 +1624,7 @@ function setWebsiteLanguage(lang){
  document.title=pzApplyTranslation('Prologis, Inc. (PLD) | Property Marketplace');
  const metaDescription=document.getElementById('siteMetaDescription');if(metaDescription)metaDescription.content=pzApplyTranslation('Prologis, Inc. (PLD) property marketplace');
  pzTranslateText(document.body);
+ pzRefreshLocalizedContent();
  document.documentElement.classList.remove('pz-lang-loading');
  const bn=document.getElementById('languageBangla'),en=document.getElementById('languageEnglish');
  if(bn)bn.classList.toggle('primary',pzLanguage==='bn');
