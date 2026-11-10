@@ -420,6 +420,16 @@ function escapeHTML(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&'
 function updatePropertyTypeOptions(){const select=document.getElementById('propertyTypeFilter');if(!select)return;const chosen=select.value||'All',types=[...new Set(properties.map(p=>String(p.type||'Property').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));select.innerHTML='<option value="All">All property types</option>'+types.map(t=>'<option value="'+escapeHTML(t)+'">'+escapeHTML(t)+'</option>').join('');select.value=types.includes(chosen)?chosen:'All'}
 function clearPropertyFilters(){const search=document.getElementById('search'),type=document.getElementById('propertyTypeFilter'),sort=document.getElementById('propertySort');if(search)search.value='';if(type)type.value='All';if(sort)sort.value='relevance';filter='All';document.querySelectorAll('.filters .btn').forEach((b,i)=>{b.classList.toggle('primary',i===0);b.setAttribute('aria-pressed',String(i===0))});renderProperties()}
 function pzTranslatePropertyText(value){return pzApplyTranslation(String(value??''));}
+function pzExactDictionaryTranslation(value){
+ const raw=String(value??'').trim();
+ if(!raw)return '';
+ if(pzLanguage==='bn'){
+  const match=Object.entries(PZ_EN_TO_BN).find(([source])=>source.toLocaleLowerCase()===raw.toLocaleLowerCase());
+  return match?match[1]:null;
+ }
+ const matches=Object.entries(PZ_EN_TO_BN).filter(([,target])=>target===raw);
+ return matches.length===1?matches[0][0]:null;
+}
 function pzLocalizedField(data,field,legacyField=field){
  const suffix=pzLanguage==='bn'?'Bn':'En',explicit=String(data?.[field+suffix]??'').trim();
  if(explicit)return explicit;
@@ -427,8 +437,8 @@ function pzLocalizedField(data,field,legacyField=field){
  if(!raw)return '';
  const hasBangla=/[\u0980-\u09FF]/.test(raw);
  if((pzLanguage==='bn'&&hasBangla)||(pzLanguage==='en'&&!hasBangla))return raw;
- const translated=pzApplyTranslation(raw);
- if(translated!==raw)return translated;
+ const translated=pzExactDictionaryTranslation(raw);
+ if(translated!==null)return translated;
  return pzLanguage==='bn'?'এই তথ্যের বাংলা অনুবাদ দেওয়া হয়নি।':'Translation not provided.';
 }
 function pzLocalizedDate(date){
