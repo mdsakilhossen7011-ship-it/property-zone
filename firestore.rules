@@ -66,23 +66,39 @@ service cloud.firestore {
         && request.resource.data.uid == memberId
         && ((request.resource.data.balanceBDT is number && request.resource.data.balanceBDT >= 0)
           || (request.resource.data.balanceUSD is number && request.resource.data.balanceUSD >= 0));
-      allow update: if isAdmin() || (signedIn()
-        && request.auth.uid == memberId
-        && resource.data.uid == memberId
-        && request.resource.data.uid == memberId
-        && resource.data.balanceBDT is number
-        && request.resource.data.balanceBDT == resource.data.balanceBDT
-        && request.resource.data.pendingWithdrawalBDT is number
-        && request.resource.data.pendingWithdrawalBDT > (resource.data.keys().hasAny(['pendingWithdrawalBDT']) ? resource.data.pendingWithdrawalBDT : 0)
-        && request.resource.data.lastWithdrawalRequestId is string
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pendingWithdrawalBDT','lastWithdrawalRequestId','updatedAt'])
-        && existsAfter(/databases/$(database)/documents/propertyEnquiries/$(request.resource.data.lastWithdrawalRequestId))
-        && getAfter(/databases/$(database)/documents/propertyEnquiries/$(request.resource.data.lastWithdrawalRequestId)).data.uid == memberId
-        && getAfter(/databases/$(database)/documents/propertyEnquiries/$(request.resource.data.lastWithdrawalRequestId)).data.requestType == 'wallet-withdraw'
-        && getAfter(/databases/$(database)/documents/propertyEnquiries/$(request.resource.data.lastWithdrawalRequestId)).data.reservedFunds == true
-        && request.resource.data.pendingWithdrawalBDT
-          == (resource.data.keys().hasAny(['pendingWithdrawalBDT']) ? resource.data.pendingWithdrawalBDT : 0)
-            + getAfter(/databases/$(database)/documents/propertyEnquiries/$(request.resource.data.lastWithdrawalRequestId)).data.amountBDT);
+      allow update: if isAdmin()
+        || (signedIn()
+          && request.auth.uid == memberId
+          && resource.data.uid == memberId
+          && request.resource.data.uid == memberId
+          && resource.data.balanceBDT is number
+          && request.resource.data.balanceBDT == resource.data.balanceBDT
+          && request.resource.data.pendingWithdrawalBDT is number
+          && request.resource.data.pendingWithdrawalBDT > (resource.data.keys().hasAny(['pendingWithdrawalBDT']) ? resource.data.pendingWithdrawalBDT : 0)
+          && request.resource.data.lastWithdrawalRequestId is string
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pendingWithdrawalBDT','lastWithdrawalRequestId','updatedAt'])
+          && existsAfter(/databases/$(database)/documents/propertyEnquiries/$(request.resource.data.lastWithdrawalRequestId))
+          && getAfter(/databases/$(database)/documents/propertyEnquiries/$(request.resource.data.lastWithdrawalRequestId)).data.uid == memberId
+          && getAfter(/databases/$(database)/documents/propertyEnquiries/$(request.resource.data.lastWithdrawalRequestId)).data.requestType == 'wallet-withdraw'
+          && getAfter(/databases/$(database)/documents/propertyEnquiries/$(request.resource.data.lastWithdrawalRequestId)).data.reservedFunds == true
+          && request.resource.data.pendingWithdrawalBDT
+            == (resource.data.keys().hasAny(['pendingWithdrawalBDT']) ? resource.data.pendingWithdrawalBDT : 0)
+              + getAfter(/databases/$(database)/documents/propertyEnquiries/$(request.resource.data.lastWithdrawalRequestId)).data.amountBDT)
+        || (signedIn()
+          && request.auth.uid == memberId
+          && resource.data.uid == memberId
+          && request.resource.data.uid == memberId
+          && resource.data.balanceBDT is number
+          && request.resource.data.balanceBDT is number
+          && request.resource.data.balanceBDT < resource.data.balanceBDT
+          && request.resource.data.lastPackagePurchaseId is string
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['balanceBDT','lastPackagePurchaseId','updatedAt'])
+          && existsAfter(/databases/$(database)/documents/activePackages/$(request.resource.data.lastPackagePurchaseId))
+          && getAfter(/databases/$(database)/documents/activePackages/$(request.resource.data.lastPackagePurchaseId)).data.uid == memberId
+          && getAfter(/databases/$(database)/documents/activePackages/$(request.resource.data.lastPackagePurchaseId)).data.status == 'active'
+          && getAfter(/databases/$(database)/documents/activePackages/$(request.resource.data.lastPackagePurchaseId)).data.amountBDT is number
+          && request.resource.data.balanceBDT
+            == resource.data.balanceBDT - getAfter(/databases/$(database)/documents/activePackages/$(request.resource.data.lastPackagePurchaseId)).data.amountBDT);
       allow delete: if isAdmin();
     }
 
@@ -102,7 +118,8 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/wallets/$(request.auth.uid))
         && get(/databases/$(database)/documents/wallets/$(request.auth.uid)).data.balanceBDT is number
         && getAfter(/databases/$(database)/documents/wallets/$(request.auth.uid)).data.balanceBDT
-          == get(/databases/$(database)/documents/wallets/$(request.auth.uid)).data.balanceBDT - request.resource.data.amountBDT;
+          == get(/databases/$(database)/documents/wallets/$(request.auth.uid)).data.balanceBDT - request.resource.data.amountBDT
+        && getAfter(/databases/$(database)/documents/wallets/$(request.auth.uid)).data.lastPackagePurchaseId == packageId;
       allow update, delete: if isAdmin();
     }
 
