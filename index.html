@@ -571,7 +571,7 @@ async function loadWalletSettings(kind){
   if(!enabled){info.textContent=message||title;form.hidden=true;return;}
   form.hidden=false;
   const heading=String(kind==='deposit'?walletSettingsCache.depositLabelText||'Cash In Number':walletSettingsCache.withdrawLabelText||'Cash Out Number').trim();
-  info.textContent=(account?heading+' · '+method+': '+account:(message||'Admin has not configured this payment method yet.'))++' · Minimum: ৳'+Math.max(1,Number(kind==='deposit'?walletSettingsCache.minimumDepositBDT||500:walletSettingsCache.minimumWithdrawBDT||500)).toLocaleString('en-US');
+  info.textContent=(account?heading+' · '+method+': '+account:(message||'Admin has not configured this payment method yet.'))+' · Minimum: ৳'+Math.max(1,Number(kind==='deposit'?walletSettingsCache.minimumDepositBDT||500:walletSettingsCache.minimumWithdrawBDT||500)).toLocaleString('en-US');
   const submit=form.querySelector('button[type="submit"]');
   if(submit)submit.disabled=!account;
  }catch(e){info.textContent='Could not load payment settings. Please try again later.';form.hidden=true;console.warn('Wallet settings could not load:',e);}
