@@ -1618,13 +1618,14 @@ function pzRefreshLocalizedContent(){
  }catch(e){console.warn('Could not refresh localized public content:',e);}
 }
 function setWebsiteLanguage(lang){
+ const previousLanguage=pzLanguage;
  pzLanguage=lang==='bn'?'bn':'en';
  try{localStorage.setItem('pz_website_language',pzLanguage)}catch(e){}
  document.documentElement.lang=pzLanguage;
  document.title=pzApplyTranslation('Prologis, Inc. (PLD) | Property Marketplace');
  const metaDescription=document.getElementById('siteMetaDescription');if(metaDescription)metaDescription.content=pzApplyTranslation('Prologis, Inc. (PLD) property marketplace');
  pzTranslateText(document.body);
- pzRefreshLocalizedContent();
+ if(previousLanguage!==pzLanguage)pzRefreshLocalizedContent();
  document.documentElement.classList.remove('pz-lang-loading');
  const bn=document.getElementById('languageBangla'),en=document.getElementById('languageEnglish');
  if(bn)bn.classList.toggle('primary',pzLanguage==='bn');
