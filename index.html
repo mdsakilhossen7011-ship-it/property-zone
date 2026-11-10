@@ -1458,7 +1458,34 @@ const PZ_BN_TO_EN=Object.freeze({
   
   
 });
-// Language-test draft: explicit BDT wording; never translate BDT/৳ as dollars.
+const PZ_BN_TO_EN_PATCH={
+ "আপনার ওয়ালেটে টাকা যোগ করুন · বাংলাদেশি টাকা ৳":"Add funds to your wallet · BDT ৳",
+ "টাকা উত্তোলনের অনুরোধ · বাংলাদেশি টাকা ৳":"Request a payout · BDT ৳",
+ "টাকা যোগ করুন · বাংলাদেশি টাকা ৳":"Add funds · BDT ৳",
+ "উত্তোলনের অনুরোধ · বাংলাদেশি টাকা ৳":"Request payout · BDT ৳",
+ "দাম / দামের সীমা (বাংলাদেশি টাকা ৳) *":"PRICE / PRICE RANGE (BDT ৳) *",
+ "এই তথ্যের বাংলা অনুবাদ দেওয়া হয়নি।":"Bangla translation not provided.",
+ "জমা দেওয়া তথ্য লোড হচ্ছে…":"Loading submissions…",
+ "রেফারেলসমূহ":"Referrals",
+ "পেমেন্ট চালু নেই":"Payments are not activated",
+ "সেবা":"Service",
+ "উপলব্ধ ব্যালেন্স: লোড হচ্ছে…":"Available Balance: Loading…",
+ "সর্বোচ্চ উত্তোলন":"MAX Withdraw",
+ "অ্যাকাউন্টের কার্যক্রম":"ACCOUNT ACTIVITY",
+ "প্রোফাইল সম্পাদনা":"Edit profile",
+ "আমার প্রপার্টিসমূহ":"My Properties",
+ "লগআউট":"Log out",
+ "ফিরে যান":"Back",
+ "রেফারেল ও কমিশন":"Referral & Commission",
+ "ওয়ালেটের কার্যক্রম":"Wallet actions",
+ "বার্তা পাঠান":"Send message",
+ "অফারের শিরোনাম লিখুন":"Enter offer title",
+ "যেমন ১০% ছাড়":"e.g. 10% discount",
+ "অফারের বিস্তারিত লিখুন":"Write offer details",
+ "আধুনিক স্থাপত্যের চিত্র":"Modern architectural illustration",
+ "আপনার পুরো নাম":"Your full name"
+};
+ // Language-test draft: explicit BDT wording; never translate BDT/৳ as dollars.
 Object.assign(PZ_EN_TO_BN,{
  "Add funds to your wallet · BDT ৳":"আপনার ওয়ালেটে টাকা যোগ করুন · বাংলাদেশি টাকা ৳",
  "Request a payout · BDT ৳":"টাকা উত্তোলনের অনুরোধ · বাংলাদেশি টাকা ৳",
@@ -1472,6 +1499,64 @@ Object.assign(PZ_BN_TO_EN,{
  "টাকা যোগ করুন · বাংলাদেশি টাকা ৳":"Add funds · BDT ৳",
  "উত্তোলনের অনুরোধ · বাংলাদেশি টাকা ৳":"Request payout · BDT ৳",
  "দাম / দামের সীমা (বাংলাদেশি টাকা ৳) *":"PRICE / PRICE RANGE (BDT ৳) *"
+});
+Object.assign(PZ_EN_TO_BN,{
+ "🇧🇩 Bangla":"🇧🇩 বাংলা",
+ "🇬🇧 English":"🇬🇧 ইংরেজি",
+ "Loading submissions…":"জমা দেওয়া তথ্য লোড হচ্ছে…",
+ "Referrals":"রেফারেলসমূহ",
+ "Payments are not activated":"পেমেন্ট চালু নেই",
+ "Service":"সেবা",
+ "PROLOGIS, INC. (PLD) WALLET":"PROLOGIS, INC. (PLD) ওয়ালেট",
+ "Available Balance: Loading…":"উপলব্ধ ব্যালেন্স: লোড হচ্ছে…",
+ "Request a payout":"টাকা উত্তোলনের অনুরোধ",
+ "MAX Withdraw":"সর্বোচ্চ উত্তোলন",
+ "ACCOUNT ACTIVITY":"অ্যাকাউন্টের কার্যক্রম",
+ "✎ Edit profile":"✎ প্রোফাইল সম্পাদনা",
+ "⌂ My Properties":"⌂ আমার প্রপার্টিসমূহ",
+ "↪ Log out":"↪ লগআউট",
+ "← Back":"← ফিরে যান",
+ "PROLOGIS, INC. (PLD) CONTROL CENTER":"PROLOGIS, INC. (PLD) নিয়ন্ত্রণকেন্দ্র",
+ "Referral & Commission":"রেফারেল ও কমিশন",
+ "Wallet actions":"ওয়ালেটের কার্যক্রম",
+ "Send message":"বার্তা পাঠান",
+ "Enter offer title":"অফারের শিরোনাম লিখুন",
+ "e.g. 10% discount":"যেমন ১০% ছাড়",
+ "Write offer details":"অফারের বিস্তারিত লিখুন",
+ "Modern architectural illustration":"আধুনিক স্থাপত্যের চিত্র",
+ "Your full name":"আপনার পুরো নাম",
+ "Translation not provided.":"অনুবাদ দেওয়া হয়নি।",
+ "No recent messages. Send a message to start chatting.":"সাম্প্রতিক কোনো বার্তা নেই। চ্যাট শুরু করতে একটি বার্তা পাঠান।",
+ "Connecting to support…":"সাপোর্টের সঙ্গে সংযোগ হচ্ছে…",
+ "Please log in to use live support.":"লাইভ সাপোর্ট ব্যবহার করতে লগইন করুন।",
+ "Please log in to send a property enquiry.":"প্রপার্টি সম্পর্কে জানতে বার্তা পাঠানোর জন্য লগইন করুন।",
+ "Write a message first.":"আগে একটি বার্তা লিখুন।",
+ "Your enquiry has been sent to the admin team.":"আপনার জিজ্ঞাসা অ্যাডমিন টিমের কাছে পাঠানো হয়েছে।",
+ "Please log in first.":"প্রথমে লগইন করুন।",
+ "Fill in all required fields.":"সব প্রয়োজনীয় ঘর পূরণ করুন।",
+ "Your submission has been sent.":"আপনার জমা দেওয়া তথ্য পাঠানো হয়েছে।",
+ "Loading payment settings…":"পেমেন্ট সেটিংস লোড হচ্ছে…",
+ "Deposit is currently unavailable":"ডিপোজিট সেবা বর্তমানে চালু নেই",
+ "Withdraw is currently unavailable":"উত্তোলন সেবা বর্তমানে চালু নেই",
+ "Admin has not configured this payment method yet.":"অ্যাডমিন এখনো এই পেমেন্ট পদ্ধতি নির্ধারণ করেননি।",
+ "Checking available balance…":"উপলব্ধ ব্যালেন্স যাচাই হচ্ছে…",
+ "Maximum available BDT amount selected.":"সর্বোচ্চ উপলব্ধ বাংলাদেশি টাকার পরিমাণ নির্বাচন করা হয়েছে।",
+ "No available balance to withdraw yet.":"উত্তোলনের জন্য এখনো কোনো ব্যালেন্স নেই।",
+ "Submitting your request…":"আপনার অনুরোধ জমা দেওয়া হচ্ছে…",
+ "No deposit or withdrawal requests yet.":"এখনো কোনো ডিপোজিট বা উত্তোলনের অনুরোধ নেই।",
+ "Email verified":"ইমেইল যাচাইকৃত",
+ "Account verified":"অ্যাকাউন্ট যাচাইকৃত",
+ "Enter your name.":"আপনার নাম লিখুন।",
+ "Please log in again.":"অনুগ্রহ করে আবার লগইন করুন।",
+ "Profile name updated.":"প্রোফাইলের নাম আপডেট হয়েছে।",
+ "Could not update profile name.":"প্রোফাইলের নাম আপডেট করা যায়নি।",
+ "No special offers are available right now. Please check back soon.":"এই মুহূর্তে কোনো বিশেষ অফার নেই। পরে আবার দেখুন।",
+ "Offers are temporarily unavailable.":"অফারগুলো সাময়িকভাবে পাওয়া যাচ্ছে না।",
+ "Member profile not found.":"সদস্যের প্রোফাইল পাওয়া যায়নি।",
+ "Not assigned":"নির্ধারণ করা হয়নি",
+ "Your referral code is ready to share.":"আপনার রেফারেল কোড শেয়ার করার জন্য প্রস্তুত।",
+ "Referral link copied.":"রেফারেল লিংক কপি হয়েছে।",
+ "Automatic copy was blocked. Link selected—tap Copy from your phone menu.":"স্বয়ংক্রিয় কপি করা যায়নি। লিংক নির্বাচন করা হয়েছে—ফোনের মেনু থেকে কপি চাপুন।"
 });
 let pzLanguage='en',pzTranslationObserver=null;
 function pzApplyTranslation(value){
@@ -1487,7 +1572,7 @@ function pzApplyTranslation(value){
   }
  };
  if(pzLanguage==='bn')replaceDictionary(PZ_EN_TO_BN,true);
- else replaceDictionary(PZ_BN_TO_EN,false);
+ else replaceDictionary({...PZ_BN_TO_EN,...PZ_BN_TO_EN_PATCH},false);
  return result;
 }
 function pzTranslateAttributes(el){
