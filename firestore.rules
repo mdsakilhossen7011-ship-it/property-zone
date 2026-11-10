@@ -67,10 +67,18 @@ service cloud.firestore {
         && resource.data.uid == memberId
         && request.resource.data.uid == memberId
         && resource.data.balanceBDT is number
-        && request.resource.data.balanceBDT is number
-        && request.resource.data.balanceBDT >= 0
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['balanceBDT','updatedAt'])
-        && validPackageAmount(resource.data.balanceBDT - request.resource.data.balanceBDT));
+        && request.resource.data.balanceBDT == resource.data.balanceBDT
+        && request.resource.data.pendingWithdrawalBDT is number
+        && request.resource.data.pendingWithdrawalBDT > (resource.data.keys().hasAny(['pendingWithdrawalBDT']) ? resource.data.pendingWithdrawalBDT : 0)
+        && request.resource.data.lastWithdrawalRequestId is string
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pendingWithdrawalBDT','lastWithdrawalRequestId','updatedAt'])
+        && existsAfter(/databases/$(database)/documents/propertyEnquiries/$(request.resource.data.lastWithdrawalRequestId))
+        && getAfter(/databases/$(database)/documents/propertyEnquiries/$(request.resource.data.lastWithdrawalRequestId)).data.uid == memberId
+        && getAfter(/databases/$(database)/documents/propertyEnquiries/$(request.resource.data.lastWithdrawalRequestId)).data.requestType == 'wallet-withdraw'
+        && getAfter(/databases/$(database)/documents/propertyEnquiries/$(request.resource.data.lastWithdrawalRequestId)).data.reservedFunds == true
+        && request.resource.data.pendingWithdrawalBDT
+          == (resource.data.keys().hasAny(['pendingWithdrawalBDT']) ? resource.data.pendingWithdrawalBDT : 0)
+            + getAfter(/databases/$(database)/documents/propertyEnquiries/$(request.resource.data.lastWithdrawalRequestId)).data.amountBDT);
       allow delete: if isAdmin();
     }
 
@@ -128,7 +136,7 @@ service cloud.firestore {
               "requestType", "uid", "email", "name", "amountUSD", "amountBDT", "exchangeRateBDT", "paymentCurrency",
               "paymentMethod", "walletNumber", "paymentAccount", "senderAccount",
               "receivingAccount", "adminPayoutAccount", "transactionId", "message",
-              "status", "createdAt"
+              "status", "createdAt", "reservedFunds"
             ])
             && request.resource.data.amountUSD is number
             && request.resource.data.amountUSD > 0
@@ -155,8 +163,14 @@ service cloud.firestore {
                 && request.resource.data.transactionId is string
                 && request.resource.data.transactionId.size() > 0)
               || (request.resource.data.requestType == "wallet-withdraw"
+                && request.resource.data.reservedFunds == true
                 && request.resource.data.adminPayoutAccount is string
-                && request.resource.data.adminPayoutAccount.size() > 0)
+                && request.resource.data.adminPayoutAccount.size() > 0
+                && existsAfter(/databases/$(database)/documents/wallets/$(request.auth.uid))
+                && getAfter(/databases/$(database)/documents/wallets/$(request.auth.uid)).data.lastWithdrawalRequestId == enquiryId
+                && getAfter(/databases/$(database)/documents/wallets/$(request.auth.uid)).data.pendingWithdrawalBDT
+                  == (get(/databases/$(database)/documents/wallets/$(request.auth.uid)).data.keys().hasAny(['pendingWithdrawalBDT']) ? get(/databases/$(database)/documents/wallets/$(request.auth.uid)).data.pendingWithdrawalBDT : 0)
+                    + request.resource.data.amountBDT)
             )
           )
         );
