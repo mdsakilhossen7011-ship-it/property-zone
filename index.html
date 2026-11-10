@@ -1755,7 +1755,7 @@ function pzApplyTranslation(value){
  const pattern=new RegExp('(?:'+alternatives.join('|')+')','gu'+(pzLanguage==='bn'?'i':''));
  let translated=original.replace(pattern,match=>lookup.get(pzLanguage==='bn'?match.toLocaleLowerCase():match)??match);
  if(pzLanguage==='bn'){
-  const residue=translated.replace(/https?:\/\/[^\s]+/gi,'').replace(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g,'').replace(/\b(?:Prologis|PLD|BDT|bKash|Nagad|Rocket|BINANCE|Firebase|TrxID|UID|OTP|SMS|API|URL|http|https|MB|GB|KB)\b/gi,'');
+  const residue=translated.replace(/https?:\/\/[^\s]+/gi,'').replace(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g,'').replace(/\b(?:Prologis|Inc|PLD|BDT|bKash|Nagad|Rocket|BINANCE|Firebase|TrxID|UID|OTP|SMS|API|URL|http|https|MB|GB|KB)\b/gi,'');
   if(/[A-Za-z]{2,}/.test(residue))return 'অনুবাদ সম্পূর্ণ নয়।';
  }else{
   translated=translated.replace(/[০-৯]/g,d=>'০১২৩৪৫৬৭৮৯'.indexOf(d));
