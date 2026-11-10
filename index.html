@@ -1677,20 +1677,18 @@ Object.assign(PZ_EN_TO_BN,{
  "Your account is inactive. Please contact Prologis, Inc. (PLD) support.":"আপনার অ্যাকাউন্ট নিষ্ক্রিয়। Prologis, Inc. (PLD) সহায়তা দলের সঙ্গে যোগাযোগ করুন।"
 });
 function pzApplyTranslation(value){
- let result=String(value??'');
- const replaceDictionary=(dictionary,caseInsensitive)=>{
-  const entries=Object.entries(dictionary).filter(([source,target])=>source!==target).sort((a,b)=>b[0].length-a[0].length);
-  for(const [source,target] of entries){
-   const escaped=source.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-   const isSingleWord=/^[\p{L}\p{N}]+$/u.test(source);
-   const bounded=isSingleWord?'(?<![\\p{L}\\p{N}-])'+escaped+'(?![\\p{L}\\p{N}-])':escaped;
-   const pattern=caseInsensitive?new RegExp(bounded,'giu'):new RegExp(bounded,'gu');
-   result=result.replace(pattern,()=>target);
-  }
- };
- if(pzLanguage==='bn')replaceDictionary(PZ_EN_TO_BN,true);
- else replaceDictionary({...PZ_BN_TO_EN,...PZ_BN_TO_EN_PATCH},false);
- return result;
+ const original=String(value??'');
+ const dictionary=pzLanguage==='bn'?PZ_EN_TO_BN:{...PZ_BN_TO_EN,...PZ_BN_TO_EN_PATCH};
+ const entries=Object.entries(dictionary).filter(([source,target])=>source!==target).sort((a,b)=>b[0].length-a[0].length);
+ if(!entries.length)return original;
+ const lookup=new Map(entries.map(([source,target])=>[pzLanguage==='bn'?source.toLocaleLowerCase():source,target]));
+ const alternatives=entries.map(([source])=>{
+  const escaped=source.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const isSingleWord=/^[\p{L}\p{N}]+$/u.test(source);
+  return isSingleWord?'(?<![\\p{L}\\p{N}-])'+escaped+'(?![\\p{L}\\p{N}-])':escaped;
+ });
+ const pattern=new RegExp('(?:'+alternatives.join('|')+')','gu'+(pzLanguage==='bn'?'i':''));
+ return original.replace(pattern,match=>lookup.get(pzLanguage==='bn'?match.toLocaleLowerCase():match)??match);
 }
 function pzTranslateAttributes(el){
  if(!el||el.nodeType!==Node.ELEMENT_NODE)return;
