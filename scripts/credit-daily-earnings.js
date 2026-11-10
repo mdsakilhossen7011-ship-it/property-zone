@@ -41,11 +41,34 @@ async function main() {
         }
 
         const termDays = Math.max(1, Math.min(365, Number(p.termDays || 30)));
-        const elapsedDays = Math.max(0, Math.min(termDays, Math.floor((now - startedAtMs) / dayMs)));
-        const alreadyCreditedDays = Math.max(0, Math.min(termDays, Number(p.creditedDays || 0)));
-        const newDays = Math.max(0, elapsedDays - alreadyCreditedDays);
+        const elapsedPackageDays = Math.max(0, Math.min(termDays, Math.floor((now - startedAtMs) / dayMs)));
+        const scheduleStartMs = p.earningScheduleStartedAt && typeof p.earningScheduleStartedAt.toMillis === "function"
+          ? p.earningScheduleStartedAt.toMillis()
+          : null;
 
-        if (newDays === 0 && elapsedDays < termDays) return null;
+        if (scheduleStartMs == null) {
+          const remainingDaysAtSetup = Math.max(0, termDays - elapsedPackageDays);
+          tx.update(packageRef, {
+            earningScheduleStartedAt: admin.firestore.Timestamp.fromMillis(now),
+            earningScheduleMaxDays: remainingDaysAtSetup,
+            creditedDays: 0,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+          });
+          if (elapsedPackageDays < termDays) return null;
+        }
+
+        const effectiveScheduleStartMs = scheduleStartMs == null ? now : scheduleStartMs;
+        const maxCreditDays = Math.max(0, Math.min(termDays, Number(
+          p.earningScheduleMaxDays == null
+            ? Math.max(0, termDays - elapsedPackageDays)
+            : p.earningScheduleMaxDays
+        )));
+        const dueCreditDays = Math.max(0, Math.min(maxCreditDays, Math.floor((now - effectiveScheduleStartMs) / dayMs)));
+        const alreadyCreditedDays = Math.max(0, Math.min(maxCreditDays, Number(p.creditedDays || 0)));
+        const newDays = Math.max(0, dueCreditDays - alreadyCreditedDays);
+        const matured = elapsedPackageDays >= termDays;
+
+        if (newDays === 0 && !matured) return null;
 
         const settingsRef = db.collection("siteSettings").doc("wallet");
         const walletRef = db.collection("wallets").doc(String(p.uid || ""));
@@ -90,11 +113,10 @@ async function main() {
         }
 
         const earnings = roundBDT(principal * dailyRate * newDays);
-        const matured = elapsedDays >= termDays;
         const principalReturn = matured ? roundBDT(principal) : 0;
         const totalCredit = roundBDT(earnings + principalReturn);
         const nextBalance = roundBDT(balance + totalCredit);
-        const nextCreditedDays = Math.max(alreadyCreditedDays, elapsedDays);
+        const nextCreditedDays = Math.max(alreadyCreditedDays, dueCreditDays);
 
         if (walletSnap.exists) {
           tx.update(walletRef, {
