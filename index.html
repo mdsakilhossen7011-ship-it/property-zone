@@ -477,6 +477,7 @@ function syncNavigation(){const loggedIn=!!currentUser;document.getElementById('
 function openProperty(id){
  const p=properties.find(x=>x.id===id);if(!p)return;
  const pid=escapeHTML(p.id);
+ document.getElementById('detailContent').dataset.propertyId=pid;
  const image=p.imageUrl?'<img src="'+escapeHTML(p.imageUrl)+'" alt="'+escapeHTML(pzLocalizedField(p,'name'))+'" style="width:100%;height:100%;object-fit:cover;border-radius:14px;position:relative;z-index:2">':'<strong>'+escapeHTML(pzLocalizedField(p,'name'))+'</strong>';
  document.getElementById('detailContent').innerHTML=
  '<div class="panel" style="margin:14px 0;padding:18px;border:2px solid var(--gold);background:var(--panel2)">'+
@@ -1623,7 +1624,11 @@ function pzTranslateText(root=document.body){
  root.querySelectorAll('*').forEach(pzTranslateAttributes);
 }
 function pzRefreshLocalizedContent(){
- try{if(typeof properties!=='undefined'&&typeof renderProperties==='function')renderProperties();}catch(e){console.warn('Could not refresh localized properties:',e);}
+ try{
+  if(typeof properties!=='undefined'&&typeof renderProperties==='function')renderProperties();
+  const detail=document.getElementById('detailContent');
+  if(detail?.dataset.propertyId&&document.getElementById('details')?.classList.contains('active'))openProperty(detail.dataset.propertyId);
+ }catch(e){console.warn('Could not refresh localized properties:',e);}
  try{
   if(typeof getFirebase==='function')getFirebase().then(f=>{
    if(typeof loadPublicOffers==='function')loadPublicOffers(f.db,f.firestore);
