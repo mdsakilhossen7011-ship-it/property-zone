@@ -1684,8 +1684,8 @@ function pzApplyTranslation(value){
  const lookup=new Map(entries.map(([source,target])=>[pzLanguage==='bn'?source.toLocaleLowerCase():source,target]));
  const alternatives=entries.map(([source])=>{
   const escaped=source.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-  const isSingleWord=/^[\p{L}\p{N}]+$/u.test(source);
-  return isSingleWord?'(?<![\\p{L}\\p{N}-])'+escaped+'(?![\\p{L}\\p{N}-])':escaped;
+  const isSingleWord=/^[\p{L}\p{N}\p{M}]+$/u.test(source);
+  return isSingleWord?'(?<![\\p{L}\\p{N}\\p{M}-])'+escaped+'(?![\\p{L}\\p{N}\\p{M}-])':escaped;
  });
  const pattern=new RegExp('(?:'+alternatives.join('|')+')','gu'+(pzLanguage==='bn'?'i':''));
  return original.replace(pattern,match=>lookup.get(pzLanguage==='bn'?match.toLocaleLowerCase():match)??match);
