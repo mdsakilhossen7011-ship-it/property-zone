@@ -669,7 +669,13 @@ function toggleProfileEdit(force){const box=document.getElementById('profileEdit
 async function saveProfileName(){try{const name=document.getElementById('profileNameInput').value.trim();if(!name)throw new Error('Enter your name.');if(!currentUser)throw new Error('Please log in again.');const f=await getFirebase();await f.updateProfile(currentUser,{displayName:name});currentUser= f.auth.currentUser;updateDashboard();toggleProfileEdit(false);setStatus('Profile name updated.')}catch(e){setStatus(e.message||'Could not update profile name.',true)}}
 function setStatus(msg,isError=false){const el=document.getElementById('globalStatus');el.style.display='block';el.textContent=msg;el.style.color=isError?'#ffb4a8':'var(--gold2)'}
 function clearStatus(){const el=document.getElementById('globalStatus');el.style.display='none';el.textContent=''}
-async function getFirebase(){if(window.pzFirebase)return window.pzFirebase;const [appMod,authMod,firestoreMod]=await Promise.all([import('https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js'),import('https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js')]);const config={apiKey:"AIzaSyDRLWFf4ISfQdoZp7JaQAWwwKCoL_aV6No",authDomain:"property-zone-17121.firebaseapp.com",projectId:"property-zone-17121",storageBucket:"property-zone-17121.firebasestorage.app",messagingSenderId:"631227640032",appId:"1:631227640032:web:855536883072ccfe3b8885"};const app=appMod.initializeApp(config);const auth=authMod.getAuth(app);try{await authMod.setPersistence(auth,authMod.browserLocalPersistence);}catch(persistenceError){console.warn('Could not enable persistent sign-in; Firebase default persistence will be used:',persistenceError);}const db=firestoreMod.getFirestore(app);window.pzFirebase={auth,db,firestore:firestoreMod,createUserWithEmailAndPassword:authMod.createUserWithEmailAndPassword,signInWithEmailAndPassword:authMod.signInWithEmailAndPassword,updateProfile:authMod.updateProfile,sendEmailVerification:authMod.sendEmailVerification,sendPasswordResetEmail:authMod.sendPasswordResetEmail,onAuthStateChanged:authMod.onAuthStateChanged,signOut:authMod.signOut,setPersistence:authMod.setPersistence,browserLocalPersistence:authMod.browserLocalPersistence};window.pzFirebase.onAuthStateChanged(auth,async u=>{currentUser=null;currentMemberStatus=null;if(u&&!u.emailVerified){authReady=true;syncNavigation();const appMain=document.getElementById('appMain');if(appMain)appMain.style.visibility='visible';showView('login',false,true);return;}if(u){currentUser=u;currentMemberStatus='active';}syncNavigation();authReady=true;const appMain=document.getElementById('appMain');if(appMain)appMain.style.visibility='visible';let requestedView=decodeURIComponent(location.hash.slice(1));if(!requestedView){try{requestedView=sessionStorage.getItem('pz_current_view')||''}catch(e){}}const requestedElement=document.getElementById(requestedView);const incomingReferralCode=(new URLSearchParams(location.search).get('ref')||'').trim().toUpperCase();if(requestedElement&&requestedElement.classList.contains('view')){showView(requestedView,false,true);}else if(incomingReferralCode&&!u){const referralInput=document.getElementById('regReferral');if(referralInput)referralInput.value=incomingReferralCode;showView('register',false,true);}else{showView('home',false,true);}/* Keep the opening loader visible for the full 3-second intro. */});loadPublicWebsiteSettings(db,firestoreMod);loadPublicOffers(db,firestoreMod);loadPublicProperties(db,firestoreMod);return window.pzFirebase}
+async function getFirebase(){
+ if(window.pzFirebase)return window.pzFirebase;
+ if(window.pzFirebasePromise)return window.pzFirebasePromise;
+ window.pzFirebasePromise=(async()=>{if(window.pzFirebase)return window.pzFirebase;const [appMod,authMod,firestoreMod]=await Promise.all([import('https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js'),import('https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js')]);const config={apiKey:"AIzaSyDRLWFf4ISfQdoZp7JaQAWwwKCoL_aV6No",authDomain:"property-zone-17121.firebaseapp.com",projectId:"property-zone-17121",storageBucket:"property-zone-17121.firebasestorage.app",messagingSenderId:"631227640032",appId:"1:631227640032:web:855536883072ccfe3b8885"};const app=appMod.initializeApp(config);const auth=authMod.getAuth(app);try{await authMod.setPersistence(auth,authMod.browserLocalPersistence);}catch(persistenceError){console.warn('Could not enable persistent sign-in; Firebase default persistence will be used:',persistenceError);}const db=firestoreMod.getFirestore(app);window.pzFirebase={auth,db,firestore:firestoreMod,createUserWithEmailAndPassword:authMod.createUserWithEmailAndPassword,signInWithEmailAndPassword:authMod.signInWithEmailAndPassword,updateProfile:authMod.updateProfile,sendEmailVerification:authMod.sendEmailVerification,sendPasswordResetEmail:authMod.sendPasswordResetEmail,onAuthStateChanged:authMod.onAuthStateChanged,signOut:authMod.signOut,setPersistence:authMod.setPersistence,browserLocalPersistence:authMod.browserLocalPersistence};window.pzFirebase.onAuthStateChanged(auth,async u=>{currentUser=null;currentMemberStatus=null;if(u&&!u.emailVerified){authReady=true;syncNavigation();const appMain=document.getElementById('appMain');if(appMain)appMain.style.visibility='visible';showView('login',false,true);return;}if(u){currentUser=u;currentMemberStatus='active';}syncNavigation();authReady=true;const appMain=document.getElementById('appMain');if(appMain)appMain.style.visibility='visible';let requestedView=decodeURIComponent(location.hash.slice(1));if(!requestedView){try{requestedView=sessionStorage.getItem('pz_current_view')||''}catch(e){}}const requestedElement=document.getElementById(requestedView);const incomingReferralCode=(new URLSearchParams(location.search).get('ref')||'').trim().toUpperCase();if(u&&(requestedView==='login'||requestedView==='register')){showView('home',false,true);}else if(requestedElement&&requestedElement.classList.contains('view')){showView(requestedView,false,true);}else if(incomingReferralCode&&!u){const referralInput=document.getElementById('regReferral');if(referralInput)referralInput.value=incomingReferralCode;showView('register',false,true);}else{showView('home',false,true);}/* Keep the opening loader visible for the full 3-second intro. */});loadPublicWebsiteSettings(db,firestoreMod);loadPublicOffers(db,firestoreMod);loadPublicProperties(db,firestoreMod);return window.pzFirebase})();
+ try{return await window.pzFirebasePromise;}
+ catch(error){window.pzFirebasePromise=null;throw error;}
+}
 async function loadPublicProperties(db,fs){const grid=document.getElementById('propertyGrid');if(!grid)return;grid.innerHTML='<p class="muted">Loading verified properties…</p>';try{try{const settingsSnap=await fs.getDoc(fs.doc(db,'siteSettings','wallet'));walletSettingsCache=settingsSnap.exists()?settingsSnap.data():{};}catch(rateError){walletSettingsCache=walletSettingsCache||{};console.warn('Legacy property price conversion rate unavailable:',rateError);}const snap=await fs.getDocs(fs.query(fs.collection(db,'properties'),fs.where('status','==','published')));properties=snap.docs.map(d=>{const x=d.data();return{id:d.id,name:x.title||'Property listing',nameBn:x.titleBn||'',nameEn:x.titleEn||'',loc:x.location||'Location not provided',locBn:x.locationBn||'',locEn:x.locationEn||'',type:x.type||'Property',typeBn:x.typeBn||'',typeEn:x.typeEn||'',desc:x.description||'',descBn:x.descriptionBn||'',descEn:x.descriptionEn||'',price:x.price||'Price on request',priceCurrency:x.priceCurrency||(x.sourceSubmissionId?'legacy':'BDT'),imageUrl:x.imageUrl||'',status:x.availability||'Available',statusBn:x.availabilityBn||'',statusEn:x.availabilityEn||'',isSample:x.isSample===true}});updatePropertyTypeOptions();renderProperties();renderSavedProperties();}catch(e){properties=[];renderProperties();console.warn('Property listings could not load:',e);grid.innerHTML='<p class="muted">Property listings are temporarily unavailable. Please try again later.</p>';}}
 async function loadPublicOffers(db,fs){
  const grid=document.getElementById("publicOfferGrid");if(!grid)return;
@@ -722,8 +728,8 @@ async function ensureMemberProfile(f,user,referralCode='',phoneNumber=''){
  if(snap.exists()){
   const existing=snap.data()||{},savedCode=String(existing.referredByCode||'').trim().toUpperCase();
   if(savedCode){
-   try{await fs.setDoc(fs.doc(f.db,'referralRegistrations',savedCode,'members',user.uid),{createdAt:fs.serverTimestamp()},{merge:true});}
-   catch(referralRepairError){console.warn('Could not repair saved referral registration:',referralRepairError);}
+   fs.setDoc(fs.doc(f.db,'referralRegistrations',savedCode,'members',user.uid),{createdAt:fs.serverTimestamp()},{merge:true})
+    .catch(referralRepairError=>console.warn('Could not repair saved referral registration in background:',referralRepairError));
   }
   return existing;
  }
@@ -1000,8 +1006,159 @@ const PZ_EN_TO_BN={
   "This payment method is not configured by admin yet.":"এই পেমেন্ট পদ্ধতি এখনো অ্যাডমিন সেট করেননি।",
   "Submitting your request…":"আপনার অনুরোধ জমা হচ্ছে…",
   "Your wallet has no available balance.":"আপনার ওয়ালেটে ব্যবহারযোগ্য ব্যালেন্স নেই।",
+  "YOUR PROPERTY JOURNEY STARTS HERE":"আপনার প্রপার্টি যাত্রা শুরু হোক এখান থেকে",
+  "Find a place to belong. Explore property opportunities, discover new offers and manage everything from one simple place.":"নিজের পছন্দের জায়গা খুঁজে নিন। প্রপার্টির সুযোগ দেখুন, নতুন অফার জানুন এবং সবকিছু এক জায়গা থেকে পরিচালনা করুন।",
+  "A smarter way to explore property opportunities":"প্রপার্টির সুযোগ খোঁজার আরও সহজ উপায়",
+  "Your next chapter.":"আপনার জীবনের পরবর্তী অধ্যায়।",
+  "PROPERTY MARKETPLACE":"প্রপার্টি মার্কেটপ্লেস",
+  "Looking for your next property? Browse available listings and find an opportunity.":"আপনার পরবর্তী প্রপার্টি খুঁজছেন? প্রকাশিত তালিকা দেখুন এবং পছন্দের সুযোগ খুঁজে নিন।",
+  "Start exploring":"ঘুরে দেখা শুরু করুন",
+  "Explore":"ঘুরে দেখুন",
+  "Browse property opportunities":"প্রপার্টির সুযোগগুলো দেখুন",
+  "Discover":"আবিষ্কার করুন",
+  "See the latest offers and updates":"সর্বশেষ অফার ও আপডেট দেখুন",
+  "Manage":"পরিচালনা করুন",
+  "Keep your member account in one place":"আপনার সদস্য অ্যাকাউন্ট এক জায়গায় রাখুন",
+  "STAY IN THE LOOP":"সর্বশেষ খবরের সঙ্গে থাকুন",
+  "Latest updates":"সর্বশেষ আপডেট",
+  "NEWS":"খবর",
+  "ANNOUNCEMENTS":"ঘোষণা",
+  "Loading notices":"ঘোষণা লোড হচ্ছে",
+  "HANDPICKED FOR YOU":"আপনার জন্য বাছাই করা",
+  "Offers":"অফার",
+  "special deals":"বিশেষ ছাড়",
+  "FEATURED OFFERS":"বিশেষ অফারসমূহ",
+  "Loading current offers":"বর্তমান অফার লোড হচ্ছে",
+  "READY TO GET STARTED?":"শুরু করতে প্রস্তুত?",
+  "Your next opportunity could be one click away. Explore the latest property listings today.":"আপনার পরবর্তী সুযোগটি হতে পারে মাত্র এক ক্লিক দূরে। আজই সর্বশেষ প্রপার্টির তালিকা দেখুন।",
+  "View properties":"প্রপার্টি দেখুন",
+  "Verified listings only":"শুধু যাচাইকৃত তালিকা",
+  "Available Properties":"উপলভ্য প্রপার্টি",
+  "All property types":"সব ধরনের প্রপার্টি",
+  "Default order":"সাধারণ ক্রম",
+  "Price: low to high":"দাম: কম থেকে বেশি",
+  "Price: high to low":"দাম: বেশি থেকে কম",
+  "Name: A to Z":"নাম: ক থেকে ঁ",
+  "Clear filters":"ফিল্টার মুছুন",
+  "All Available Upcoming":"সব প্রপার্টি | উপলভ্য | আসন্ন",
+  "Showing all properties":"সব প্রপার্টি দেখানো হচ্ছে",
+  "Back to properties":"প্রপার্টির তালিকায় ফিরুন",
+  "Welcome back":"আবারও স্বাগতম",
+  "Member Login":"সদস্য লগইন",
+  "Forgot password?":"পাসওয়ার্ড ভুলে গেছেন?",
+  "Sign in with your email and password. Your email must be verified first.":"আপনার ইমেইল ও পাসওয়ার্ড দিয়ে প্রবেশ করুন। আগে ইমেইল যাচাই করতে হবে।",
+  "New here?":"এখানে নতুন?",
+  "Create account":"অ্যাকাউন্ট খুলুন",
+  "Become a member":"সদস্য হন",
+  "Create Account":"অ্যাকাউন্ট তৈরি করুন",
+  "Send Verification Email":"যাচাইকরণ ইমেইল পাঠান",
+  "We will send a verification link to your email. Verify your email before logging in.":"আপনার ইমেইলে একটি যাচাইকরণ লিংক পাঠানো হবে। লগইনের আগে ইমেইল যাচাই করুন।",
+  "Wallet Balance":"ওয়ালেটের ব্যালেন্স",
+  "Available BDT balance":"উপলভ্য টাকা (BDT) ব্যালেন্স",
+  "Hourly Earning":"প্রতি ঘণ্টার আয়",
+  "From active packages":"সক্রিয় প্যাকেজ থেকে",
+  "daily":"প্রতিদিন",
+  "Today's Earning":"আজকের আয়",
+  "Estimated earnings today":"আজকের আনুমানিক আয়",
+  "Total Earning":"মোট আয়",
+  "Deposit":"জমা",
+  "Add funds to your wallet":"আপনার ওয়ালেটে টাকা যোগ করুন",
+  "Saved on this device":"এই ডিভাইসে সংরক্ষিত",
+  "Commission":"কমিশন",
+  "QUICK ACCESS":"দ্রুত প্রবেশ",
+  "Services":"সেবাসমূহ",
+  "document":"নথি",
+  "Browse Properties":"প্রপার্টি দেখুন",
+  "Explore available listings":"উপলভ্য তালিকা দেখুন",
+  "Add Property":"প্রপার্টি যোগ করুন",
+  "Submit a property for admin review":"অ্যাডমিনের পর্যালোচনার জন্য প্রপার্টি জমা দিন",
+  "Referral program overview":"রেফারেল প্রোগ্রামের বিবরণ",
+  "Notifications":"বিজ্ঞপ্তি",
+  "Account updates and alerts":"অ্যাকাউন্টের আপডেট ও সতর্কবার্তা",
+  "Settings":"সেটিংস",
+  "Manage account preferences":"অ্যাকাউন্টের পছন্দসমূহ পরিচালনা করুন",
+  "Account Profile":"অ্যাকাউন্ট প্রোফাইল",
+  "Update your name and view email status":"আপনার নাম হালনাগাদ করুন এবং ইমেইলের অবস্থা দেখুন",
+  "RECENT ACTIVITY":"সাম্প্রতিক কার্যক্রম",
+  "Activity Overview":"কার্যক্রমের সারসংক্ষেপ",
+  "Loading your recent activity":"আপনার সাম্প্রতিক কার্যক্রম লোড হচ্ছে",
+  "ACCOUNT STATUS":"অ্যাকাউন্টের অবস্থা",
+  "Email account":"ইমেইল অ্যাকাউন্ট",
+  "Your account verification status will appear here.":"আপনার অ্যাকাউন্ট যাচাইয়ের অবস্থা এখানে দেখা যাবে।",
+  "Account Details":"অ্যাকাউন্টের বিবরণ",
+  "Back to Dashboard":"ড্যাশবোর্ডে ফিরুন",
+  "Account status":"অ্যাকাউন্টের অবস্থা",
+  "Profile Information":"প্রোফাইলের তথ্য",
+  "Full Name":"পূর্ণ নাম",
+  "Display name":"প্রদর্শিত নাম",
+  "Save name":"নাম সংরক্ষণ করুন",
+  "Cancel":"বাতিল",
+  "Member Account":"সদস্য অ্যাকাউন্ট",
+  "Sign in to view your account.":"আপনার অ্যাকাউন্ট দেখতে লগইন করুন।",
+  "Recent Activity":"সাম্প্রতিক কার্যক্রম",
+  "Your account activity will appear here when these features are available.":"এই সুবিধাগুলো চালু হলে আপনার অ্যাকাউন্টের কার্যক্রম এখানে দেখা যাবে।",
+  "My Properties":"আমার প্রপার্টিসমূহ",
+  "You have not added any properties yet.":"আপনি এখনো কোনো প্রপার্টি যোগ করেননি।",
+  "Property submission will be available after the member listing feature is enabled.":"সদস্যদের তালিকা সুবিধা চালু হলে প্রপার্টি জমা দেওয়ার সুযোগ পাওয়া যাবে।",
+  "YOUR SHORTLIST":"আপনার পছন্দের তালিকা",
+  "Saved Properties":"সংরক্ষিত প্রপার্টি",
+  "Your saved listings are stored on this device and browser.":"আপনার সংরক্ষিত তালিকা এই ডিভাইস ও ব্রাউজারে রাখা হয়েছে।",
+  "Loading saved properties":"সংরক্ষিত প্রপার্টি লোড হচ্ছে",
+  "MEMBER PROPERTY SUBMISSION":"সদস্যের প্রপার্টি জমা",
+  "Submit a Property":"প্রপার্টি জমা দিন",
+  "Submit accurate details for admin review. A listing will appear publicly only after approval.":"অ্যাডমিনের পর্যালোচনার জন্য সঠিক তথ্য জমা দিন। অনুমোদনের পরেই তালিকাটি সবার জন্য প্রকাশিত হবে।",
+  "PROPERTY NAME":"প্রপার্টির নাম",
+  "LOCATION":"অবস্থান",
+  "Enter your email":"আপনার ইমেইল লিখুন",
+  "Enter your password":"আপনার পাসওয়ার্ড লিখুন",
+  "Confirm password":"পাসওয়ার্ড নিশ্চিত করুন",
+  "First name":"নামের প্রথম অংশ",
+  "Last name":"নামের শেষ অংশ",
+  "Phone number":"ফোন নম্বর",
+  "Referral code":"রেফারেল কোড",
+  "Search properties":"প্রপার্টি খুঁজুন",
+  "Search by name or location":"নাম বা অবস্থান দিয়ে খুঁজুন",
+  "No recent activity":"সাম্প্রতিক কোনো কার্যক্রম নেই",
+  "No saved properties yet":"এখনো কোনো প্রপার্টি সংরক্ষণ করা হয়নি",
+  "Available balance":"উপলভ্য ব্যালেন্স",
+  "Withdrawal amount":"উত্তোলনের পরিমাণ",
+  "Deposit amount":"জমার পরিমাণ",
+  "Payment method":"পেমেন্ট পদ্ধতি",
+  "Cash In Number":"ক্যাশ-ইন নম্বর",
+  "Cash Out Number":"ক্যাশ-আউট নম্বর",
+  "Transaction ID":"লেনদেন আইডি",
+  "Submit request":"অনুরোধ জমা দিন",
+  "Request submitted successfully":"অনুরোধ সফলভাবে জমা হয়েছে",
+  "Please wait":"অনুগ্রহ করে অপেক্ষা করুন",
+  "Try again":"আবার চেষ্টা করুন",
+  "Loading":"লোড হচ্ছে",
+  "View all":"সব দেখুন",
+  "Learn more":"আরও জানুন",
+  "Read more":"আরও পড়ুন",
+  "See details":"বিস্তারিত দেখুন",
+  "Property details":"প্রপার্টির বিবরণ",
+  "Description":"বিবরণ",
+  "Price":"দাম",
+  "Type":"ধরন",
+  "Status":"অবস্থা",
+  "Contact":"যোগাযোগ",
+  "Send enquiry":"অনুসন্ধান পাঠান",
+  "Your message":"আপনার বার্তা",
+  "Message":"বার্তা",
+  "Send":"পাঠান",
+  "Close":"বন্ধ করুন",
+  "Save":"সংরক্ষণ করুন",
+  "Edit":"সম্পাদনা",
+  "Update":"হালনাগাদ",
+  "Delete":"মুছুন",
+  "Confirm":"নিশ্চিত করুন",
+  "Yes":"হ্যাঁ",
+  "No":"না",
+  "Choose language":"ভাষা নির্বাচন করুন",
+  "Bangla":"বাংলা",
+  "English":"ইংরেজি",
  };
-const PZ_BN_TO_EN=Object.freeze({
+const PZ_BN_TO_EN={
   "মেনু": "Menu",
   "ছবি যোগ করুন": "Add image",
   "নির্বাচিত ছবি: ": "Selected image: ",
@@ -1516,7 +1673,8 @@ const PZ_BN_TO_EN=Object.freeze({
   "পূর্বাচল, ঢাকা · বাড়ি": "Purbachal, Dhaka · House",
   
   
-});
+};
+
 const PZ_BN_TO_EN_PATCH={
  "আপনার ওয়ালেটে টাকা যোগ করুন · বাংলাদেশি টাকা ৳":"Add funds to your wallet · BDT ৳",
  "টাকা উত্তোলনের অনুরোধ · বাংলাদেশি টাকা ৳":"Request a payout · BDT ৳",
@@ -2109,7 +2267,7 @@ for(const [english,bangla] of Object.entries(PZ_EN_TO_BN)){
  else if(existing.normalized!==normalized)existing.ambiguous=true;
 }
 for(const [bangla,candidate] of pzReverseCandidates){
- if(!candidate.ambiguous&&!Object.prototype.hasOwnProperty.call(PZ_BN_TO_EN,bangla)&&!Object.prototype.hasOwnProperty.call(PZ_BN_TO_EN_PATCH,bangla)){
+ if(!Object.prototype.hasOwnProperty.call(PZ_BN_TO_EN,bangla)&&!Object.prototype.hasOwnProperty.call(PZ_BN_TO_EN_PATCH,bangla)){
   PZ_BN_TO_EN_PATCH[bangla]=candidate.english;
  }
 }
@@ -2260,7 +2418,52 @@ function setWebsiteLanguage(lang){
  }
 })();
 
-async function loginEmailPassword(){const button=document.getElementById('loginButton');if(button?.disabled)return;const original=button?.innerHTML||'Login';const started=Date.now();if(button){button.disabled=true;button.innerHTML='<span class="login-spinner" aria-hidden="true"></span> Logging in…';}clearStatus();let loginError=null;try{const f=await getFirebase();await f.setPersistence(f.auth,f.browserLocalPersistence);const email=document.getElementById('loginEmail').value.trim(),pw=document.getElementById('loginPassword').value;if(!email||!pw)throw new Error('Enter email and password.');const result=await f.signInWithEmailAndPassword(f.auth,email,pw);if(!result.user.emailVerified){try{await f.sendEmailVerification(result.user)}catch(verificationError){console.warn('Could not resend verification email:',verificationError)}await f.signOut(f.auth);throw new Error('Your email is not verified. A verification link has been sent again. Check your inbox and spam folder.');}const adminSnap=await f.firestore.getDoc(f.firestore.doc(f.db,'admins',result.user.uid));const adminData=adminSnap.exists()?adminSnap.data():null;if(adminData?.role==='admin'&&adminData?.active===true){currentMemberStatus='active';}else{await ensureMemberProfile(f,result.user,'');currentMemberStatus='active';}currentUser=result.user;syncNavigation();updateDashboard();setStatus('Logged in successfully.');showView('home')}catch(e){loginError=e;const code=e?.code||'';const message=(code==='auth/invalid-credential'||code==='auth/wrong-password'||code==='auth/user-not-found')?'Incorrect email or password. Please try again.':(e.message||'Login failed.');setStatus(message,true)}finally{const remaining=Math.max(0,3000-(Date.now()-started));await new Promise(resolve=>setTimeout(resolve,remaining));if(button){button.disabled=false;button.innerHTML=original;}}}
+async function loginEmailPassword(){
+ const button=document.getElementById('loginButton');
+ if(button?.disabled)return;
+ const original=button?.innerHTML||'Login',started=Date.now();
+ if(button){button.disabled=true;button.innerHTML='<span class="login-spinner" aria-hidden="true"></span> Logging in…';}
+ clearStatus();
+ try{
+  const f=await getFirebase();
+  await f.setPersistence(f.auth,f.browserLocalPersistence);
+  const email=document.getElementById('loginEmail').value.trim(),pw=document.getElementById('loginPassword').value;
+  if(!email||!pw)throw new Error('Enter email and password.');
+  const result=await f.signInWithEmailAndPassword(f.auth,email,pw);
+  if(!result.user.emailVerified){
+   try{await f.sendEmailVerification(result.user);}catch(verificationError){console.warn('Could not resend verification email:',verificationError);}
+   await f.signOut(f.auth);
+   throw new Error('Your email is not verified. A verification link has been sent again. Check your inbox and spam folder.');
+  }
+  currentUser=result.user;
+  currentMemberStatus='active';
+  authReady=true;
+  syncNavigation();
+  updateDashboard();
+  setStatus('Logged in successfully.');
+  showView('home');
+  Promise.resolve().then(async()=>{
+   try{
+    const adminSnap=await f.firestore.getDoc(f.firestore.doc(f.db,'admins',result.user.uid));
+    const adminData=adminSnap.exists()?adminSnap.data():null;
+    if(adminData?.role==='admin'&&adminData?.active===true){currentMemberStatus='active';}
+    else{
+     const member=await ensureMemberProfile(f,result.user,'');
+     currentMemberStatus=member?.status||'active';
+    }
+    if(currentUser?.uid===result.user.uid)updateDashboard();
+   }catch(profileError){console.warn('Member/referral background sync did not finish; signed-in session is kept:',profileError);}
+  });
+ }catch(e){
+  const code=e?.code||'';
+  const message=(code==='auth/invalid-credential'||code==='auth/wrong-password'||code==='auth/user-not-found')?'Incorrect email or password. Please try again.':(e.message||'Login failed.');
+  setStatus(message,true);
+ }finally{
+  const remaining=Math.max(0,3000-(Date.now()-started));
+  await new Promise(resolve=>setTimeout(resolve,remaining));
+  if(button){button.disabled=false;button.innerHTML=original;}
+ }
+}
 async function resetLoginPassword(){clearStatus();try{const email=document.getElementById('loginEmail').value.trim();if(!email)throw new Error('Enter your email address in the Email field first.');if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Enter a valid email address.');const f=await getFirebase();await f.sendPasswordResetEmail(f.auth,email);setStatus('Password reset email sent. Open your inbox and follow the link.');}catch(e){setStatus(e.message||'Could not send password reset email.',true)}}
 async function refreshMemberStatus(){if(!currentUser)return;try{const f=await getFirebase(),snap=await f.firestore.getDoc(f.firestore.doc(f.db,'members',currentUser.uid));if(!snap.exists())throw new Error('Member profile not found.');currentMemberStatus=snap.data().status||'pending';const heading=document.getElementById('approvalHeading'),message=document.getElementById('approvalMessage');if(currentMemberStatus==='active'){if(heading)heading.textContent='Account Activated';if(message)message.textContent='Your account is active. You can now access member services.';setStatus('Your account is active.');showView('dashboard');}else if(currentMemberStatus==='inactive'){if(heading)heading.textContent='Account Inactive';if(message)message.textContent='Your account is inactive. Please contact Prologis, Inc. (PLD) support.';setStatus('Your account is inactive.',true);}else{setStatus('Your account is still waiting for admin approval.');}}catch(e){setStatus('Could not check approval: '+e.message,true)}}
 async function logout(){try{const f=await getFirebase();await f.signOut(f.auth);currentUser=null;currentMemberStatus=null;syncNavigation();showView('home');setStatus('You are logged out.')}catch(e){setStatus(e.message,true)}}
