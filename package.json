@@ -1,0 +1,12 @@
+{
+  "name": "property-zone-earnings-job",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Scheduled, idempotent daily package earnings credit for Property Zone",
+  "scripts": {
+    "credit:daily": "node scripts/credit-daily-earnings.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0"
+  }
+}
