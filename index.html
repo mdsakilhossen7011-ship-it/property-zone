@@ -1663,6 +1663,7 @@ function setWebsiteLanguage(lang){
   for(const record of records){
    if(record.type==='characterData'&&record.target){
     const changed=record.target;
+    if(changed.parentElement?.closest('[data-pz-no-translate]'))continue;
     if(changed.__pzTranslatedValue!==changed.nodeValue){
      changed.__pzEnglish=changed.nodeValue;
      const translated=pzApplyTranslation(changed.__pzEnglish);
