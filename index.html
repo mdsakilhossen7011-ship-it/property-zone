@@ -168,8 +168,8 @@ html.pz-lang-loading body{visibility:hidden}
 .wallet-methods-top .binance-mark{font-size:11px;letter-spacing:.3px}
 @media(max-width:420px){.wallet-methods-top{gap:6px}.wallet-methods-top .wallet-method{min-height:72px;padding:8px 2px;font-size:11px}.wallet-brand-icon{width:25px;height:25px;flex-basis:25px}.wallet-methods-top .binance-mark{font-size:10px}}
 
-/* Menu visibility fix: keep the drawer above its dimming backdrop */
-.menu-backdrop{z-index:2000!important}
+/* Keep the backdrop below the drawer and the header so menu controls remain clickable */
+.menu-backdrop{z-index:19!important}
 .side-menu{z-index:2001!important;right:0!important;top:0!important;visibility:hidden!important;transform:translate3d(105%,0,0)!important;pointer-events:none!important}
 .side-menu.open{visibility:visible!important;transform:translate3d(0,0,0)!important;pointer-events:auto!important}
 html.pz-auth-pending #appMain{visibility:hidden!important}
@@ -404,7 +404,7 @@ html.pz-auth-pending #sideMenu{pointer-events:none!important}
   if(loader){loader.style.display='none';loader.style.opacity='0';loader.style.visibility='hidden';loader.setAttribute('aria-hidden','true');}
   const status=document.getElementById('globalStatus');
   if(status){status.style.display='block';status.textContent='Account service is taking longer to respond. Public pages are available; please check your connection and refresh to retry login.';status.style.color='#f0d17d';}
- },12000);
+ },5000);
  let wanted='';
  try{
   const referralCode=(new URLSearchParams(location.search).get('ref')||'').trim().toUpperCase();
