@@ -1447,7 +1447,9 @@ function pzApplyTranslation(value){
   const entries=Object.entries(dictionary).filter(([source,target])=>source!==target).sort((a,b)=>b[0].length-a[0].length);
   for(const [source,target] of entries){
    const escaped=source.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-   const pattern=caseInsensitive?new RegExp(escaped,'gi'):new RegExp(escaped,'g');
+   const isSingleWord=/^[\\p{L}\\p{N}]+$/u.test(source);
+   const bounded=isSingleWord?'(?<![\\p{L}\\p{N}-])'+escaped+'(?![\\p{L}\\p{N}-])':escaped;
+   const pattern=caseInsensitive?new RegExp(bounded,'giu'):new RegExp(bounded,'gu');
    result=result.replace(pattern,()=>target);
   }
  };
