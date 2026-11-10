@@ -436,14 +436,11 @@ function pzExactDictionaryTranslation(value){
 }
 function pzLocalizedField(data,field,legacyField=field){
  const suffix=pzLanguage==='bn'?'Bn':'En',explicit=String(data?.[field+suffix]??'').trim();
- if(explicit){
-  const hasBangla=/[\u0980-\u09FF]/.test(explicit);
-  if((pzLanguage==='bn'&&hasBangla)||(pzLanguage==='en'&&!hasBangla))return explicit;
-  return pzApplyTranslation(explicit);
- }
- const raw=String(data?.[legacyField]??'').trim();
+ const raw=explicit||String(data?.[legacyField]??'').trim();
  if(!raw)return '';
- const hasBangla=/[\u0980-\u09FF]/.test(raw);
+ const hasBangla=/[\u0980-\u09FF]/.test(raw),hasEnglish=/[A-Za-z]/.test(raw);
+ // Mixed-script Firestore values must be normalized instead of being treated as fully localized.
+ if(hasBangla&&hasEnglish)return pzApplyTranslation(raw);
  if((pzLanguage==='bn'&&hasBangla)||(pzLanguage==='en'&&!hasBangla))return raw;
  return pzApplyTranslation(raw);
 }
@@ -2399,6 +2396,15 @@ Object.assign(PZ_BN_TO_EN_PATCH,{
  "নাম: ক থেকে ঁ": "Name: from ka to chandrabindu",
  "লেনদেন আইডি (TrxID)": "Transaction ID (TrxID)",
  "পেমেন্টের TrxID লিখুন": "Enter payment TrxID"
+});
+Object.assign(PZ_EN_TO_BN,{
+ "Spacious suburban-home concept with landscaped outdoor space.":"বাগানঘেরা প্রশস্ত শহরতলির বাড়ির ধারণা।",
+ "Fictional illustrative content; this is not a যাচাইকৃত প্রপার্টি offer.":"এটি একটি কাল্পনিক নমুনা বিবরণ; এটি যাচাইকৃত কোনো প্রপার্টির প্রস্তাব নয়।",
+ "Fictional illustrative content; this is not a verified property offer.":"এটি একটি কাল্পনিক নমুনা বিবরণ; এটি যাচাইকৃত কোনো প্রপার্টির প্রস্তাব নয়।"
+});
+Object.assign(PZ_BN_TO_EN_PATCH,{
+ "বাগানঘেরা প্রশস্ত শহরতলির বাড়ির ধারণা।":"Spacious suburban-home concept with landscaped outdoor space.",
+ "এটি একটি কাল্পনিক নমুনা বিবরণ; এটি যাচাইকৃত কোনো প্রপার্টির প্রস্তাব নয়।":"Fictional illustrative content; this is not a verified property offer."
 });
 function pzApplyTranslation(value){
  const original=String(value??'');
