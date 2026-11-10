@@ -2077,6 +2077,7 @@ Object.assign(PZ_EN_TO_BN,{
  "Enter Binance Pay ID or UID":"বাইন্যান্স পে আইডি অথবা ইউআইডি লিখুন",
  "Binance Pay ID / UID":"বাইন্যান্স পে আইডি / ইউআইডি"
 });
+Object.assign(PZ_BN_TO_EN_PATCH,{});
 function pzApplyTranslation(value){
  const original=String(value??'');
  const dictionary=pzLanguage==='bn'?PZ_EN_TO_BN:{...PZ_BN_TO_EN,...PZ_BN_TO_EN_PATCH};
