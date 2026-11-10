@@ -1715,7 +1715,7 @@ function pzTranslateText(root=document.body){
  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
  let node;
  while((node=walker.nextNode())){
-  if(!node.parentElement||node.parentElement.closest('script,style,textarea,input,[contenteditable="true"],[data-pz-no-translate]))continue;
+  if(!node.parentElement||node.parentElement.closest('script,style,textarea,input,[contenteditable="true"],[data-pz-no-translate]'))continue;
   if(node.__pzEnglish===undefined)node.__pzEnglish=node.nodeValue;
   else if(node.__pzTranslatedValue!==undefined&&node.nodeValue!==node.__pzTranslatedValue)node.__pzEnglish=node.nodeValue;
   const translated=pzApplyTranslation(node.__pzEnglish);
