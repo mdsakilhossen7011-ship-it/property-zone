@@ -1501,7 +1501,9 @@ const PZ_BN_TO_EN_PATCH={
  "অফারের বিস্তারিত লিখুন":"Write offer details",
  "আধুনিক স্থাপত্যের চিত্র":"Modern architectural illustration",
  "আপনার পুরো নাম":"Your full name",
- "ভাষা":"language"
+ "ভাষা":"language",
+ "বাংলাদেশি টাকা ৳":"Bangladeshi Taka (BDT ৳)",
+ "বাংলাদেশি টাকা":"Bangladeshi Taka"
 };
  // Language-test draft: explicit BDT wording; never translate BDT/৳ as dollars.
 Object.assign(PZ_EN_TO_BN,{
@@ -1720,7 +1722,7 @@ function pzApplyTranslation(value){
   if(/[A-Za-z]{2,}/.test(residue))return 'অনুবাদ সম্পূর্ণ নয়।';
  }else{
   translated=translated.replace(/[০-৯]/g,d=>'০১২৩৪৫৬৭৮৯'.indexOf(d));
-  if(/[\u0980-\u09FF]/.test(translated))return 'Translation not provided.';
+  if(/[\u0980-\u09FF]/.test(translated.replace(/৳/g,'')))return 'Translation not provided.';
  }
  return translated;
 }
