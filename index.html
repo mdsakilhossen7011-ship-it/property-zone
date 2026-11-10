@@ -2267,7 +2267,7 @@ for(const [english,bangla] of Object.entries(PZ_EN_TO_BN)){
  else if(existing.normalized!==normalized)existing.ambiguous=true;
 }
 for(const [bangla,candidate] of pzReverseCandidates){
- if(!candidate.ambiguous&&!Object.prototype.hasOwnProperty.call(PZ_BN_TO_EN,bangla)&&!Object.prototype.hasOwnProperty.call(PZ_BN_TO_EN_PATCH,bangla)){
+ if(!Object.prototype.hasOwnProperty.call(PZ_BN_TO_EN,bangla)&&!Object.prototype.hasOwnProperty.call(PZ_BN_TO_EN_PATCH,bangla)){
   PZ_BN_TO_EN_PATCH[bangla]=candidate.english;
  }
 }
