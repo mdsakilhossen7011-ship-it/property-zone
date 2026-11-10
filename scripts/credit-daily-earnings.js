@@ -42,26 +42,28 @@ async function main() {
 
         const termDays = Math.max(1, Math.min(365, Number(p.termDays || 30)));
         const elapsedPackageDays = Math.max(0, Math.min(termDays, Math.floor((now - startedAtMs) / dayMs)));
-        const scheduleStartMs = p.earningScheduleStartedAt && typeof p.earningScheduleStartedAt.toMillis === "function"
+        let scheduleStartMs = p.earningScheduleStartedAt && typeof p.earningScheduleStartedAt.toMillis === "function"
           ? p.earningScheduleStartedAt.toMillis()
           : null;
+        let scheduleMaxDays = p.earningScheduleMaxDays == null ? null : Number(p.earningScheduleMaxDays);
 
         if (scheduleStartMs == null) {
-          const remainingDaysAtSetup = Math.max(0, termDays - elapsedPackageDays);
-          tx.update(packageRef, {
-            earningScheduleStartedAt: admin.firestore.Timestamp.fromMillis(now),
-            earningScheduleMaxDays: remainingDaysAtSetup,
-            creditedDays: 0,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-          });
-          if (elapsedPackageDays < termDays) return null;
+          scheduleStartMs = now;
+          scheduleMaxDays = Math.max(0, termDays - elapsedPackageDays);
+          if (elapsedPackageDays < termDays) {
+            tx.update(packageRef, {
+              earningScheduleStartedAt: admin.firestore.Timestamp.fromMillis(now),
+              earningScheduleMaxDays: scheduleMaxDays,
+              creditedDays: 0,
+              updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+            return null;
+          }
         }
 
-        const effectiveScheduleStartMs = scheduleStartMs == null ? now : scheduleStartMs;
+        const effectiveScheduleStartMs = scheduleStartMs;
         const maxCreditDays = Math.max(0, Math.min(termDays, Number(
-          p.earningScheduleMaxDays == null
-            ? Math.max(0, termDays - elapsedPackageDays)
-            : p.earningScheduleMaxDays
+          scheduleMaxDays == null ? Math.max(0, termDays - elapsedPackageDays) : scheduleMaxDays
         )));
         const dueCreditDays = Math.max(0, Math.min(maxCreditDays, Math.floor((now - effectiveScheduleStartMs) / dayMs)));
         const alreadyCreditedDays = Math.max(0, Math.min(maxCreditDays, Number(p.creditedDays || 0)));
@@ -149,6 +151,8 @@ async function main() {
         });
 
         const update = {
+          earningScheduleStartedAt: p.earningScheduleStartedAt || admin.firestore.Timestamp.fromMillis(effectiveScheduleStartMs),
+          earningScheduleMaxDays: maxCreditDays,
           creditedDays: nextCreditedDays,
           dailyEarningsPaidBDT: roundBDT(Number(p.dailyEarningsPaidBDT || 0) + earnings),
           lastEarningCreditAt: admin.firestore.FieldValue.serverTimestamp(),
