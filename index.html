@@ -677,7 +677,7 @@ async function loadPublicOffers(db,fs){
   grid.innerHTML="";
   snap.forEach(docSnap=>{
    const o=docSnap.data(),card=document.createElement("article");card.className="card";card.style.overflow="hidden";
-   if(o.imageUrl){const img=document.createElement("img");img.src=o.imageUrl;img.alt=pzLocalizedField({...o,title:o.title||'Special Offer'},'title');img.loading="lazy";img.style.cssText="width:100%;height:170px;object-fit:cover;display:block";img.onerror=()=>img.remove();card.appendChild(img);}
+   if(o.imageUrl){const img=document.createElement("img");img.src=o.imageUrl;img.alt=pzLocalizedField({...o,title:o.title||(pzLanguage==='bn'?'বিশেষ অফার':'Special Offer')},'title');img.loading="lazy";img.style.cssText="width:100%;height:170px;object-fit:cover;display:block";img.onerror=()=>img.remove();card.appendChild(img);}
    const body=document.createElement("div");body.style.padding="16px";
    const title=document.createElement("h3");title.textContent=pzLocalizedField({...o,title:o.title||(pzLanguage==='bn'?'বিশেষ অফার':'Special Offer')},'title');title.style.cssText="margin:0 0 8px;font:22px Georgia";
    const desc=document.createElement("p");desc.className="muted";desc.textContent=pzLocalizedField(o,'description');desc.style.whiteSpace="pre-wrap";
