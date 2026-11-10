@@ -571,7 +571,7 @@ async function loadWalletSettings(kind){
   if(!enabled){info.textContent=message||title;form.hidden=true;return;}
   form.hidden=false;
   const heading=String(kind==='deposit'?walletSettingsCache.depositLabelText||'Cash In Number':walletSettingsCache.withdrawLabelText||'Cash Out Number').trim();
-  info.textContent=(account?heading+' · '+method+': '+account:(message||'Admin has not configured this payment method yet.'))+(kind==='withdraw'?' · Minimum: ৳'+Math.max(500,Number(walletSettingsCache.minimumWithdrawBDT||500)).toLocaleString('en-US'):'');
+  info.textContent=(account?heading+' · '+method+': '+account:(message||'Admin has not configured this payment method yet.'))++' · Minimum: ৳'+Math.max(1,Number(kind==='deposit'?walletSettingsCache.minimumDepositBDT||500:walletSettingsCache.minimumWithdrawBDT||500)).toLocaleString('en-US');
   const submit=form.querySelector('button[type="submit"]');
   if(submit)submit.disabled=!account;
  }catch(e){info.textContent='Could not load payment settings. Please try again later.';form.hidden=true;console.warn('Wallet settings could not load:',e);}
@@ -600,11 +600,11 @@ async function submitWalletRequest(event,kind){
  event.preventDefault();if(!currentUser){setStatus('Please log in first.',true);showView('login');return;}
  const isDeposit=kind==='deposit',amountBDT=Number(document.getElementById(isDeposit?'depositAmount':'withdrawAmount').value),method=document.getElementById(isDeposit?'depositMethod':'withdrawMethod').value,account=document.getElementById(isDeposit?'depositNumber':'withdrawNumber').value.trim(),trx=isDeposit?document.getElementById('depositTrx').value.trim():'',status=document.getElementById(kind+'Status'),form=event.currentTarget,submit=form.querySelector('button[type="submit"]');
  await loadWalletSettings(kind);
- const settings=walletSettingsCache||{},minimum=Math.max(500,Number(settings.minimumWithdrawBDT||500)),enabled=isDeposit?settings.depositEnabled===true:settings.withdrawEnabled===true,accounts=isDeposit?settings.depositAccounts:settings.withdrawAccounts,officialAccount=String(accounts?.[method]||'').trim();
+ const settings=walletSettingsCache||{},minimumDeposit=Math.max(1,Number(settings.minimumDepositBDT||500)),minimumWithdraw=Math.max(1,Number(settings.minimumWithdrawBDT||500)),enabled=isDeposit?settings.depositEnabled===true:settings.withdrawEnabled===true,accounts=isDeposit?settings.depositAccounts:settings.withdrawAccounts,officialAccount=String(accounts?.[method]||'').trim();
  if(!enabled){status.textContent=(isDeposit?settings.depositMessage:settings.withdrawMessage)||'This service is currently unavailable.';return;}
  if(!officialAccount){status.textContent='This payment method is not configured by admin yet.';return;}
  if(!Number.isSafeInteger(amountBDT)||amountBDT<=0){status.textContent='Enter a valid amount in BDT.';return;}
- if(!isDeposit&&amountBDT<minimum){status.textContent='Minimum withdrawal is ৳'+minimum.toLocaleString('en-US')+'. Requests below this amount are not accepted.';return;}
+ if(isDeposit&&amountBDT<minimumDeposit){status.textContent='Minimum deposit is ৳'+minimumDeposit.toLocaleString('en-US')+'. Requests below this amount are not accepted.';return;}\n if(!isDeposit&&amountBDT<minimumWithdraw){status.textContent='Minimum withdrawal is ৳'+minimumWithdraw.toLocaleString('en-US')+'. Requests below this amount are not accepted.';return;}
  if(method==='Binance'||method==='Bank Account'?account.length<3||account.length>100:method==='Rocket'?!/^01[0-9]{10}$/.test(account):!/^01[0-9]{9}$/.test(account)){status.textContent=method==='Binance'?'Enter a valid Binance Pay ID or UID.':method==='Bank Account'?'Enter your bank name and account number.':method==='Rocket'?'Enter your 12-digit Rocket account number, including the check digit.':'Enter a valid 11-digit Bangladesh wallet number.';return;}
  if(isDeposit&&!/^[A-Za-z0-9-]{6,100}$/.test(trx)){status.textContent='Invalid Transaction ID format. Please check your TrxID.';return;}
  submit.disabled=true;status.textContent='Submitting your request…';
