@@ -1714,7 +1714,15 @@ function pzApplyTranslation(value){
   return isSingleWord?'(?<![\\p{L}\\p{N}\\p{M}-])'+escaped+'(?![\\p{L}\\p{N}\\p{M}-])':escaped;
  });
  const pattern=new RegExp('(?:'+alternatives.join('|')+')','gu'+(pzLanguage==='bn'?'i':''));
- return original.replace(pattern,match=>lookup.get(pzLanguage==='bn'?match.toLocaleLowerCase():match)??match);
+ let translated=original.replace(pattern,match=>lookup.get(pzLanguage==='bn'?match.toLocaleLowerCase():match)??match);
+ if(pzLanguage==='bn'){
+  const residue=translated.replace(/https?:\/\/[^\s]+/gi,'').replace(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g,'').replace(/\b(?:Prologis|PLD|BDT|bKash|Nagad|Rocket|BINANCE|Firebase|TrxID|UID|OTP|SMS|API|URL|http|https|MB|GB|KB)\b/gi,'');
+  if(/[A-Za-z]{2,}/.test(residue))return 'অনুবাদ সম্পূর্ণ নয়।';
+ }else{
+  translated=translated.replace(/[০-৯]/g,d=>'০১২৩৪৫৬৭৮৯'.indexOf(d));
+  if(/[\u0980-\u09FF]/.test(translated))return 'Translation not provided.';
+ }
+ return translated;
 }
 function pzTranslateAttributes(el){
  if(!el||el.nodeType!==Node.ELEMENT_NODE)return;
