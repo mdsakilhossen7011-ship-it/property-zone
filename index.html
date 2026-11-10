@@ -415,7 +415,7 @@ html.pz-lang-loading body{visibility:hidden}
 </script>
 <script>
 let properties=[];let filter="All",currentUser=null,currentMemberStatus=null,authReady=false;let walletSettingsCache=null;
-function formatPropertyPrice(value,currency='BDT'){const raw=String(value??'').trim();if(!raw||/price on request/i.test(raw))return raw||'Price on request';const nums=raw.match(/\d[\d,]*(?:\.\d+)?/g);if(!nums)return raw;const rate=walletExchangeRate();if(currency!=='BDT'&&(!Number.isFinite(rate)||rate<=0))return 'Price on request';const fmt=n=>'৳'+(Number(n.replace(/,/g,''))*(currency==='BDT'?1:rate)).toLocaleString('en-US',{maximumFractionDigits:0});return nums.length===1?fmt(nums[0]):nums.map(fmt).join(' – ')}
+function formatPropertyPrice(value,currency='BDT'){const raw=String(value??'').trim();if(!raw||/price on request/i.test(raw))return raw||'Price on request';const nums=raw.match(/\d[\d,]*(?:\.\d+)?/g);if(!nums)return raw;const rate=walletExchangeRate();if(currency!=='BDT'&&(!Number.isFinite(rate)||rate<=0))return 'Price on request';const fmt=n=>'৳'+(Number(n.replace(/,/g,''))*(currency==='BDT'?1:rate)).toLocaleString(pzLanguage==='bn'?'bn-BD':'en-US',{maximumFractionDigits:0});return nums.length===1?fmt(nums[0]):nums.map(fmt).join(' – ')}
 function escapeHTML(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
 function updatePropertyTypeOptions(){const select=document.getElementById('propertyTypeFilter');if(!select)return;const chosen=select.value||'All',types=[...new Set(properties.map(p=>String(p.type||'Property').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));select.innerHTML='<option value="All">All property types</option>'+types.map(t=>'<option value="'+escapeHTML(t)+'">'+escapeHTML(t)+'</option>').join('');select.value=types.includes(chosen)?chosen:'All'}
 function clearPropertyFilters(){const search=document.getElementById('search'),type=document.getElementById('propertyTypeFilter'),sort=document.getElementById('propertySort');if(search)search.value='';if(type)type.value='All';if(sort)sort.value='relevance';filter='All';document.querySelectorAll('.filters .btn').forEach((b,i)=>{b.classList.toggle('primary',i===0);b.setAttribute('aria-pressed',String(i===0))});renderProperties()}
@@ -1464,6 +1464,8 @@ const PZ_BN_TO_EN_PATCH={
  "টাকা যোগ করুন · বাংলাদেশি টাকা ৳":"Add funds · BDT ৳",
  "উত্তোলনের অনুরোধ · বাংলাদেশি টাকা ৳":"Request payout · BDT ৳",
  "দাম / দামের সীমা (বাংলাদেশি টাকা ৳) *":"PRICE / PRICE RANGE (BDT ৳) *",
+ "নিচের ক্যাশ-ইন নম্বর ও নির্বাচিত পদ্ধতি ব্যবহার করে টাকা পাঠান। সব পরিমাণ বাংলাদেশি টাকায় (৳) দেখানো হবে।":"Send your payment using the selected method and the Cash In Number below. Enter amount in Bangladeshi Taka (BDT ৳). All wallet amounts are handled in Bangladeshi Taka.",
+ "নিচের ক্যাশ-আউট নম্বর ব্যবহার করে উত্তোলনের পদ্ধতি বেছে নিন। সব পরিমাণ বাংলাদেশি টাকায় (৳) দেখানো হবে।":"Choose your payout method and use the Cash Out Number below. Enter amount in Bangladeshi Taka (BDT ৳). All wallet amounts are handled in Bangladeshi Taka.",
  "এই তথ্যের বাংলা অনুবাদ দেওয়া হয়নি।":"Bangla translation not provided.",
  "জমা দেওয়া তথ্য লোড হচ্ছে…":"Loading submissions…",
  "রেফারেলসমূহ":"Referrals",
@@ -1491,7 +1493,9 @@ Object.assign(PZ_EN_TO_BN,{
  "Request a payout · BDT ৳":"টাকা উত্তোলনের অনুরোধ · বাংলাদেশি টাকা ৳",
  "Add funds · BDT ৳":"টাকা যোগ করুন · বাংলাদেশি টাকা ৳",
  "Request payout · BDT ৳":"উত্তোলনের অনুরোধ · বাংলাদেশি টাকা ৳",
- "PRICE / PRICE RANGE (BDT ৳) *":"দাম / দামের সীমা (বাংলাদেশি টাকা ৳) *"
+ "PRICE / PRICE RANGE (BDT ৳) *":"দাম / দামের সীমা (বাংলাদেশি টাকা ৳) *",
+ "Send your payment using the selected method and the Cash In Number below. Enter amount in Bangladeshi Taka (BDT ৳). All wallet amounts are handled in Bangladeshi Taka.":"নিচের ক্যাশ-ইন নম্বর ও নির্বাচিত পদ্ধতি ব্যবহার করে টাকা পাঠান। সব পরিমাণ বাংলাদেশি টাকায় (৳) দেখানো হবে।",
+ "Choose your payout method and use the Cash Out Number below. Enter amount in Bangladeshi Taka (BDT ৳). All wallet amounts are handled in Bangladeshi Taka.":"নিচের ক্যাশ-আউট নম্বর ব্যবহার করে উত্তোলনের পদ্ধতি বেছে নিন। সব পরিমাণ বাংলাদেশি টাকায় (৳) দেখানো হবে।"
 });
 Object.assign(PZ_BN_TO_EN,{
  "আপনার ওয়ালেটে টাকা যোগ করুন · বাংলাদেশি টাকা ৳":"Add funds to your wallet · BDT ৳",
