@@ -396,6 +396,15 @@ html.pz-auth-pending #sideMenu{pointer-events:none!important}
  const main=document.getElementById('appMain'),loader=document.getElementById('pzBootLoader');
  if(main)main.style.visibility='hidden';
  if(loader){loader.style.display='flex';loader.style.opacity='1';loader.style.visibility='visible';loader.setAttribute('aria-hidden','false');}
+ // Failsafe: never leave the public site hidden forever if Firebase auth initialization stalls.
+ window.setTimeout(function(){
+  if(!document.documentElement.classList.contains('pz-auth-pending'))return;
+  document.documentElement.classList.remove('pz-auth-pending');
+  if(main)main.style.visibility='visible';
+  if(loader){loader.style.display='none';loader.style.opacity='0';loader.style.visibility='hidden';loader.setAttribute('aria-hidden','true');}
+  const status=document.getElementById('globalStatus');
+  if(status){status.style.display='block';status.textContent='Account service is taking longer to respond. Public pages are available; please check your connection and refresh to retry login.';status.style.color='#f0d17d';}
+ },12000);
  let wanted='';
  try{
   const referralCode=(new URLSearchParams(location.search).get('ref')||'').trim().toUpperCase();
