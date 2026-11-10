@@ -1741,6 +1741,14 @@ for(const [bangla,candidate] of pzReverseCandidates){
   PZ_BN_TO_EN_PATCH[bangla]=candidate.english;
  }
 }
+Object.assign(PZ_EN_TO_BN,{
+ "Your sending bank account details":"আপনার টাকা পাঠানোর ব্যাংক অ্যাকাউন্টের তথ্য",
+ "Your receiving bank account details":"আপনার টাকা গ্রহণের ব্যাংক অ্যাকাউন্টের তথ্য",
+ "Bank name and account number":"ব্যাংকের নাম ও অ্যাকাউন্ট নম্বর",
+ "Bank Account":"ব্যাংক অ্যাকাউন্ট",
+ "Enter Binance Pay ID or UID":"বাইন্যান্স পে আইডি অথবা ইউআইডি লিখুন",
+ "Binance Pay ID / UID":"বাইন্যান্স পে আইডি / ইউআইডি"
+});
 function pzApplyTranslation(value){
  const original=String(value??'');
  const dictionary=pzLanguage==='bn'?PZ_EN_TO_BN:{...PZ_BN_TO_EN,...PZ_BN_TO_EN_PATCH};
