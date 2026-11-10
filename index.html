@@ -428,6 +428,59 @@ html.pz-auth-pending #sideMenu{pointer-events:none!important}
 })();
 </script>
 <script>
+/* Navigation safety net: keep public page navigation working if the main app script fails to initialize. */
+(function(){
+ function fallbackView(id){
+  const protectedViews=['dashboard','profile','referral','savedProperties','submitProperty','depositWallet','withdrawWallet','walletHistory'];
+  if(protectedViews.includes(id))id='login';
+  let target=document.getElementById(id);
+  if(!target||!target.classList.contains('view'))return;
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');});
+  target.classList.add('active');
+  try{history.pushState({pzView:id},'','#'+id);sessionStorage.setItem('pz_current_view',id);}catch(e){}
+  window.scrollTo(0,0);
+  const menu=document.getElementById('sideMenu'),backdrop=document.getElementById('menuBackdrop');
+  if(menu)menu.classList.remove('open');
+  if(backdrop)backdrop.classList.remove('open');
+  const toggle=document.getElementById('menuToggle');
+  if(toggle)toggle.setAttribute('aria-expanded','false');
+  if(menu)menu.setAttribute('aria-hidden','true');
+ }
+ document.addEventListener('click',function(event){
+  const el=event.target&&event.target.closest?event.target.closest('[onclick]'):null;
+  if(!el)return;
+  const code=el.getAttribute('onclick')||'';
+  if(typeof window.showView==='function'&&(/showView\\s*\\(/.test(code)||/menuGo\\s*\\(/.test(code)))return;
+  if(/(?:showView|menuGo)\\s*\\(\\s*['"]([A-Za-z0-9_-]+)['"]/.test(code)){
+   const match=code.match(/(?:showView|menuGo)\\s*\\(\\s*['"]([A-Za-z0-9_-]+)['"]/);
+   if(match){event.preventDefault();event.stopImmediatePropagation();fallbackView(match[1]);}
+   return;
+  }
+  if(/toggleMenu\\s*\\(/.test(code)&&typeof window.toggleMenu!=='function'){
+   event.preventDefault();event.stopImmediatePropagation();
+   const menu=document.getElementById('sideMenu'),backdrop=document.getElementById('menuBackdrop'),toggle=document.getElementById('menuToggle');
+   const open=menu&&!menu.classList.contains('open');
+   if(menu){menu.classList.toggle('open',open);menu.setAttribute('aria-hidden',String(!open));}
+   if(backdrop)backdrop.classList.toggle('open',open);
+   if(toggle)toggle.setAttribute('aria-expanded',String(!!open));
+   return;
+  }
+  if(/closeMenu\\s*\\(/.test(code)&&typeof window.closeMenu!=='function'){
+   event.preventDefault();event.stopImmediatePropagation();
+   const menu=document.getElementById('sideMenu'),backdrop=document.getElementById('menuBackdrop'),toggle=document.getElementById('menuToggle');
+   if(menu){menu.classList.remove('open');menu.setAttribute('aria-hidden','true');}
+   if(backdrop)backdrop.classList.remove('open');
+   if(toggle)toggle.setAttribute('aria-expanded','false');
+  }
+ },true);
+ window.addEventListener('popstate',function(){
+  if(typeof window.showView==='function')return;
+  const id=(location.hash||'').slice(1);
+  fallbackView(id||'home');
+ });
+})();
+</script>
+<script>
 let properties=[];let filter="All",currentUser=null,currentMemberStatus=null,authReady=false;let walletSettingsCache=null;
 function formatPropertyPrice(value,currency='BDT'){const raw=String(value??'').trim();if(!raw||/price on request/i.test(raw))return raw||'Price on request';const nums=raw.match(/\d[\d,]*(?:\.\d+)?/g);if(!nums)return raw;const rate=walletExchangeRate();if(currency!=='BDT'&&(!Number.isFinite(rate)||rate<=0))return 'Price on request';const fmt=n=>'৳'+(Number(n.replace(/,/g,''))*(currency==='BDT'?1:rate)).toLocaleString(pzLanguage==='bn'?'bn-BD':'en-US',{maximumFractionDigits:0});return nums.length===1?fmt(nums[0]):nums.map(fmt).join(' – ')}
 function escapeHTML(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
