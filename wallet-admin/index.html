@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101827">
+<title>Wallet Operations · Prologis</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#121d2e;--panel2:#172438;--line:#26364d;--muted:#91a2b9;--text:#edf3fb;--gold:#e8bd68;--green:#32c48d;--red:#f07878;--blue:#79b8ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 12% 0%,#1d2c43 0,transparent 34%),var(--bg);color:var(--text);font:15px Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}
+button,input{font:inherit}.wrap{max-width:1400px;margin:auto;padding:26px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px}.brand{display:flex;align-items:center;gap:13px}.logo{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#f3d48f,#a97829);display:grid;place-items:center;color:#172033;font-weight:900;font-size:20px}.brand h1{font-size:19px;margin:0}.brand p{margin:3px 0 0;color:var(--muted);font-size:12px}.top-actions{display:flex;gap:9px;align-items:center}.btn{border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:#1b2a40;color:var(--text);font-weight:700;cursor:pointer}.btn:hover{filter:brightness(1.15)}.btn:disabled{opacity:.5;cursor:wait}.btn.outline{background:transparent}.login-shell{max-width:420px;margin:9vh auto;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:28px;box-shadow:0 25px 70px #0005}.login-shell h2{margin:0 0 7px}.muted{color:var(--muted)}label{display:block;font-size:12px;color:var(--muted);margin:17px 0 7px}input{width:100%;border:1px solid var(--line);background:#0c1727;color:var(--text);border-radius:10px;padding:13px;outline:none}input:focus{border-color:var(--gold)}.primary{background:linear-gradient(135deg,#f1d18c,#bd8a39);border:0;color:#192235;width:100%;margin-top:20px}.notice{margin-top:15px;color:var(--muted);font-size:12px;line-height:1.5}.hidden{display:none!important}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin:18px 0 24px}.stat{background:linear-gradient(145deg,var(--panel),#101a29);border:1px solid var(--line);border-radius:15px;padding:17px}.stat small{color:var(--muted)}.stat strong{display:block;font-size:25px;margin-top:8px}.columns{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}.column{background:#101a29;border:1px solid var(--line);border-radius:18px;overflow:hidden;min-width:0}.column-head{padding:19px 19px 15px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px}.column-head h2{font-size:17px;margin:0}.tag{font-size:10px;letter-spacing:1px;font-weight:800;padding:6px 9px;border-radius:30px;background:#26364d;color:var(--blue)}.withdraw .tag{color:#d7b6ff}.filters{display:flex;gap:6px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}.filter{border:1px solid transparent;background:transparent;color:var(--muted);padding:7px 10px;border-radius:8px;font-size:12px;cursor:pointer}.filter.active{background:#26364d;color:#fff;border-color:#3b506d}.list{padding:13px;display:grid;gap:11px;max-height:72vh;overflow:auto}.request{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:15px}.req-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.req-top h3{font-size:14px;margin:0 0 4px}.req-amount{font-size:19px;font-weight:850;color:var(--gold);white-space:nowrap}.req-email{font-size:12px;color:var(--muted);overflow-wrap:anywhere}.status{display:inline-block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;border-radius:20px;padding:5px 8px;margin:10px 0}.status.pending{background:#49391b;color:#f3d48f}.status.approved{background:#153d32;color:#7de0b8}.status.rejected{background:#49292d;color:#ff9b9b}.details{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:8px}.detail{background:#0c1727;border-radius:9px;padding:9px;min-width:0}.detail small{display:block;color:var(--muted);font-size:10px;margin-bottom:4px}.detail span{font-size:12px;overflow-wrap:anywhere}.actions{display:flex;gap:8px;margin-top:13px}.approve,.reject{flex:1;border:0;border-radius:9px;padding:10px;font-size:12px;font-weight:800;cursor:pointer}.approve{background:#174b3a;color:#8ff0c4}.reject{background:#4a252b;color:#ffaaaa}.empty{padding:30px 12px;text-align:center;color:var(--muted);font-size:13px}.foot{margin:20px 0;color:#71839b;font-size:11px;text-align:center}.message{font-size:12px;margin-top:12px;min-height:18px;color:var(--gold)}@media(max-width:850px){.columns{grid-template-columns:1fr}.list{max-height:none}.summary{grid-template-columns:repeat(2,1fr)}}@media(max-width:480px){.wrap{padding:15px}.top{align-items:flex-start}.brand h1{font-size:16px}.summary{gap:8px}.stat{padding:13px}.stat strong{font-size:21px}.details{grid-template-columns:1fr 1fr}.top-actions .btn{padding:8px 10px;font-size:12px}}
+</style>
+</head>
+<body>
+<div id="loginView" class="login-shell">
+ <div class="brand"><div class="logo">P</div><div><h1>Wallet Operations</h1><p>Secure administrator access</p></div></div>
+ <h2 style="margin-top:25px">Admin sign in</h2><p class="muted" style="font-size:13px">Use your existing authorized Property Zone admin email.</p>
+ <form id="loginForm"><label for="email">Admin email</label><input id="email" type="email" autocomplete="username" required><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required><button id="loginBtn" class="btn primary" type="submit">Sign in securely</button></form>
+ <div id="loginMessage" class="message" role="status"></div><p class="notice">Only active admin accounts already registered in the Firebase admins collection can enter. Member accounts are not permitted.</p>
+</div>
+<div id="appView" class="hidden">
+ <div class="wrap">
+  <header class="top"><div class="brand"><div class="logo">P</div><div><h1>Wallet Operations</h1><p>Deposit &amp; Withdrawal Control Center</p></div></div><div class="top-actions"><button id="refreshBtn" class="btn outline">↻ Refresh</button><button id="logoutBtn" class="btn">Sign out</button></div></header>
+  <div class="summary">
+   <div class="stat"><small>Pending deposits</small><strong id="pendingDeposits">0</strong></div>
+   <div class="stat"><small>Pending withdrawals</small><strong id="pendingWithdrawals">0</strong></div>
+   <div class="stat"><small>Approved requests</small><strong id="approvedCount">0</strong></div>
+   <div class="stat"><small>Rejected requests</small><strong id="rejectedCount">0</strong></div>
+  </div>
+  <main class="columns">
+   <section class="column deposit"><div class="column-head"><div><h2>Deposit Requests</h2><div class="muted" style="font-size:11px;margin-top:4px">Verify payment received before approval</div></div><span class="tag">DEPOSIT</span></div><div class="filters" data-kind="deposit"><button class="filter active" data-filter="pending">Pending</button><button class="filter" data-filter="approved">Approved</button><button class="filter" data-filter="rejected">Rejected</button><button class="filter" data-filter="all">All</button></div><div id="depositList" class="list"><div class="empty">Loading requests…</div></div></section>
+   <section class="column withdraw"><div class="column-head"><div><h2>Withdrawal Requests</h2><div class="muted" style="font-size:11px;margin-top:4px">Send payout before approval</div></div><span class="tag">WITHDRAW</span></div><div class="filters" data-kind="withdraw"><button class="filter active" data-filter="pending">Pending</button><button class="filter" data-filter="approved">Approved</button><button class="filter" data-filter="rejected">Rejected</button><button class="filter" data-filter="all">All</button></div><div id="withdrawList" class="list"><div class="empty">Loading requests…</div></div></section>
+  </main>
+  <div id="appMessage" class="message"></div><div class="foot">Private admin workspace · Actions are recorded on the request · Verify every payment manually</div>
+ </div>
+</div>
+<script type="module">
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js';
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut} from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js';
+import {getFirestore,doc,getDoc,collection,getDocs,runTransaction,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js';
+const firebaseConfig={apiKey:"AIzaSyDRLWFf4ISfQdoZp7JaQAWwwKCoL_aV6No",authDomain:"property-zone-17121.firebaseapp.com",projectId:"property-zone-17121",storageBucket:"property-zone-17121.firebasestorage.app",messagingSenderId:"631227640032",appId:"1:631227640032:web:855536883072ccfe3b8885"};
+const allowedAdmins={
+ "Ry06huUzzmeqryzna9lPzpNw4Rr1":"ridoyhasank5434@gmail.com",
+ "bSOdvUtNO4Vxl3lJBuFA2xiREP53":"prologisinvest@gmail.com"
+};
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+let activeUser=null,requests=[],filters={deposit:"pending",withdraw:"pending"},busy=new Set();
+const $=id=>document.getElementById(id);
+const esc=value=>String(value??"—").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const money=n=>"৳"+Number(n||0).toLocaleString("en-BD",{maximumFractionDigits:2});
+function showLogin(message=""){ $("loginView").classList.remove("hidden");$("appView").classList.add("hidden");$("loginMessage").textContent=message;}
+function showApp(){ $("loginView").classList.add("hidden");$("appView").classList.remove("hidden");}
+async function verifyAdmin(user){
+ if(!user||!user.emailVerified||allowedAdmins[user.uid]!==user.email)throw new Error("This account is not an authorized, email-verified administrator.");
+ const snap=await getDoc(doc(db,"admins",user.uid));
+ if(!snap.exists()||snap.data().role!=="admin"||snap.data().active!==true)throw new Error("Admin access is inactive. Contact the project owner.");
+ return true;
+}
+$("loginForm").addEventListener("submit",async e=>{
+ e.preventDefault();const btn=$("loginBtn");btn.disabled=true;btn.textContent="Checking access…";$("loginMessage").textContent="";
+ try{const credential=await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value);await verifyAdmin(credential.user);activeUser=credential.user;showApp();await loadRequests();}
+ catch(error){await signOut(auth).catch(()=>{});showLogin(error.message||"Sign in failed.");}
+ finally{btn.disabled=false;btn.textContent="Sign in securely";}
+});
+onAuthStateChanged(auth,async user=>{
+ if(!user){activeUser=null;showLogin();return;}
+ try{await verifyAdmin(user);activeUser=user;showApp();await loadRequests();}
+ catch(error){await signOut(auth).catch(()=>{});showLogin(error.message||"Admin verification failed.");}
+});
+$("logoutBtn").addEventListener("click",()=>signOut(auth));
+$("refreshBtn").addEventListener("click",loadRequests);
+async function loadRequests(){
+ if(!activeUser)return;
+ $("appMessage").textContent="Refreshing requests…";
+ try{
+  const snap=await getDocs(collection(db,"propertyEnquiries"));
+  requests=snap.docs.map(d=>({id:d.id,...d.data()})).filter(r=>r.requestType==="wallet-deposit"||r.requestType==="wallet-withdraw").sort((a,b)=>(b.createdAt?.toMillis?.()||0)-(a.createdAt?.toMillis?.()||0));
+  render();$("appMessage").textContent="Requests refreshed.";
+ }catch(error){$("appMessage").textContent="Could not load requests: "+error.message;}
+}
+function render(){
+ const deposits=requests.filter(r=>r.requestType==="wallet-deposit"),withdrawals=requests.filter(r=>r.requestType==="wallet-withdraw");
+ $("pendingDeposits").textContent=deposits.filter(r=>r.status==="pending").length;
+ $("pendingWithdrawals").textContent=withdrawals.filter(r=>r.status==="pending").length;
+ $("approvedCount").textContent=requests.filter(r=>r.status==="approved").length;
+ $("rejectedCount").textContent=requests.filter(r=>r.status==="rejected").length;
+ renderList("deposit",deposits);renderList("withdraw",withdrawals);
+}
+function detail(label,value){return '<div class="detail"><small>'+esc(label)+'</small><span>'+esc(value||"—")+'</span></div>';}
+function renderList(kind,items){
+ const filter=filters[kind],list=$(kind+"List"),filtered=items.filter(r=>filter==="all"||r.status===filter);
+ if(!filtered.length){list.innerHTML='<div class="empty">No '+(filter==="all"?"":filter+" ")+' '+(kind==="deposit"?"deposit":"withdrawal")+' requests found.</div>';return;}
+ list.innerHTML=filtered.map(r=>{
+  const isDeposit=kind==="deposit",status=["pending","approved","rejected"].includes(r.status)?r.status:"unknown";
+  const memberAccount=isDeposit?(r.senderAccount||r.paymentAccount||r.walletNumber):(r.walletNumber||r.paymentAccount);
+  const payout=isDeposit?(r.receivingAccount||r.walletNumber):(r.adminPayoutAccount||"Not set");
+  const when=r.createdAt?.toDate?r.createdAt.toDate().toLocaleString():"Date not available";
+  const actions=status==="pending"?'<div class="actions"><button class="approve" data-action="approve" data-id="'+esc(r.id)+'" '+(busy.has(r.id)?"disabled":"")+'>✓ Approve</button><button class="reject" data-action="reject" data-id="'+esc(r.id)+'" '+(busy.has(r.id)?"disabled":"")+'>✕ Reject</button></div>':"";
+  return '<article class="request"><div class="req-top"><div><h3>'+esc(r.name||"Member")+'</h3><div class="req-email">'+esc(r.email||r.uid||"No email")+'</div></div><div class="req-amount">'+money(r.amountBDT)+'</div></div><span class="status '+status+'">'+esc(status)+'</span><div class="details">'+detail("Payment method",r.paymentMethod)+detail(isDeposit?"Sender account":"Member account",memberAccount)+detail(isDeposit?"Paid to":"Payout info",payout)+detail("Transaction ID",r.transactionId||"Not applicable")+detail("Request date",when)+detail("Member UID",r.uid)+'</div>'+actions+'</article>';
+ }).join("");
+}
+document.querySelectorAll(".filters").forEach(group=>group.addEventListener("click",e=>{
+ const btn=e.target.closest("[data-filter]");if(!btn)return;const kind=group.dataset.kind;filters[kind]=btn.dataset.filter;group.querySelectorAll(".filter").forEach(b=>b.classList.toggle("active",b===btn));render();
+}));
+document.addEventListener("click",async e=>{
+ const btn=e.target.closest("button[data-action]");if(!btn)return;
+ const id=btn.dataset.id,action=btn.dataset.action,request=requests.find(r=>r.id===id);if(!request||request.status!=="pending"||busy.has(id))return;
+ if(action==="approve"){
+  const promptText=request.requestType==="wallet-deposit"?"Confirm you have received and verified this deposit payment. Approve and credit "+money(request.amountBDT)+" to the member wallet?":"Confirm you have already sent "+money(request.amountBDT)+" to the member's payout account. Approve and deduct it from the wallet?";
+  if(!confirm(promptText))return;
+ }else if(!confirm("Reject this request?"+(request.requestType==="wallet-withdraw"?" Any reserved withdrawal balance will be released.":"")))return;
+ busy.add(id);render();
+ try{await reviewRequest(id,action);$("appMessage").textContent="Request "+(action==="approve"?"approved":"rejected")+" successfully.";await loadRequests();}
+ catch(error){$("appMessage").textContent="Action failed: "+error.message;}
+ finally{busy.delete(id);render();}
+});
+async function reviewRequest(id,action){
+ const requestRef=doc(db,"propertyEnquiries",id);
+ await runTransaction(db,async tx=>{
+  const requestSnap=await tx.get(requestRef);if(!requestSnap.exists())throw new Error("Request no longer exists.");
+  const r=requestSnap.data();if(r.status!=="pending")throw new Error("This request has already been processed.");
+  if(!["wallet-deposit","wallet-withdraw"].includes(r.requestType))throw new Error("Unsupported request type.");
+  const amount=Number(r.amountBDT);if(!Number.isSafeInteger(amount)||amount<=0)throw new Error("Invalid request amount.");
+  const walletRef=doc(db,"wallets",r.uid),walletSnap=await tx.get(walletRef),wallet=walletSnap.exists()?walletSnap.data():{};
+  if(r.requestType==="wallet-deposit"&&action==="approve"){
+   let balance=Number(wallet.balanceBDT);
+   if(!Number.isFinite(balance)){const oldUsd=Number(wallet.balanceUSD||0),rate=Number(r.exchangeRateBDT||0);if(oldUsd<0||!Number.isFinite(oldUsd)||rate<=0)throw new Error("Wallet balance needs manual review before crediting.");balance=Math.round(oldUsd*rate*100)/100;}
+   tx.set(walletRef,{uid:r.uid,balanceBDT:Math.round((balance+amount)*100)/100,updatedAt:serverTimestamp(),lastDepositRequestId:id},{merge:true});
+  }
+  if(r.requestType==="wallet-withdraw"){
+   if(!walletSnap.exists())throw new Error("Member wallet is missing; cannot safely process withdrawal.");
+   const pending=Math.max(0,Number(wallet.pendingWithdrawalBDT||0));
+   if(r.reservedFunds===true&&pending+0.000001<amount)throw new Error("Reserved withdrawal balance is inconsistent. Please inspect this wallet manually.");
+   if(action==="approve"){
+    if(r.reservedFunds!==true)throw new Error("This legacy withdrawal has no reserved-funds marker. Manual review is required.");
+    let balance=Number(wallet.balanceBDT);
+    if(!Number.isFinite(balance)){const oldUsd=Number(wallet.balanceUSD||0),rate=Number(r.exchangeRateBDT||0);if(oldUsd<0||!Number.isFinite(oldUsd)||rate<=0)throw new Error("Wallet balance needs manual review.");balance=Math.round(oldUsd*rate*100)/100;}
+    if(balance+0.000001<amount)throw new Error("Wallet balance is lower than the withdrawal amount.");
+    tx.update(walletRef,{balanceBDT:Math.round((balance-amount)*100)/100,pendingWithdrawalBDT:Math.round((pending-amount)*100)/100,updatedAt:serverTimestamp(),lastWithdrawalProcessedId:id});
+   }else if(r.reservedFunds===true){
+    tx.update(walletRef,{pendingWithdrawalBDT:Math.round((pending-amount)*100)/100,updatedAt:serverTimestamp(),lastWithdrawalRejectedId:id});
+   }
+  }
+  tx.update(requestRef,{status:action==="approve"?"approved":"rejected",reviewedAt:serverTimestamp(),reviewedBy:activeUser.email});
+ });
+}
+</script>
+</body>
+</html>
