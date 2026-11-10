@@ -42,6 +42,15 @@ public class MainActivity extends Activity {
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                // App-only adjustment: move the website logo and menu button slightly lower.
+                String css = "header.top .brand, header.top .menu-toggle { transform: translateY(4px) !important; }";
+                String js = "(function(){var s=document.getElementById('pz-app-header-offset');if(!s){s=document.createElement('style');s.id='pz-app-header-offset';document.head.appendChild(s);}s.textContent=" + JSON.stringify(css) + ";})();";
+                view.evaluateJavascript(js, null);
+            }
+
+            @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
                 String scheme = uri.getScheme() == null ? "" : uri.getScheme();
