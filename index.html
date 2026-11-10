@@ -432,7 +432,11 @@ function pzExactDictionaryTranslation(value){
 }
 function pzLocalizedField(data,field,legacyField=field){
  const suffix=pzLanguage==='bn'?'Bn':'En',explicit=String(data?.[field+suffix]??'').trim();
- if(explicit)return explicit;
+ if(explicit){
+  const hasBangla=/[\u0980-\u09FF]/.test(explicit);
+  if((pzLanguage==='bn'&&hasBangla)||(pzLanguage==='en'&&!hasBangla))return explicit;
+  return pzLanguage==='bn'?'এই তথ্যের বাংলা অনুবাদ দেওয়া হয়নি।':'Translation not provided.';
+ }
  const raw=String(data?.[legacyField]??'').trim();
  if(!raw)return '';
  const hasBangla=/[\u0980-\u09FF]/.test(raw);
