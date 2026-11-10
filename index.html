@@ -598,7 +598,7 @@ async function requestPropertyPurchase(propertyId,packageAmount){
     const walletSnap=await tx.get(walletRef);
     const balance=walletSnap.exists()?walletBalanceInBDT(walletSnap.data(),rate):0;
     if(balance+0.000001<amountBDT)throw new Error('Insufficient wallet balance. Please deposit funds first.');
-    tx.update(walletRef,{balanceBDT:Math.round((balance-amountBDT)*100)/100,updatedAt:fs.serverTimestamp()});
+    tx.update(walletRef,{balanceBDT:Math.round((balance-amountBDT)*100)/100,lastPackagePurchaseId:packageRef.id,updatedAt:fs.serverTimestamp()});
     tx.set(packageRef,{uid:currentUser.uid,propertyId,propertyTitle:p.name,amountBDT,dailyRate:0.02,hourlyRate:0.02/24,termDays:30,maturityAt:new Date(Date.now()+30*24*60*60*1000),status:'active',startedAt:fs.serverTimestamp(),createdAt:fs.serverTimestamp()});
    });
    status.textContent='Package of ৳'+Number(packageAmount).toLocaleString('en-US')+' activated successfully.';
