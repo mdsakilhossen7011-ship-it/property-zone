@@ -2078,6 +2078,35 @@ Object.assign(PZ_EN_TO_BN,{
  "Binance Pay ID / UID":"বাইন্যান্স পে আইডি / ইউআইডি"
 });
 Object.assign(PZ_BN_TO_EN_PATCH,{});
+Object.assign(PZ_BN_TO_EN_PATCH,{
+ "ছবি নির্বাচিত: ": "Selected image: ",
+ "শুধু ছবির ফাইল নির্বাচন করুন।": "Please select an image file.",
+ "ছবির সাইজ ৮ MB-এর কম হতে হবে।": "Image must be smaller than 8 MB.",
+ "সাম্প্রতিক কোনো বার্তা নেই। চ্যাট শুরু করতে একটি বার্তা পাঠান।": "No recent messages. Send a message to start chatting.",
+ "সাপোর্টের সঙ্গে সংযোগ হচ্ছে…": "Connecting to support…",
+ "প্রপার্টি সম্পর্কে জানতে বার্তা পাঠানোর জন্য লগইন করুন।": "Please log in to send a property enquiry.",
+ "আপনার জিজ্ঞাসা অ্যাডমিন টিমের কাছে পাঠানো হয়েছে।": "Your enquiry has been sent to the admin team.",
+ "সর্বোচ্চ উপলব্ধ বাংলাদেশি টাকার পরিমাণ নির্বাচন করা হয়েছে।": "The maximum available amount in Bangladeshi Taka has been selected.",
+ "উত্তোলনের জন্য এখনো কোনো ব্যালেন্স নেই।": "There is no balance available for withdrawal yet.",
+ "স্বয়ংক্রিয় কপি করা যায়নি। লিংক নির্বাচন করা হয়েছে—ফোনের মেনু থেকে কপি চাপুন।": "Automatic copying failed. The link has been selected; use your phone menu to copy it.",
+ "অ্যাডমিন প্রবেশাধিকার এখনো প্রস্তুত নয়। মালিকের ইমেইল ও নিরাপদ ফায়ারবেস অনুমতি নির্ধারণ না হওয়া পর্যন্ত এই প্যানেল সাধারণ সদস্যদের জন্য লুকানো থাকবে।": "Admin access is not ready yet. This panel will remain hidden from regular members until the owner's email and secure Firebase permissions are configured.",
+ "উত্তর পাওয়া যায়নি:": "No reply received: ",
+ "সাপোর্টে সংযোগ করা যায়নি:": "Could not connect to support: ",
+ "জিজ্ঞাসা পাঠানো যায়নি:": "Could not send enquiry: ",
+ "তথ্য জমা দেওয়া যায়নি:": "Could not submit information: ",
+ "ওয়ালেটের ইতিহাস লোড করা যায়নি:": "Could not load wallet history:",
+ "লেনদেন আইডির ফরম্যাট সঠিক নয়। অনুগ্রহ করে TrxID পরীক্ষা করুন।": "The transaction ID format is invalid. Please check the TrxID.",
+ "পাসওয়ার্ড পুনর্নির্ধারণের ইমেইল পাঠানো হয়েছে। ইনবক্স খুলে লিংক অনুসরণ করুন।": "Password reset email sent. Open your inbox and follow the link.",
+ "বার্তা পাঠানো যায়নি。": "Could not send the message.",
+ "এখনো কোনো ঘোষণা নেই。": "There are no announcements yet.",
+ "আপনার ওয়ালেটে উত্তোলন করুন": "Withdraw to your wallet",
+ "PROLOGIS, INC. (PLD) নিয়ন্ত্রণকেন্দ্র": "PROLOGIS, INC. (PLD) Control Center",
+ "অনুবাদ দেওয়া হয়নি।": "Translation not provided.",
+ "কাজ": "Work",
+ "নাম: ক থেকে ঁ": "Name: from ক to ঁ",
+ "লেনদেন আইডি (TrxID)": "Transaction ID (TrxID)",
+ "পেমেন্টের TrxID লিখুন": "Enter payment TrxID"
+});
 function pzApplyTranslation(value){
  const original=String(value??'');
  const dictionary=pzLanguage==='bn'?PZ_EN_TO_BN:{...PZ_BN_TO_EN,...PZ_BN_TO_EN_PATCH};
