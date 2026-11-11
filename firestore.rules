@@ -144,6 +144,24 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    match /depositTrxIds/{trxDocId} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(["uid", "transactionId", "enquiryId", "createdAt"])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.transactionId is string
+        && request.resource.data.transactionId.matches("^[A-Z0-9-]{6,100}$")
+        && trxDocId == "trx_" + request.resource.data.transactionId
+        && request.resource.data.enquiryId is string
+        && request.resource.data.createdAt is timestamp
+        && existsAfter(/databases/$(database)/documents/propertyEnquiries/$(request.resource.data.enquiryId))
+        && getAfter(/databases/$(database)/documents/propertyEnquiries/$(request.resource.data.enquiryId)).data.uid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/propertyEnquiries/$(request.resource.data.enquiryId)).data.requestType == "wallet-deposit"
+        && getAfter(/databases/$(database)/documents/propertyEnquiries/$(request.resource.data.enquiryId)).data.transactionId == request.resource.data.transactionId;
+      allow update, delete: if false;
+    }
+
     match /propertyEnquiries/{enquiryId} {
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
@@ -175,7 +193,10 @@ service cloud.firestore {
                 && request.resource.data.receivingAccount is string
                 && request.resource.data.receivingAccount.size() > 0
                 && request.resource.data.transactionId is string
-                && request.resource.data.transactionId.size() > 0)
+                && request.resource.data.transactionId.matches("^[A-Z0-9-]{6,100}$")
+                && existsAfter(/databases/$(database)/documents/depositTrxIds/$("trx_" + request.resource.data.transactionId))
+                && getAfter(/databases/$(database)/documents/depositTrxIds/$("trx_" + request.resource.data.transactionId)).data.uid == request.auth.uid
+                && getAfter(/databases/$(database)/documents/depositTrxIds/$("trx_" + request.resource.data.transactionId)).data.enquiryId == enquiryId)
               || (request.resource.data.requestType == "wallet-withdraw"
                 && request.resource.data.reservedFunds == true
                 && request.resource.data.adminPayoutAccount is string
