@@ -261,7 +261,7 @@ html.pz-auth-pending #sideMenu{pointer-events:none!important}
 <section id="dashboard" class="view">
  <div class="dash-earnings" style="grid-template-columns:repeat(2,minmax(0,1fr))">
   <div class="dash-earning-card"><span>Wallet Balance</span><strong id="dashWalletBalance">৳0</strong><small>Available BDT balance</small></div>
-  <div class="dash-earning-card"><span>Hourly Earning</span><strong id="dashHourlyEarning">৳0</strong><small>From active packages · 2% daily</small></div>
+  <div class="dash-earning-card"><span>Hourly Earning</span><strong id="dashHourlyEarning">৳0</strong><small>From active packages · current daily rate</small></div>
   <div class="dash-earning-card"><span>Today's Earning</span><strong id="dashTodayEarning">৳0</strong><small>Estimated earnings today</small></div>
   <div class="dash-earning-card"><span>Total Earning</span><strong id="dashTotalEarning">৳0</strong><small>Estimated since activation</small></div>
  </div>
@@ -593,11 +593,14 @@ async function requestPropertyPurchase(propertyId,packageAmount){
    if(!Number.isSafeInteger(amountBDT)||amountBDT<=0)throw new Error('Invalid package amount.');
    const f=await getFirebase(),fs=f.firestore,walletRef=fs.doc(f.db,'wallets',currentUser.uid),packageRef=fs.doc(fs.collection(f.db,'activePackages'));
    await fs.runTransaction(f.db,async tx=>{
-    const walletSnap=await tx.get(walletRef);
+    const profitSettingsRef=fs.doc(f.db,'siteSettings','propertyProfit');
+    const [walletSnap,profitSettingsSnap]=await Promise.all([tx.get(walletRef),tx.get(profitSettingsRef)]);
+    const propertyDailyRate=profitSettingsSnap.exists()?Number(profitSettingsSnap.data().dailyRate):0.02;
+    if(!Number.isFinite(propertyDailyRate)||propertyDailyRate<0||propertyDailyRate>1)throw new Error('Property profit rate is not configured correctly.');
     const balance=walletSnap.exists()?walletBalanceInBDT(walletSnap.data(),rate):0;
     if(balance+0.000001<amountBDT)throw new Error('Insufficient wallet balance. Please deposit funds first.');
     tx.update(walletRef,{balanceBDT:Math.round((balance-amountBDT)*100)/100,lastPackagePurchaseId:packageRef.id,updatedAt:fs.serverTimestamp()});
-    tx.set(packageRef,{uid:currentUser.uid,propertyId,propertyTitle:p.name,amountBDT,dailyRate:0.02,hourlyRate:0.02/24,termDays:30,maturityAt:new Date(Date.now()+30*24*60*60*1000),status:'active',startedAt:fs.serverTimestamp(),createdAt:fs.serverTimestamp()});
+    tx.set(packageRef,{uid:currentUser.uid,propertyId,propertyTitle:p.name,amountBDT,dailyRate:propertyDailyRate,hourlyRate:propertyDailyRate/24,termDays:30,maturityAt:new Date(Date.now()+30*24*60*60*1000),status:'active',startedAt:fs.serverTimestamp(),createdAt:fs.serverTimestamp()});
    });
    status.textContent='Package of ৳'+Number(packageAmount).toLocaleString('en-US')+' activated successfully.';
    await loadDashboardStats();await loadWalletAndEarnings();
@@ -690,13 +693,35 @@ async function loadWalletHistory(){
   rows.forEach(item=>{const row=document.createElement('article');row.style.cssText='padding:14px 0;border-bottom:1px solid var(--line)';const title=document.createElement('strong');title.textContent=(item.requestType==='wallet-deposit'?'DEPOSIT':'WITHDRAW')+' · '+(item.amountBDT?'৳'+Number(item.amountBDT).toLocaleString('en-US'):'Legacy request');const state=document.createElement('p');state.style.cssText='margin:6px 0;font-weight:800';const raw=item.status||'pending';state.textContent='Status: '+(raw==='approved'||raw==='success'?'Success':raw==='open'||raw==='pending'?'Pending':raw.charAt(0).toUpperCase()+raw.slice(1));const detail=document.createElement('p');detail.className='muted';detail.textContent=(item.paymentMethod||'')+' · '+(item.createdAt?.toDate?item.createdAt.toDate().toLocaleString():'Recently submitted')+(item.transactionId?' · TrxID: '+item.transactionId:'');row.append(title,state,detail);box.appendChild(row);});
  }catch(e){box.textContent='Could not load wallet history: '+e.message;}
 }
+function propertyRateTimeMs(value){
+ if(value&&typeof value.toMillis==="function")return value.toMillis();
+ if(value instanceof Date)return value.getTime();
+ const n=Number(value);return Number.isFinite(n)?n:0;
+}
+function propertyProfitBetween(amount,start,end,history,fallbackRate=0.02){
+ if(!Number.isFinite(amount)||amount<=0||end<=start)return 0;
+ const entries=(Array.isArray(history)?history:[]).map(x=>({rate:Number(x.dailyRate),at:propertyRateTimeMs(x.effectiveAt)})).filter(x=>Number.isFinite(x.rate)&&x.rate>=0&&x.rate<=1).sort((a,b)=>a.at-b.at);
+ let cursor=start,rate=fallbackRate,total=0;
+ for(const entry of entries){
+  if(entry.at<=start){rate=entry.rate;continue;}
+  if(entry.at>=end)break;
+  total+=amount*rate/24*(entry.at-cursor)/3600000;
+  cursor=entry.at;rate=entry.rate;
+ }
+ total+=amount*rate/24*(end-cursor)/3600000;
+ return total;
+}
 let walletEarningsRefreshTimer=null;
 async function loadWalletAndEarnings(){
  if(!currentUser)return;
  try{
   const f=await getFirebase(),fs=f.firestore;
   const settingsSnap=await fs.getDoc(fs.doc(f.db,'siteSettings','wallet'));
+  const profitSettingsSnap=await fs.getDoc(fs.doc(f.db,'siteSettings','propertyProfit'));
   walletSettingsCache=settingsSnap.exists()?settingsSnap.data():{};
+  const profitSettings=profitSettingsSnap.exists()?profitSettingsSnap.data():{};
+  const profitHistory=Array.isArray(profitSettings.history)?profitSettings.history:[];
+  const currentProfitRate=Number.isFinite(Number(profitSettings.dailyRate))?Number(profitSettings.dailyRate):0.02;
   const rate=Number(walletSettingsCache.exchangeRateBDT||0);
   const wallet=await fs.getDoc(fs.doc(f.db,'wallets',currentUser.uid));
   const balance=wallet.exists()?walletBalanceInBDT(wallet.data(),rate):0;
@@ -706,9 +731,10 @@ async function loadWalletAndEarnings(){
   snap.docs.forEach(d=>{
    const p=d.data(),amount=Number(p.amountBDT||(Number(p.amountUSD||0)*Number(p.exchangeRateBDT||rate))),started=p.startedAt?.toMillis?.()||now;
    if(!Number.isFinite(amount)||amount<=0)return;
-   const maturity=started+30*24*60*60*1000,earningEnd=Math.min(now,maturity),perHour=earningEnd>now-1?amount*0.02/24:0;hourly+=perHour;
-   today+=amount*0.02/24*Math.max(0,earningEnd-Math.max(started,dayStart.getTime()))/3600000;
-   total+=amount*0.02/24*Math.max(0,earningEnd-started)/3600000;
+   const maturity=started+30*24*60*60*1000,earningEnd=Math.min(now,maturity);
+   if(earningEnd>now-1)hourly+=amount*currentProfitRate/24;
+   today+=propertyProfitBetween(amount,Math.max(started,dayStart.getTime()),earningEnd,profitHistory,Number(p.dailyRate)||0.02);
+   total+=propertyProfitBetween(amount,started,earningEnd,profitHistory,Number(p.dailyRate)||0.02);
   });
   const money=n=>'৳'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   document.getElementById('dashWalletBalance').textContent=money(balance);

@@ -108,8 +108,13 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly(['uid','propertyId','propertyTitle','amountBDT','dailyRate','hourlyRate','termDays','maturityAt','status','startedAt','createdAt'])
         && validPackageAmount(request.resource.data.amountBDT)
-        && request.resource.data.dailyRate == 0.02
-        && request.resource.data.hourlyRate == 0.02 / 24
+        && (
+          (!exists(/databases/$(database)/documents/siteSettings/propertyProfit)
+            && request.resource.data.dailyRate == 0.02)
+          || (exists(/databases/$(database)/documents/siteSettings/propertyProfit)
+            && request.resource.data.dailyRate == get(/databases/$(database)/documents/siteSettings/propertyProfit).data.dailyRate)
+        )
+        && request.resource.data.hourlyRate == request.resource.data.dailyRate / 24
         && request.resource.data.termDays == 30
         && request.resource.data.maturityAt is timestamp
         && request.resource.data.status == 'active'
