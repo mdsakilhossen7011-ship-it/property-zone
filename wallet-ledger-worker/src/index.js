@@ -424,7 +424,8 @@ async function decideWalletRequest(env, adminUid, input) {
       const ledgerDocs = await batchRead(env, paths, transaction, token), ledgerDoc = ledgerDocs[ledgerPath];
       if (!ledgerDoc) throw new Error("MIGRATION_PENDING");
       const ledger = firestoreFields(ledgerDoc.fields || {}), available = Number(ledger[availableField] || 0), pending = Number(ledger[pendingField] || 0);
-      if (!Number.isSafeInteger(available) || !Number.isSafeInteger(pending) || pending < amountPoisha || available < amountPoisha) throw new Error("WITHDRAWAL_RESERVE_MISMATCH");
+      if (!Number.isSafeInteger(available) || available < 0 || !Number.isSafeInteger(pending)
+        || pending < amountPoisha || pending > available || available < amountPoisha) throw new Error("WITHDRAWAL_RESERVE_MISMATCH");
       const updated = { ...ledger, [pendingField]: pending - amountPoisha, updatedAt: now };
       if (action === "approve") updated[availableField] = available - amountPoisha;
       writes.push(updateDocWrite(env, ledgerPath, ledgerDoc, updated, [availableField, pendingField, "updatedAt"]));
