@@ -452,7 +452,9 @@ async function accruePackageProfit(env, adminUid, packageId) {
     if (p.status !== "active") { await rollbackTxn(env, transaction, token); return { skipped: true, reason: "not-active" }; }
     const startedAt = Date.parse(p.startedAt || "");
     if (!Number.isFinite(startedAt)) throw new Error("PACKAGE_START_DATE_INVALID");
-    const termDays = Math.max(1, Math.min(365, Number(p.termDays || 30))), principalPoisha = amountToPoisha(p.amountBDT), rate = Number(p.dailyRate);
+    const termDays = Math.max(1, Math.min(365, Number(p.termDays || 30)));
+    const principalBDT = p.amountBDT != null ? Number(p.amountBDT) : Number(p.amountUSD || 0) * Number(p.exchangeRateBDT || 0);
+    const principalPoisha = amountToPoisha(principalBDT), rate = p.dailyRate == null ? 0.02 : Number(p.dailyRate);
     if (!Number.isFinite(rate) || rate < 0 || rate > 1) throw new Error("INVALID_PROFIT_RATE");
     const nowMs = Date.now(), elapsedDays = Math.min(termDays, Math.floor((nowMs - startedAt) / 86400000));
     const creditedDays = Math.max(0, Number(p.creditedDays || 0)), dueDays = Math.max(0, elapsedDays - creditedDays);
