@@ -246,19 +246,215 @@ async function purchasePackage(env, uid, input) {
   }
 }
 
+
+const LEDGER_FIELDS = {
+  deposit: ["depositAvailablePoisha", "pendingDepositWithdrawalPoisha"],
+  package: ["packagePrincipalPoisha", "pendingPackageWithdrawalPoisha"],
+  profit: ["profitAvailablePoisha", "pendingProfitWithdrawalPoisha"]
+};
+function docName(env, path) {
+  return "projects/" + env.FIREBASE_PROJECT_ID + "/databases/(default)/documents/" + path;
+}
+async function readDocument(env, path, token) {
+  const response = await fetch("https://firestore.googleapis.com/v1/" + docName(env, path), { headers: { authorization: "Bearer " + token } });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error("FIRESTORE_READ_FAILED");
+  return response.json();
+}
+async function beginTxn(env, token) {
+  const result = await firestorePost(env, "documents:beginTransaction", { options: { readWrite: {} } }, token);
+  if (!result.transaction) throw new Error("FIRESTORE_TRANSACTION_START_FAILED");
+  return result.transaction;
+}
+async function batchRead(env, paths, transaction, token) {
+  const result = await firestorePost(env, "documents:batchGet", { documents: paths.map(path => docName(env, path)), transaction }, token);
+  const found = {};
+  for (const item of result) if (item.found) found[item.found.name.split("/documents/")[1]] = item.found;
+  return found;
+}
+function updateDocWrite(env, path, document, fields, mask) {
+  return { update: { name: docName(env, path), fields: encodeFields(fields) }, updateMask: { fieldPaths: mask }, currentDocument: { updateTime: document.updateTime } };
+}
+function createDocWrite(env, path, fields) {
+  return { update: { name: docName(env, path), fields: encodeFields(fields) }, currentDocument: { exists: false } };
+}
+async function commitTxn(env, transaction, writes, token) {
+  await firestorePost(env, "documents:commit", { writes, transaction }, token);
+}
+async function rollbackTxn(env, transaction, token) {
+  await firestorePost(env, "documents:rollback", { transaction }, token).catch(() => {});
+}
+async function requireAdmin(env, uid, token) {
+  const admin = await readDocument(env, "admins/" + uid, token);
+  const data = admin ? firestoreFields(admin.fields || {}) : {};
+  if (!admin || data.role !== "admin" || data.active !== true) throw new Error("ADMIN_REQUIRED");
+}
+function amountToPoisha(value) {
+  const amount = Number(value);
+  if (!Number.isSafeInteger(amount) || amount <= 0 || amount > 100000000) throw new Error("INVALID_AMOUNT");
+  return amount * 100;
+}
+async function requestWithdrawal(env, uid, input) {
+  const source = String(input.source || "");
+  if (!Object.hasOwn(LEDGER_FIELDS, source)) throw new Error("INVALID_WITHDRAWAL_SOURCE");
+  const amountPoisha = amountToPoisha(input.amountBDT);
+  const method = String(input.paymentMethod || "").trim().slice(0, 40);
+  const account = String(input.walletNumber || "").trim().slice(0, 120);
+  if (!method || !account) throw new Error("PAYOUT_DETAILS_REQUIRED");
+  const requestId = crypto.randomUUID().replace(/-/g, "");
+  const requestPath = "propertyEnquiries/" + requestId;
+  const ledgerPath = "walletLedgers/" + uid;
+  const token = await createServiceAccountAccessToken(env);
+  const transaction = await beginTxn(env, token);
+  try {
+    const packageId = source === "package" ? String(input.packageId || "") : "";
+    if (source === "package" && !/^[A-Za-z0-9_-]{1,120}$/.test(packageId)) throw new Error("PACKAGE_ID_REQUIRED");
+    const paths = [ledgerPath];
+    if (packageId) paths.push("activePackages/" + packageId);
+    const docs = await batchRead(env, paths, transaction, token);
+    const ledgerDoc = docs[ledgerPath];
+    if (!ledgerDoc) throw new Error("MIGRATION_PENDING");
+    const ledger = firestoreFields(ledgerDoc.fields || {});
+    if (Number(ledger.schemaVersion || 0) !== 1) throw new Error("MIGRATION_PENDING");
+    const [availableField, pendingField] = LEDGER_FIELDS[source];
+    const available = Number(ledger[availableField] || 0), pending = Number(ledger[pendingField] || 0);
+    if (!Number.isSafeInteger(available) || !Number.isSafeInteger(pending) || available < 0 || pending < 0 || pending > available) throw new Error("INVALID_LEDGER_BALANCE");
+    if (available - pending < amountPoisha) throw new Error("INSUFFICIENT_BALANCE");
+    let packageDoc = null;
+    if (source === "package") {
+      packageDoc = docs["activePackages/" + packageId];
+      if (!packageDoc) throw new Error("PACKAGE_NOT_FOUND");
+      const p = firestoreFields(packageDoc.fields || {});
+      const principal = amountToPoisha(p.amountBDT);
+      if (p.uid !== uid || p.status !== "active" || principal !== amountPoisha || p.withdrawalRequestId) throw new Error("PACKAGE_WITHDRAWAL_MUST_MATCH_FULL_ACTIVE_PACKAGE");
+    }
+    const now = new Date();
+    const writes = [
+      updateDocWrite(env, ledgerPath, ledgerDoc, { ...ledger, [pendingField]: pending + amountPoisha, updatedAt: now }, [pendingField, "updatedAt"]),
+      createDocWrite(env, requestPath, { uid, requestType: "wallet-withdraw", status: "pending", amountBDT: Number(input.amountBDT), source, paymentMethod: method, walletNumber: account, reservedFunds: true, packageId: packageId || "", createdAt: now, ledgerRequestId: requestId })
+    ];
+    if (packageDoc) {
+      const p = firestoreFields(packageDoc.fields || {});
+      writes.push(updateDocWrite(env, "activePackages/" + packageId, packageDoc, { ...p, status: "withdrawal_pending", withdrawalRequestId: requestId, updatedAt: now }, ["status", "withdrawalRequestId", "updatedAt"]));
+    }
+    await commitTxn(env, transaction, writes, token);
+    return { requestId, source, amountBDT: Number(input.amountBDT), status: "pending" };
+  } catch (error) {
+    await rollbackTxn(env, transaction, token);
+    throw error;
+  }
+}
+async function decideWalletRequest(env, adminUid, input) {
+  const requestId = String(input.requestId || ""), action = String(input.action || "");
+  if (!/^[A-Za-z0-9_-]{8,120}$/.test(requestId) || !["approve", "reject"].includes(action)) throw new Error("INVALID_REVIEW_ACTION");
+  const token = await createServiceAccountAccessToken(env);
+  await requireAdmin(env, adminUid, token);
+  const transaction = await beginTxn(env, token);
+  try {
+    const requestPath = "propertyEnquiries/" + requestId;
+    const docs = await batchRead(env, [requestPath], transaction, token);
+    const requestDoc = docs[requestPath];
+    if (!requestDoc) throw new Error("REQUEST_NOT_FOUND");
+    const r = firestoreFields(requestDoc.fields || {});
+    if (r.requestType !== "wallet-deposit" && r.requestType !== "wallet-withdraw") throw new Error("UNSUPPORTED_REQUEST_TYPE");
+    if (r.status !== "pending") throw new Error("REQUEST_ALREADY_PROCESSED");
+    const now = new Date(), writes = [];
+    if (r.requestType === "wallet-deposit") {
+      if (action === "approve") {
+        const amountPoisha = amountToPoisha(r.amountBDT), ledgerPath = "walletLedgers/" + r.uid;
+        const ledgerDocs = await batchRead(env, [ledgerPath], transaction, token), ledgerDoc = ledgerDocs[ledgerPath];
+        if (!ledgerDoc) throw new Error("MIGRATION_PENDING");
+        const ledger = firestoreFields(ledgerDoc.fields || {});
+        if (Number(ledger.schemaVersion || 0) !== 1) throw new Error("MIGRATION_PENDING");
+        const next = Number(ledger.depositAvailablePoisha || 0) + amountPoisha;
+        if (!Number.isSafeInteger(next)) throw new Error("INVALID_LEDGER_BALANCE");
+        writes.push(updateDocWrite(env, ledgerPath, ledgerDoc, { ...ledger, depositAvailablePoisha: next, updatedAt: now }, ["depositAvailablePoisha", "updatedAt"]));
+        writes.push(createDocWrite(env, "walletLedgerEntries/deposit_" + requestId, { uid: r.uid, type: "deposit-credit", requestId, amountPoisha, createdAt: now, adminUid }));
+      }
+    } else {
+      const source = String(r.source || "");
+      if (!Object.hasOwn(LEDGER_FIELDS, source) || r.reservedFunds !== true) throw new Error("LEGACY_WITHDRAWAL_REQUIRES_MANUAL_RECONCILIATION");
+      const amountPoisha = amountToPoisha(r.amountBDT), [availableField, pendingField] = LEDGER_FIELDS[source];
+      const ledgerPath = "walletLedgers/" + r.uid, paths = [ledgerPath];
+      if (source === "package") paths.push("activePackages/" + String(r.packageId || ""));
+      const ledgerDocs = await batchRead(env, paths, transaction, token), ledgerDoc = ledgerDocs[ledgerPath];
+      if (!ledgerDoc) throw new Error("MIGRATION_PENDING");
+      const ledger = firestoreFields(ledgerDoc.fields || {}), available = Number(ledger[availableField] || 0), pending = Number(ledger[pendingField] || 0);
+      if (!Number.isSafeInteger(available) || !Number.isSafeInteger(pending) || pending < amountPoisha || available < amountPoisha) throw new Error("WITHDRAWAL_RESERVE_MISMATCH");
+      const updated = { ...ledger, [pendingField]: pending - amountPoisha, updatedAt: now };
+      if (action === "approve") updated[availableField] = available - amountPoisha;
+      writes.push(updateDocWrite(env, ledgerPath, ledgerDoc, updated, [availableField, pendingField, "updatedAt"]));
+      if (source === "package") {
+        const packageId = String(r.packageId || ""), packageDoc = ledgerDocs["activePackages/" + packageId];
+        if (!packageDoc) throw new Error("PACKAGE_NOT_FOUND");
+        const p = firestoreFields(packageDoc.fields || {});
+        if (p.uid !== r.uid || p.status !== "withdrawal_pending" || p.withdrawalRequestId !== requestId) throw new Error("PACKAGE_STATE_MISMATCH");
+        writes.push(updateDocWrite(env, "activePackages/" + packageId, packageDoc, { ...p, status: action === "approve" ? "withdrawn" : "active", withdrawalRequestId: "", updatedAt: now }, ["status", "withdrawalRequestId", "updatedAt"]));
+      }
+      writes.push(createDocWrite(env, "walletLedgerEntries/" + (action === "approve" ? "withdrawal_" : "withdrawal_reject_") + requestId, { uid: r.uid, type: action === "approve" ? "withdrawal-debit" : "withdrawal-release", requestId, source, amountPoisha, adminUid, createdAt: now }));
+    }
+    writes.push(updateDocWrite(env, requestPath, requestDoc, { ...r, status: action === "approve" ? "approved" : "rejected", reviewedAt: now, reviewedBy: adminUid }, ["status", "reviewedAt", "reviewedBy"]));
+    await commitTxn(env, transaction, writes, token);
+    return { requestId, status: action === "approve" ? "approved" : "rejected" };
+  } catch (error) {
+    await rollbackTxn(env, transaction, token);
+    throw error;
+  }
+}
+async function accruePackageProfit(env, adminUid, packageId) {
+  const token = await createServiceAccountAccessToken(env);
+  await requireAdmin(env, adminUid, token);
+  if (!/^[A-Za-z0-9_-]{1,120}$/.test(packageId)) throw new Error("PACKAGE_ID_REQUIRED");
+  const path = "activePackages/" + packageId, transaction = await beginTxn(env, token);
+  try {
+    const docs = await batchRead(env, [path], transaction, token), packageDoc = docs[path];
+    if (!packageDoc) throw new Error("PACKAGE_NOT_FOUND");
+    const p = firestoreFields(packageDoc.fields || {});
+    if (p.status !== "active") { await rollbackTxn(env, transaction, token); return { skipped: true, reason: "not-active" }; }
+    const startedAt = Date.parse(p.startedAt || "");
+    if (!Number.isFinite(startedAt)) throw new Error("PACKAGE_START_DATE_INVALID");
+    const termDays = Math.max(1, Math.min(365, Number(p.termDays || 30))), principalPoisha = amountToPoisha(p.amountBDT), rate = Number(p.dailyRate);
+    if (!Number.isFinite(rate) || rate < 0 || rate > 1) throw new Error("INVALID_PROFIT_RATE");
+    const nowMs = Date.now(), elapsedDays = Math.min(termDays, Math.floor((nowMs - startedAt) / 86400000));
+    const creditedDays = Math.max(0, Number(p.creditedDays || 0)), dueDays = Math.max(0, elapsedDays - creditedDays);
+    if (!dueDays) { await rollbackTxn(env, transaction, token); return { skipped: true, reason: "not-due" }; }
+    const earningsPoisha = Math.round(principalPoisha * rate * dueDays), ledgerPath = "walletLedgers/" + p.uid;
+    const ledgerDocs = await batchRead(env, [ledgerPath], transaction, token), ledgerDoc = ledgerDocs[ledgerPath];
+    if (!ledgerDoc) throw new Error("MIGRATION_PENDING");
+    const ledger = firestoreFields(ledgerDoc.fields || {});
+    if (Number(ledger.schemaVersion || 0) !== 1) throw new Error("MIGRATION_PENDING");
+    const nextProfit = Number(ledger.profitAvailablePoisha || 0) + earningsPoisha, matured = elapsedDays >= termDays;
+    const nextPrincipal = Number(ledger.packagePrincipalPoisha || 0) - (matured ? principalPoisha : 0);
+    const nextDeposit = Number(ledger.depositAvailablePoisha || 0) + (matured ? principalPoisha : 0);
+    if (!Number.isSafeInteger(nextProfit) || nextPrincipal < 0 || !Number.isSafeInteger(nextDeposit)) throw new Error("INVALID_LEDGER_BALANCE");
+    const now = new Date(), nextCreditedDays = creditedDays + dueDays;
+    const writes = [
+      updateDocWrite(env, ledgerPath, ledgerDoc, { ...ledger, profitAvailablePoisha: nextProfit, packagePrincipalPoisha: nextPrincipal, depositAvailablePoisha: nextDeposit, updatedAt: now }, ["profitAvailablePoisha", "packagePrincipalPoisha", "depositAvailablePoisha", "updatedAt"]),
+      updateDocWrite(env, path, packageDoc, { ...p, creditedDays: nextCreditedDays, lastProfitAccruedAt: now, status: matured ? "completed" : "active", completedAt: matured ? now : null, updatedAt: now }, ["creditedDays", "lastProfitAccruedAt", "status", "completedAt", "updatedAt"]),
+      createDocWrite(env, "walletLedgerEntries/profit_" + packageId + "_day_" + nextCreditedDays, { uid: p.uid, packageId, type: "profit-credit", amountPoisha: earningsPoisha, daysCredited: dueDays, principalReturnedPoisha: matured ? principalPoisha : 0, createdAt: now })
+    ];
+    await commitTxn(env, transaction, writes, token);
+    return { packageId, daysCredited: dueDays, profitBDT: earningsPoisha / 100, principalReturnedBDT: matured ? principalPoisha / 100 : 0, matured };
+  } catch (error) {
+    await rollbackTxn(env, transaction, token);
+    throw error;
+  }
+}
+
 export default {
   async fetch(request, env) {
     const cors = corsHeaders(request, env);
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
     const url = new URL(request.url);
     if (url.pathname === "/health" && request.method === "GET") {
-      return json({ ok: true, service: "property-zone-wallet-ledger", mode: "read-only-foundation" }, 200, cors);
+      return json({ ok: true, service: "property-zone-wallet-ledger", mode: "segregated-ledger-staged" }, 200, cors);
     }
-    if (!["/v1/wallet-summary", "/v1/package-purchase"].includes(url.pathname)
-      || (url.pathname === "/v1/wallet-summary" && request.method !== "GET")
-      || (url.pathname === "/v1/package-purchase" && request.method !== "POST")) {
-      return json({ error: "NOT_FOUND" }, 404, cors);
-    }
+    const routes = new Map([
+      ["/v1/wallet-summary", "GET"], ["/v1/package-purchase", "POST"],
+      ["/v1/withdrawal-request", "POST"], ["/v1/admin/wallet-decision", "POST"],
+      ["/v1/admin/profit-accrual", "POST"]
+    ]);
+    if (!routes.has(url.pathname) || routes.get(url.pathname) !== request.method) return json({ error: "NOT_FOUND" }, 404, cors);
     try {
       if (!env.FIREBASE_PROJECT_ID || !env.FIREBASE_SERVICE_ACCOUNT) {
         return json({ error: "BACKEND_NOT_CONFIGURED" }, 503, cors);
@@ -267,10 +463,14 @@ export default {
       const match = authorization.match(/^Bearer\s+(.+)$/i);
       if (!match) return json({ error: "AUTH_REQUIRED" }, 401, cors);
       const claims = await verifyFirebaseIdToken(match[1], env.FIREBASE_PROJECT_ID);
-      if (url.pathname === "/v1/package-purchase") {
+      if (url.pathname !== "/v1/wallet-summary") {
         let input;
         try { input = await request.json(); } catch (_) { return json({ error: "INVALID_JSON" }, 400, cors); }
-        const result = await purchasePackage(env, claims.sub, input || {});
+        let result;
+        if (url.pathname === "/v1/package-purchase") result = await purchasePackage(env, claims.sub, input || {});
+        else if (url.pathname === "/v1/withdrawal-request") result = await requestWithdrawal(env, claims.sub, input || {});
+        else if (url.pathname === "/v1/admin/wallet-decision") result = await decideWalletRequest(env, claims.sub, input || {});
+        else if (url.pathname === "/v1/admin/profit-accrual") result = await accruePackageProfit(env, claims.sub, String(input.packageId || ""));
         return json({ ok: true, ...result }, 200, cors);
       }
       const ledger = await getLedger(env, claims.sub);
@@ -293,12 +493,12 @@ export default {
     } catch (error) {
       const message = String(error && error.message || "");
       const authError = /token|bearer|signature|claims|signing key/i.test(message);
-      const clientErrors = new Set(["MIGRATION_PENDING", "INSUFFICIENT_DEPOSIT_BALANCE", "INVALID_PACKAGE_AMOUNT", "INVALID_IDEMPOTENCY_KEY", "INVALID_PROPERTY", "INVALID_LEDGER_BALANCE", "INVALID_PROFIT_RATE"]);
-      const status = authError ? 401 : clientErrors.has(message) ? (message === "MIGRATION_PENDING" || message === "INSUFFICIENT_DEPOSIT_BALANCE" ? 409 : 400) : 500;
+      const clientErrors = new Set(["MIGRATION_PENDING", "INSUFFICIENT_DEPOSIT_BALANCE", "INVALID_PACKAGE_AMOUNT", "INVALID_IDEMPOTENCY_KEY", "INVALID_PROPERTY", "INVALID_LEDGER_BALANCE", "INVALID_PROFIT_RATE", "INVALID_AMOUNT", "INVALID_WITHDRAWAL_SOURCE", "PAYOUT_DETAILS_REQUIRED", "INSUFFICIENT_BALANCE", "PACKAGE_ID_REQUIRED", "PACKAGE_NOT_FOUND", "PACKAGE_WITHDRAWAL_MUST_MATCH_FULL_ACTIVE_PACKAGE", "ADMIN_REQUIRED", "INVALID_REVIEW_ACTION", "REQUEST_NOT_FOUND", "REQUEST_ALREADY_PROCESSED", "UNSUPPORTED_REQUEST_TYPE", "LEGACY_WITHDRAWAL_REQUIRES_MANUAL_RECONCILIATION", "WITHDRAWAL_RESERVE_MISMATCH", "PACKAGE_STATE_MISMATCH", "PACKAGE_START_DATE_INVALID", "PROFIT_SCHEDULE_INVALID"]);
+      const status = authError ? 401 : message === "ADMIN_REQUIRED" ? 403 : clientErrors.has(message) ? (["MIGRATION_PENDING", "INSUFFICIENT_DEPOSIT_BALANCE", "INSUFFICIENT_BALANCE", "REQUEST_ALREADY_PROCESSED"].includes(message) ? 409 : 400) : 500;
       return json({ error: authError ? "UNAUTHORIZED" : clientErrors.has(message) ? message : "BACKEND_ERROR" }, status, cors);
     }
   }
 };
 
 
-export { firestoreValue, firestoreFields, sourceBalance, purchasePackage, parseBatchGetResponse };
+export { firestoreValue, firestoreFields, sourceBalance, purchasePackage, parseBatchGetResponse, requestWithdrawal, decideWalletRequest, accruePackageProfit };
