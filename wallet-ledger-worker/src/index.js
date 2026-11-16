@@ -100,9 +100,9 @@ async function getLedger(env, uid) {
   const document = await response.json();
   return firestoreFields(document.fields || {});
 }
-function sourceBalance(ledger, source) {
-  const available = Number(ledger[source + "AvailablePoisha"] || 0);
-  const pending = Number(ledger["pending" + source[0].toUpperCase() + source.slice(1) + "WithdrawalPoisha"] || 0);
+function sourceBalance(ledger, availableField, pendingField) {
+  const available = Number(ledger[availableField] || 0);
+  const pending = Number(ledger[pendingField] || 0);
   if (!Number.isSafeInteger(available) || available < 0 || !Number.isSafeInteger(pending) || pending < 0 || pending > available) {
     throw new Error("Wallet ledger contains invalid amounts.");
   }
@@ -138,9 +138,9 @@ export default {
       if (!ledger || Number(ledger.schemaVersion || 0) < 1) {
         return json({ error: "MIGRATION_PENDING", message: "Wallet ledger is not enabled for this account." }, 409, cors);
       }
-      const deposit = sourceBalance(ledger, "deposit");
-      const packageFunds = sourceBalance(ledger, "package");
-      const profit = sourceBalance(ledger, "profit");
+      const deposit = sourceBalance(ledger, "depositAvailablePoisha", "pendingDepositWithdrawalPoisha");
+      const packageFunds = sourceBalance(ledger, "packagePrincipalPoisha", "pendingPackageWithdrawalPoisha");
+      const profit = sourceBalance(ledger, "profitAvailablePoisha", "pendingProfitWithdrawalPoisha");
       return json({
         uid: claims.sub,
         currency: "BDT",
