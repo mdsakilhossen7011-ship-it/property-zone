@@ -343,6 +343,11 @@ html.pz-auth-pending #sideMenu{pointer-events:none!important}
   <option value="package">Package Balance</option>
   <option value="profit">Profit Balance</option>
  </select>
+ <div id="withdrawPackagePicker" style="display:none;margin-top:12px">
+  <label for="withdrawPackageId" style="display:block;font-weight:800;margin-bottom:8px">Select package to withdraw</label>
+  <select id="withdrawPackageId" class="search" style="width:100%;max-width:100%"><option value="">Loading active packages…</option></select>
+  <p class="wallet-note" style="font-size:12px;margin-top:6px">Package withdrawal closes the entire selected active package.</p>
+ </div>
  <div id="withdrawAvailableBalance" class="wallet-note" style="margin-top:10px;font-size:15px;font-weight:800">Available Balance: Loading…</div>
 </div></div>
  <div class="wallet-methods wallet-methods-top" aria-label="Select withdraw payment method">
@@ -744,13 +749,40 @@ async function refreshWithdrawAvailableBalance(){
   }
  }catch(e){display.textContent='Balance: '+e.message;console.warn('Withdraw source balance could not load:',e);}
 }
+async function loadWithdrawPackageOptions(){
+ const picker=document.getElementById('withdrawPackagePicker'),select=document.getElementById('withdrawPackageId');
+ if(!picker||!select)return;
+ const isPackage=(document.getElementById('withdrawBalanceType')?.value||'available')==='package';
+ picker.style.display=isPackage?'block':'none';
+ if(!isPackage||!currentUser)return;
+ select.innerHTML='<option value="">Loading active packages…</option>';
+ try{
+  const f=await getFirebase(),fs=f.firestore;
+  const snap=await fs.getDocs(fs.query(fs.collection(f.db,'activePackages'),fs.where('uid','==',currentUser.uid),fs.where('status','==','active')));
+  const packages=snap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>Number.isSafeInteger(Number(p.amountBDT))&&Number(p.amountBDT)>0);
+  select.replaceChildren();
+  if(!packages.length){select.innerHTML='<option value="">No active package available</option>';return;}
+  select.add(new Option('Choose an active package',''));
+  packages.forEach(p=>select.add(new Option((p.propertyTitle||p.propertyName||'Property Package')+' · ৳'+Number(p.amountBDT).toLocaleString('en-US'),p.id)));
+ }catch(error){select.innerHTML='<option value="">Could not load packages</option>';console.warn('Active packages could not load:',error);}
+}
 function changeWithdrawBalanceType(){
  const type=document.getElementById('withdrawBalanceType')?.value||'available',status=document.getElementById('withdrawStatus'),amount=document.getElementById('withdrawAmount');
  if(amount)amount.value='';
  updateWalletAmountPreview('withdraw');
  if(status)status.textContent='';
+ loadWithdrawPackageOptions();
  refreshWithdrawAvailableBalance();
 }
+document.getElementById('withdrawPackageId')?.addEventListener('change',async function(){
+ const id=this.value,amountInput=document.getElementById('withdrawAmount');
+ if(!id||!amountInput||!currentUser)return;
+ try{
+  const f=await getFirebase(),snap=await f.firestore.getDoc(f.firestore.doc(f.db,'activePackages',id));
+  if(!snap.exists()||snap.data().uid!==currentUser.uid||snap.data().status!=='active')throw new Error('Selected package is no longer active.');
+  amountInput.value=String(Number(snap.data().amountBDT||0));updateWalletAmountPreview('withdraw');
+ }catch(error){this.value='';const status=document.getElementById('withdrawStatus');if(status)status.textContent=error.message;}
+});
 async function setWithdrawAllAmount(){
  const el=document.getElementById('withdrawAmount'),status=document.getElementById('withdrawStatus');
  if(!el||!currentUser)return;
