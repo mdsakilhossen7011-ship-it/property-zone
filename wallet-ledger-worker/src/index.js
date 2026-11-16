@@ -693,7 +693,7 @@ export default {
           package: { ...packageFunds, withdrawableBDT: packageFunds.withdrawablePoisha / 100 },
           profit: { ...profit, withdrawableBDT: profit.withdrawablePoisha / 100 }
         },
-        mode: "read-only"
+        mode: "segregated-ledger"
       }, 200, cors);
     } catch (error) {
       const message = String(error && error.message || "");
