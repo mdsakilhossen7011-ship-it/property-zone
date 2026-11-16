@@ -52,3 +52,13 @@ Do not auto-migrate a customer if the source history does not reconcile. Mark fo
 - Test concurrent package purchases, duplicate admin clicks, rejected withdrawals, 24-hour profit maturity, and retries.
 - Compare ledger totals with the legacy records before enabling any customer.
 - Do not change Firestore Rules as part of this work.
+
+## Read-only migration audit utility
+A read-only reconciliation script is included at `scripts/audit-wallet-ledger-migration.js`.
+Run it in a trusted local environment with the Firebase service-account JSON supplied through the `FIREBASE_SERVICE_ACCOUNT` environment variable:
+
+```bash
+npm run audit:wallet-ledger
+```
+
+It reads wallets, deposit/withdrawal requests, package records, and earningLedger records; it writes only a local report file (default `wallet-ledger-migration-audit.json`). It does not write to Firestore. Treat the report as sensitive because it contains customer UIDs and financial totals; do not commit or publicly upload it. A customer marked `RECONCILED_REVIEW_REQUIRED` still requires a human review before migration. All other customers are marked for manual review. This audit is a first-pass reconciliation, not authorization to migrate funds.
