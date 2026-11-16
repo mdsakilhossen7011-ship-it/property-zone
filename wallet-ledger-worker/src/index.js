@@ -442,7 +442,7 @@ async function decideWalletRequest(env, adminUid, input) {
 }
 async function accruePackageProfit(env, adminUid, packageId) {
   const token = await createServiceAccountAccessToken(env);
-  await requireAdmin(env, adminUid, token);
+  if (adminUid) await requireAdmin(env, adminUid, token);
   if (!/^[A-Za-z0-9_-]{1,120}$/.test(packageId)) throw new Error("PACKAGE_ID_REQUIRED");
   const path = "activePackages/" + packageId, transaction = await beginTxn(env, token);
   try {
