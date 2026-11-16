@@ -322,6 +322,8 @@ service cloud.firestore {
   }
 })
         && (request.auth.uid == userId || isAdmin())
+        && existsAfter(/databases/$(database)/documents/publicUserIdRegistry/$(request.resource.data.publicId))
+        && getAfter(/databases/$(database)/documents/publicUserIdRegistry/$(request.resource.data.publicId)).data.uid == userId
         && !exists(/databases/$(database)/documents/publicUserIds/$(userId));
       allow update, delete: if false;
     }
@@ -608,6 +610,8 @@ service cloud.firestore {
   }
 })
         && (request.resource.data.uid == request.auth.uid || isAdmin())
+        && existsAfter(/databases/$(database)/documents/publicUserIds/$(request.resource.data.uid))
+        && getAfter(/databases/$(database)/documents/publicUserIds/$(request.resource.data.uid)).data.publicId == publicId
         && !exists(/databases/$(database)/documents/publicUserIdRegistry/$(publicId));
       allow update, delete: if false;
     }
