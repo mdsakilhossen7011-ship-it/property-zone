@@ -5,7 +5,7 @@ on:
     paths:
       - "scripts/audit-wallet-ledger-migration.js"
       - "package.json"
-      - "backend/**"
+      - "backend/**"\n      - "wallet-ledger-worker/**"
       - ".github/workflows/wallet-ledger-checks.yml"
   push:
     branches:
