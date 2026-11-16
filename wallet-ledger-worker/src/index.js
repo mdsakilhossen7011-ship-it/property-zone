@@ -320,15 +320,16 @@ async function requestWithdrawal(env, uid, input) {
     const paths = [ledgerPath, idempotencyPath, settingsPath];
     if (packageId) paths.push("activePackages/" + packageId);
     const docs = await batchRead(env, paths, transaction, token);
-    const walletSettings = docs[settingsPath] ? firestoreFields(docs[settingsPath].fields || {}) : {};
-    if (walletSettings.withdrawEnabled !== true) throw new Error("WITHDRAW_DISABLED");
-    const minimumWithdrawBDT = Number(walletSettings.minimumWithdrawBDT || 500);
-    if (!Number.isSafeInteger(minimumWithdrawBDT) || minimumWithdrawBDT < 1 || Number(input.amountBDT) < minimumWithdrawBDT) throw new Error("BELOW_MINIMUM_WITHDRAWAL");
     if (docs[idempotencyPath]) {
       const previous = firestoreFields(docs[idempotencyPath].fields || {});
       await rollbackTxn(env, transaction, token);
       return { duplicate: true, requestId: previous.requestId, status: previous.status || "pending" };
     }
+    const walletSettings = docs[settingsPath] ? firestoreFields(docs[settingsPath].fields || {}) : {};
+    if (walletSettings.withdrawEnabled !== true) throw new Error("WITHDRAW_DISABLED");
+    const minimumWithdrawBDT = Number(walletSettings.minimumWithdrawBDT || 500);
+    if (!Number.isSafeInteger(minimumWithdrawBDT) || minimumWithdrawBDT < 1 || Number(input.amountBDT) < minimumWithdrawBDT) throw new Error("BELOW_MINIMUM_WITHDRAWAL");
+    if (!["bKash", "Nagad", "Rocket", "Bank Account", "Binance"].includes(method)) throw new Error("INVALID_PAYOUT_METHOD");
     const ledgerDoc = docs[ledgerPath];
     if (!ledgerDoc) throw new Error("MIGRATION_PENDING");
     const ledger = firestoreFields(ledgerDoc.fields || {});
@@ -636,7 +637,7 @@ export default {
     } catch (error) {
       const message = String(error && error.message || "");
       const authError = /token|bearer|signature|claims|signing key/i.test(message);
-      const clientErrors = new Set(["MIGRATION_PENDING", "INSUFFICIENT_DEPOSIT_BALANCE", "INVALID_PACKAGE_AMOUNT", "INVALID_IDEMPOTENCY_KEY", "INVALID_PROPERTY", "INVALID_LEDGER_BALANCE", "INVALID_PROFIT_RATE", "INVALID_AMOUNT", "INVALID_WITHDRAWAL_SOURCE", "PAYOUT_DETAILS_REQUIRED", "INSUFFICIENT_BALANCE", "WITHDRAW_DISABLED", "BELOW_MINIMUM_WITHDRAWAL", "PACKAGE_ID_REQUIRED", "PACKAGE_NOT_FOUND", "PACKAGE_WITHDRAWAL_MUST_MATCH_FULL_ACTIVE_PACKAGE", "ADMIN_REQUIRED", "INVALID_REVIEW_ACTION", "REQUEST_NOT_FOUND", "REQUEST_ALREADY_PROCESSED", "UNSUPPORTED_REQUEST_TYPE", "LEGACY_WITHDRAWAL_REQUIRES_MANUAL_RECONCILIATION", "WITHDRAWAL_RESERVE_MISMATCH", "PACKAGE_STATE_MISMATCH", "PACKAGE_START_DATE_INVALID", "PROFIT_SCHEDULE_INVALID", "INVALID_MEMBER_UID", "TOO_MANY_ACTIVE_PACKAGES", "PACKAGE_MIGRATION_REVIEW_FAILED", "PACKAGE_TOTAL_MISMATCH", "LEGACY_WALLET_NOT_FOUND", "LEGACY_WALLET_BALANCE_UNRESOLVED", "LEGACY_BALANCE_SPLIT_MISMATCH", "LEGACY_PENDING_WITHDRAWALS_REQUIRE_REVIEW", "MIGRATION_STATE_CHANGED", "LEDGER_ALREADY_EXISTS", "LEGACY_BALANCE_CHANGED"]);
+      const clientErrors = new Set(["MIGRATION_PENDING", "INSUFFICIENT_DEPOSIT_BALANCE", "INVALID_PACKAGE_AMOUNT", "INVALID_IDEMPOTENCY_KEY", "INVALID_PROPERTY", "INVALID_LEDGER_BALANCE", "INVALID_PROFIT_RATE", "INVALID_AMOUNT", "INVALID_WITHDRAWAL_SOURCE", "PAYOUT_DETAILS_REQUIRED", "INVALID_PAYOUT_METHOD", "INSUFFICIENT_BALANCE", "WITHDRAW_DISABLED", "BELOW_MINIMUM_WITHDRAWAL", "PACKAGE_ID_REQUIRED", "PACKAGE_NOT_FOUND", "PACKAGE_WITHDRAWAL_MUST_MATCH_FULL_ACTIVE_PACKAGE", "ADMIN_REQUIRED", "INVALID_REVIEW_ACTION", "REQUEST_NOT_FOUND", "REQUEST_ALREADY_PROCESSED", "UNSUPPORTED_REQUEST_TYPE", "LEGACY_WITHDRAWAL_REQUIRES_MANUAL_RECONCILIATION", "WITHDRAWAL_RESERVE_MISMATCH", "PACKAGE_STATE_MISMATCH", "PACKAGE_START_DATE_INVALID", "PROFIT_SCHEDULE_INVALID", "INVALID_MEMBER_UID", "TOO_MANY_ACTIVE_PACKAGES", "PACKAGE_MIGRATION_REVIEW_FAILED", "PACKAGE_TOTAL_MISMATCH", "LEGACY_WALLET_NOT_FOUND", "LEGACY_WALLET_BALANCE_UNRESOLVED", "LEGACY_BALANCE_SPLIT_MISMATCH", "LEGACY_PENDING_WITHDRAWALS_REQUIRE_REVIEW", "MIGRATION_STATE_CHANGED", "LEDGER_ALREADY_EXISTS", "LEGACY_BALANCE_CHANGED"]);
       const status = authError ? 401 : message === "ADMIN_REQUIRED" ? 403 : clientErrors.has(message) ? (["MIGRATION_PENDING", "INSUFFICIENT_DEPOSIT_BALANCE", "INSUFFICIENT_BALANCE", "REQUEST_ALREADY_PROCESSED"].includes(message) ? 409 : 400) : 500;
       return json({ error: authError ? "UNAUTHORIZED" : clientErrors.has(message) ? message : "BACKEND_ERROR" }, status, cors);
     }
