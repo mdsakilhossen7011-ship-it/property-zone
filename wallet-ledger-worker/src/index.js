@@ -289,10 +289,14 @@ async function requireAdmin(env, uid, token) {
   const data = admin ? firestoreFields(admin.fields || {}) : {};
   if (!admin || data.role !== "admin" || data.active !== true) throw new Error("ADMIN_REQUIRED");
 }
-function amountToPoisha(value) {
+function amountToPoisha(value, allowZero = false) {
   const amount = Number(value);
-  if (!Number.isSafeInteger(amount) || amount <= 0 || amount > 100000000) throw new Error("INVALID_AMOUNT");
-  return amount * 100;
+  const poisha = Math.round(amount * 100);
+  if (!Number.isFinite(amount) || amount < 0 || (!allowZero && amount === 0) || amount > 100000000
+    || !Number.isSafeInteger(poisha) || Math.abs(amount * 100 - poisha) > 0.000001) {
+    throw new Error("INVALID_AMOUNT");
+  }
+  return poisha;
 }
 async function requestWithdrawal(env, uid, input) {
   const source = String(input.source || "");
