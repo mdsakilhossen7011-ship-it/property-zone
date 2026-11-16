@@ -62,3 +62,8 @@ npm run audit:wallet-ledger
 ```
 
 It reads wallets, deposit/withdrawal requests, package records, and earningLedger records; it writes only a local report file (default `wallet-ledger-migration-audit.json`). It does not write to Firestore. Treat the report as sensitive because it contains customer UIDs and financial totals; do not commit or publicly upload it. A customer marked `RECONCILED_REVIEW_REQUIRED` still requires a human review before migration. All other customers are marked for manual review. This audit is a first-pass reconciliation, not authorization to migrate funds.
+
+## Worker implementation status (stage 1)
+A separate Cloudflare Worker foundation now exists under `wallet-ledger-worker/`. It verifies Firebase ID-token signatures and claims, exchanges a server-held service-account key for a Firestore access token, and exposes a read-only `GET /v1/wallet-summary` endpoint for a previously migrated `walletLedgers/{uid}` document. Missing ledgers return `MIGRATION_PENDING`; the Worker does not infer balances from legacy wallet data.
+
+This is deliberately read-only. It has no deposit approval, package purchase, profit accrual, withdrawal request, withdrawal approval/rejection, or migration-write endpoints. It is not deployed and is not connected to either website. The current production customer/admin flow remains unchanged. Deploy only to a staging Worker after setting secrets directly in Cloudflare; never commit or message the service-account JSON.
