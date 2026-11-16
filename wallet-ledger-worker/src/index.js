@@ -495,7 +495,7 @@ async function migrateMemberLedger(env, adminUid, input) {
   const wallet = firestoreFields(walletDoc.fields || {});
   const settingsDoc = await readDocument(env, "siteSettings/wallet", token);
   const settings = settingsDoc ? firestoreFields(settingsDoc.fields || {}) : {};
-  let legacyBalance = Number(wallet.balanceBDT);
+  let legacyBalance = wallet.balanceBDT == null ? NaN : Number(wallet.balanceBDT);
   if (!Number.isFinite(legacyBalance)) {
     const usd = Number(wallet.balanceUSD || 0), rate = Number(settings.exchangeRateBDT || 0);
     if (!Number.isFinite(usd) || usd < 0 || (usd > 0 && (!Number.isFinite(rate) || rate <= 0))) throw new Error("LEGACY_WALLET_BALANCE_UNRESOLVED");
@@ -615,4 +615,4 @@ export default {
 };
 
 
-export { firestoreValue, firestoreFields, sourceBalance, purchasePackage, parseBatchGetResponse, requestWithdrawal, decideWalletRequest, accruePackageProfit, migrateMemberLedger, runScheduledProfitAccrual };
+export { firestoreValue, firestoreFields, sourceBalance, purchasePackage, parseBatchGetResponse, amountToPoisha, requestWithdrawal, decideWalletRequest, accruePackageProfit, migrateMemberLedger, runScheduledProfitAccrual };
