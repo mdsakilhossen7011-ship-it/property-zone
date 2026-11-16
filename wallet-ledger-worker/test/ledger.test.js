@@ -44,7 +44,7 @@ test("batchGet parses both JSON arrays and streamed adjacent objects", () => {
   assert.deepEqual(parseBatchGetResponse('[{"found":{"name":"a"}},{"missing":"b"}]'), [
     { found: { name: "a" } }, { missing: "b" }
   ]);
-  assert.deepEqual(parseBatchGetResponse('{"found":{"name":"a"}}\\n{"missing":"b"}'), [
+  assert.deepEqual(parseBatchGetResponse('{"found":{"name":"a"}}\n{"missing":"b"}'), [
     { found: { name: "a" } }, { missing: "b" }
   ]);
   assert.deepEqual(parseBatchGetResponse(""), []);
