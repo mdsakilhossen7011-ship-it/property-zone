@@ -54,7 +54,8 @@ service cloud.firestore {
     }
 
     match /publicUserIdRegistry/{publicId} {
-      allow get, list: if isAdmin();
+      allow get: if isAdmin() || signedIn();
+      allow list: if isAdmin();
       allow create: if signedIn()
         && request.resource.data.uid is string
         && request.resource.data.createdAt is timestamp
