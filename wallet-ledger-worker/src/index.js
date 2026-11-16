@@ -199,11 +199,15 @@ async function purchasePackage(env, uid, input) {
     }
     const ledger = firestoreFields(ledgerDoc.fields || {});
     const deposit = Number(ledger.depositAvailablePoisha || 0);
+    const pendingDeposit = Number(ledger.pendingDepositWithdrawalPoisha || 0);
     const principal = Number(ledger.packagePrincipalPoisha || 0);
     const amountPoisha = amountBDT * 100;
-    if (!Number.isSafeInteger(deposit) || deposit < amountPoisha || !Number.isSafeInteger(principal) || principal < 0) {
-      throw new Error(deposit < amountPoisha ? "INSUFFICIENT_DEPOSIT_BALANCE" : "INVALID_LEDGER_BALANCE");
+    if (!Number.isSafeInteger(deposit) || deposit < 0 || !Number.isSafeInteger(pendingDeposit)
+      || pendingDeposit < 0 || pendingDeposit > deposit || !Number.isSafeInteger(principal)
+      || principal < 0 || !Number.isSafeInteger(principal + amountPoisha)) {
+      throw new Error("INVALID_LEDGER_BALANCE");
     }
+    if (deposit - pendingDeposit < amountPoisha) throw new Error("INSUFFICIENT_DEPOSIT_BALANCE");
     const dailyRate = settingsDoc ? Number(firestoreFields(settingsDoc.fields || {}).dailyRate) : 0.02;
     if (!Number.isFinite(dailyRate) || dailyRate < 0 || dailyRate > 1) throw new Error("INVALID_PROFIT_RATE");
     const now = new Date();
