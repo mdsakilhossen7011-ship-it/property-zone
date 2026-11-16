@@ -68,3 +68,9 @@ test("zero source balances are valid for a newly migrated wallet", () => {
     withdrawablePoisha: 0
   });
 });
+
+test("streamed Firestore responses accept CRLF separators", () => {
+  assert.deepEqual(parseBatchGetResponse('{"document":{"name":"one"}}\r\n{"document":{"name":"two"}}'), [
+    { document: { name: "one" } }, { document: { name: "two" } }
+  ]);
+});
