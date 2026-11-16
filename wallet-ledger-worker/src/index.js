@@ -365,14 +365,24 @@ async function decideWalletRequest(env, adminUid, input) {
     const now = new Date(), writes = [];
     if (r.requestType === "wallet-deposit") {
       if (action === "approve") {
-        const amountPoisha = amountToPoisha(r.amountBDT), ledgerPath = "walletLedgers/" + r.uid;
-        const ledgerDocs = await batchRead(env, [ledgerPath], transaction, token), ledgerDoc = ledgerDocs[ledgerPath];
-        if (!ledgerDoc) throw new Error("MIGRATION_PENDING");
-        const ledger = firestoreFields(ledgerDoc.fields || {});
-        if (Number(ledger.schemaVersion || 0) !== 1) throw new Error("MIGRATION_PENDING");
-        const next = Number(ledger.depositAvailablePoisha || 0) + amountPoisha;
-        if (!Number.isSafeInteger(next)) throw new Error("INVALID_LEDGER_BALANCE");
-        writes.push(updateDocWrite(env, ledgerPath, ledgerDoc, { ...ledger, depositAvailablePoisha: next, updatedAt: now }, ["depositAvailablePoisha", "updatedAt"]));
+        const amountPoisha = amountToPoisha(r.amountBDT), ledgerPath = "walletLedgers/" + r.uid, walletPath = "wallets/" + r.uid;
+        const ledgerDocs = await batchRead(env, [ledgerPath, walletPath], transaction, token), ledgerDoc = ledgerDocs[ledgerPath];
+        if (!ledgerDoc) {
+          if (ledgerDocs[walletPath]) throw new Error("MIGRATION_PENDING");
+          writes.push(createDocWrite(env, ledgerPath, {
+            uid: r.uid, schemaVersion: 1, currency: "BDT",
+            depositAvailablePoisha: amountPoisha, pendingDepositWithdrawalPoisha: 0,
+            packagePrincipalPoisha: 0, pendingPackageWithdrawalPoisha: 0,
+            profitAvailablePoisha: 0, pendingProfitWithdrawalPoisha: 0,
+            createdAt: now, updatedAt: now
+          }));
+        } else {
+          const ledger = firestoreFields(ledgerDoc.fields || {});
+          if (Number(ledger.schemaVersion || 0) !== 1) throw new Error("MIGRATION_PENDING");
+          const next = Number(ledger.depositAvailablePoisha || 0) + amountPoisha;
+          if (!Number.isSafeInteger(next)) throw new Error("INVALID_LEDGER_BALANCE");
+          writes.push(updateDocWrite(env, ledgerPath, ledgerDoc, { ...ledger, depositAvailablePoisha: next, updatedAt: now }, ["depositAvailablePoisha", "updatedAt"]));
+        }
         writes.push(createDocWrite(env, "walletLedgerEntries/deposit_" + requestId, { uid: r.uid, type: "deposit-credit", requestId, amountPoisha, createdAt: now, adminUid }));
       }
     } else {
