@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { firestoreValue, firestoreFields, sourceBalance, parseBatchGetResponse } from "../src/index.js";
+import { firestoreValue, firestoreFields, sourceBalance, parseBatchGetResponse, amountToPoisha } from "../src/index.js";
 
 test("Firestore values decode supported primitive types", () => {
   assert.equal(firestoreValue({ integerValue: "1250" }), 1250);
@@ -48,4 +48,12 @@ test("batchGet parses both JSON arrays and streamed adjacent objects", () => {
     { found: { name: "a" } }, { missing: "b" }
   ]);
   assert.deepEqual(parseBatchGetResponse(""), []);
+});
+
+test("amount conversion uses integer poisha and allows explicit zero only for migration", () => {
+  assert.equal(amountToPoisha(12), 1200);
+  assert.equal(amountToPoisha(12.34), 1234);
+  assert.equal(amountToPoisha(0, true), 0);
+  assert.throws(() => amountToPoisha(0), /INVALID_AMOUNT/);
+  assert.throws(() => amountToPoisha(1.001), /INVALID_AMOUNT/);
 });
