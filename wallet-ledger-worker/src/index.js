@@ -573,7 +573,8 @@ export default {
         if (url.pathname === "/v1/package-purchase") result = await purchasePackage(env, claims.sub, input || {});
         else if (url.pathname === "/v1/withdrawal-request") result = await requestWithdrawal(env, claims.sub, input || {});
         else if (url.pathname === "/v1/admin/wallet-decision") result = await decideWalletRequest(env, claims.sub, input || {});
-        else if (url.pathname === "/v1/admin/profit-accrual") result = await accruePackageProfit(env, claims.sub, String(input.packageId || ""));\n        else if (url.pathname === "/v1/admin/migrate-member") result = await migrateMemberLedger(env, claims.sub, input || {});
+        else if (url.pathname === "/v1/admin/profit-accrual") result = await accruePackageProfit(env, claims.sub, String(input.packageId || ""));
+        else if (url.pathname === "/v1/admin/migrate-member") result = await migrateMemberLedger(env, claims.sub, input || {});
         return json({ ok: true, ...result }, 200, cors);
       }
       const ledger = await getLedger(env, claims.sub);
