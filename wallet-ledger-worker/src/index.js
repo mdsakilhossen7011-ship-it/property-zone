@@ -208,7 +208,8 @@ async function purchasePackage(env, uid, input) {
       throw new Error("INVALID_LEDGER_BALANCE");
     }
     if (deposit - pendingDeposit < amountPoisha) throw new Error("INSUFFICIENT_DEPOSIT_BALANCE");
-    const dailyRate = settingsDoc ? Number(firestoreFields(settingsDoc.fields || {}).dailyRate) : 0.02;
+    const profitSettings = settingsDoc ? firestoreFields(settingsDoc.fields || {}) : {};
+    const dailyRate = profitSettings.dailyRate == null ? 0.02 : Number(profitSettings.dailyRate);
     if (!Number.isFinite(dailyRate) || dailyRate < 0 || dailyRate > 1) throw new Error("INVALID_PROFIT_RATE");
     const now = new Date();
     const maturityAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
