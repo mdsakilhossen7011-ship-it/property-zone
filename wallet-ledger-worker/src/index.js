@@ -146,7 +146,7 @@ async function firestorePost(env, path, body, token) {
 }
 async function purchasePackage(env, uid, input) {
   const amountBDT = Number(input.amountBDT);
-  const allowed = [1000, 2000, 5000, 10000, 20000, 50000, 100000];
+  const allowed = [1000, 2000, 5000, 10000, 20000, 50000];
   const propertyId = String(input.propertyId || "").trim();
   const propertyTitle = String(input.propertyTitle || "").trim().slice(0, 160);
   const idempotencyKey = String(input.idempotencyKey || "").trim();
