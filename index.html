@@ -723,7 +723,7 @@ function updateWalletAmountPreview(kind){const input=document.getElementById(kin
 async function getWithdrawAvailableBalanceBDT(){
  const f=await getFirebase(),fs=f.firestore,settingsSnap=await fs.getDoc(fs.doc(f.db,'siteSettings','wallet'));
  walletSettingsCache=settingsSnap.exists()?settingsSnap.data():{};
- const apiBase=String(walletSettingsCache.walletLedgerApiUrl||'').trim().replace(/\\/+$/,'');
+ const apiBase=String(walletSettingsCache.walletLedgerApiUrl||'').trim().replace(/\/+$/,'');
  if(!apiBase)throw new Error('Wallet Ledger API এখনো Configure করা হয়নি।');
  const apiUrl=new URL(apiBase);if(apiUrl.protocol!=='https:')throw new Error('Wallet API অবশ্যই HTTPS হতে হবে।');
  const token=await currentUser.getIdToken(),response=await fetch(apiUrl.href+'/v1/wallet-summary',{headers:{Authorization:'Bearer '+token}});
@@ -905,7 +905,7 @@ async function loadWalletAndEarnings(){
   const currentProfitRate=Number.isFinite(Number(profitSettings.dailyRate))?Number(profitSettings.dailyRate):0.02;
   const rate=Number(walletSettingsCache.exchangeRateBDT||0);
   let ledgerBalances=null;
-  const apiBase=String(walletSettingsCache.walletLedgerApiUrl||'').trim().replace(/\\/+$/,'');
+  const apiBase=String(walletSettingsCache.walletLedgerApiUrl||'').trim().replace(/\/+$/,'');
   if(apiBase){
    try{
     const apiUrl=new URL(apiBase);
