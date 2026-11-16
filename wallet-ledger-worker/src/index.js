@@ -349,7 +349,7 @@ async function requestWithdrawal(env, uid, input) {
     const now = new Date();
     const writes = [
       updateDocWrite(env, ledgerPath, ledgerDoc, { ...ledger, [pendingField]: pending + amountPoisha, updatedAt: now }, [pendingField, "updatedAt"]),
-      createDocWrite(env, requestPath, { uid, requestType: "wallet-withdraw", status: "pending", amountBDT: Number(input.amountBDT), source, paymentMethod: method, walletNumber: account, reservedFunds: true, packageId: packageId || "", createdAt: now, ledgerRequestId: requestId, publicId: String(input.publicId || "").slice(0, 32), email: String(input.email || "").slice(0, 160), name: String(input.name || "").slice(0, 100), adminPayoutAccount: String(input.adminPayoutAccount || "").slice(0, 120) }),
+      createDocWrite(env, requestPath, { uid, requestType: "wallet-withdraw", status: "pending", amountBDT: Number(input.amountBDT), source, paymentMethod: method, walletNumber: account, reservedFunds: true, packageId: packageId || "", createdAt: now, ledgerRequestId: requestId, withdrawalIdempotencyPath: idempotencyPath, publicId: String(input.publicId || "").slice(0, 32), email: String(input.email || "").slice(0, 160), name: String(input.name || "").slice(0, 100), adminPayoutAccount: String(input.adminPayoutAccount || "").slice(0, 120) }),
       createDocWrite(env, idempotencyPath, { uid, type: "withdrawal-request-idempotency", requestId, status: "pending", idempotencyKey, createdAt: now })
     ];
     if (packageDoc) {
@@ -377,6 +377,11 @@ async function decideWalletRequest(env, adminUid, input) {
     const r = firestoreFields(requestDoc.fields || {});
     if (r.requestType !== "wallet-deposit" && r.requestType !== "wallet-withdraw") throw new Error("UNSUPPORTED_REQUEST_TYPE");
     if (r.status !== "pending") throw new Error("REQUEST_ALREADY_PROCESSED");
+    let idempotencyDoc = null;
+    if (r.withdrawalIdempotencyPath) {
+      const idempotencyDocs = await batchRead(env, [r.withdrawalIdempotencyPath], transaction, token);
+      idempotencyDoc = idempotencyDocs[r.withdrawalIdempotencyPath] || null;
+    }
     const now = new Date(), writes = [];
     if (r.requestType === "wallet-deposit") {
       if (action === "approve") {
@@ -422,7 +427,12 @@ async function decideWalletRequest(env, adminUid, input) {
       }
       writes.push(createDocWrite(env, "walletLedgerEntries/" + (action === "approve" ? "withdrawal_" : "withdrawal_reject_") + requestId, { uid: r.uid, type: action === "approve" ? "withdrawal-debit" : "withdrawal-release", requestId, source, amountPoisha, adminUid, createdAt: now }));
     }
-    writes.push(updateDocWrite(env, requestPath, requestDoc, { ...r, status: action === "approve" ? "approved" : "rejected", reviewedAt: now, reviewedBy: adminUid }, ["status", "reviewedAt", "reviewedBy"]));
+    const finalStatus = action === "approve" ? "approved" : "rejected";
+    writes.push(updateDocWrite(env, requestPath, requestDoc, { ...r, status: finalStatus, reviewedAt: now, reviewedBy: adminUid }, ["status", "reviewedAt", "reviewedBy"]));
+    if (idempotencyDoc) {
+      const idempotencyData = firestoreFields(idempotencyDoc.fields || {});
+      writes.push(updateDocWrite(env, r.withdrawalIdempotencyPath, idempotencyDoc, { ...idempotencyData, status: finalStatus, reviewedAt: now }, ["status", "reviewedAt"]));
+    }
     await commitTxn(env, transaction, writes, token);
     return { requestId, status: action === "approve" ? "approved" : "rejected" };
   } catch (error) {
