@@ -318,8 +318,11 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/members/$(memberId))
         && get(/databases/$(database)/documents/members/$(memberId)).data.referredByCode == code
         && request.resource.data.keys().hasAll(['createdAt'])
-        && request.resource.data.keys().hasOnly(['createdAt'])
-        && request.resource.data.createdAt is timestamp);
+        && request.resource.data.keys().hasOnly(['createdAt','uid','publicId','name'])
+        && request.resource.data.createdAt is timestamp
+        && (!request.resource.data.keys().hasAny(['uid']) || request.resource.data.uid == memberId)
+        && (!request.resource.data.keys().hasAny(['publicId']) || (request.resource.data.publicId is string && request.resource.data.publicId.matches('^[0-9]{7}$')))
+        && (!request.resource.data.keys().hasAny(['name']) || request.resource.data.name is string));
       allow update, delete: if false;
     }
     match /referralCodes/{code} {
