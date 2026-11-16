@@ -833,7 +833,7 @@ async function submitWalletRequest(event,kind){
     packageId=document.getElementById('withdrawPackageId')?.value||'';
     if(!packageId)throw new Error('উত্তোলনের জন্য একটি Active Package নির্বাচন করুন।');
    }
-   const settingsSnap=await fs.getDoc(fs.doc(f.db,'siteSettings','wallet')),apiBase=String((settingsSnap.exists()?settingsSnap.data().walletLedgerApiUrl:'')||'').trim().replace(/\\/+$/,'');
+   const settingsSnap=await fs.getDoc(fs.doc(f.db,'siteSettings','wallet')),apiBase=String((settingsSnap.exists()?settingsSnap.data().walletLedgerApiUrl:'')||'').trim().replace(/\/+$/,'');
    if(!apiBase)throw new Error('Wallet Ledger API এখনো Configure করা হয়নি।');
    const apiUrl=new URL(apiBase);if(apiUrl.protocol!=='https:')throw new Error('Wallet API অবশ্যই HTTPS হতে হবে।');
    const token=await currentUser.getIdToken(),idempotencyStorageKey='pz-withdraw:'+currentUser.uid+':'+selectedWithdrawSource+':'+amountBDT+':'+packageId;
