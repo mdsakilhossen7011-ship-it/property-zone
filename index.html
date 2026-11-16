@@ -626,29 +626,44 @@ async function requestPropertyPurchase(propertyId,packageAmount){
   const allowed=[1000,2000,5000,10000,20000,50000];
   if(!allowed.includes(Number(packageAmount))){status.textContent='Invalid package selected.';return;}
   const buttons=document.querySelectorAll('#propertyPackageList button');buttons.forEach(b=>b.disabled=true);
-  status.textContent='Checking package and wallet balance…';
+  status.textContent='Checking Deposit Balance…';
   try{
-   await loadWalletSettings('deposit');
-   const rate=walletExchangeRate();
+   const f=await getFirebase(),fs=f.firestore;
+   const settingsSnap=await fs.getDoc(fs.doc(f.db,'siteSettings','wallet'));
+   const apiBase=String((settingsSnap.exists()?settingsSnap.data().walletLedgerApiUrl:'')||'').trim().replace(/\\/+$/,'');
+   if(!apiBase)throw new Error('The new wallet system is not enabled yet. Please contact support.');
+   let apiUrl;
+   try{apiUrl=new URL(apiBase);}catch(_){throw new Error('Wallet backend URL is not configured correctly.');}
+   if(apiUrl.protocol!=='https:')throw new Error('Wallet backend must use a secure HTTPS address.');
    const amountBDT=Number(packageAmount);
    if(!Number.isSafeInteger(amountBDT)||amountBDT<=0)throw new Error('Invalid package amount.');
-   const f=await getFirebase(),fs=f.firestore,walletRef=fs.doc(f.db,'wallets',currentUser.uid),packageRef=fs.doc(fs.collection(f.db,'activePackages'));
-   await fs.runTransaction(f.db,async tx=>{
-    const profitSettingsRef=fs.doc(f.db,'siteSettings','propertyProfit');
-    const [walletSnap,profitSettingsSnap]=await Promise.all([tx.get(walletRef),tx.get(profitSettingsRef)]);
-    const propertyDailyRate=profitSettingsSnap.exists()?Number(profitSettingsSnap.data().dailyRate):0.02;
-    if(!Number.isFinite(propertyDailyRate)||propertyDailyRate<0||propertyDailyRate>1)throw new Error('Property profit rate is not configured correctly.');
-    const balance=walletSnap.exists()?walletBalanceInBDT(walletSnap.data(),rate):0;
-    if(balance+0.000001<amountBDT)throw new Error('Insufficient wallet balance. Please deposit funds first.');
-    tx.update(walletRef,{balanceBDT:Math.round((balance-amountBDT)*100)/100,lastPackagePurchaseId:packageRef.id,updatedAt:fs.serverTimestamp()});
-    tx.set(packageRef,{uid:currentUser.uid,propertyId,propertyTitle:p.name,amountBDT,dailyRate:propertyDailyRate,hourlyRate:propertyDailyRate/24,termDays:30,maturityAt:new Date(Date.now()+30*24*60*60*1000),status:'active',startedAt:fs.serverTimestamp(),createdAt:fs.serverTimestamp()});
+   const token=await currentUser.getIdToken();
+   const pendingKey='pz-package-purchase:'+currentUser.uid+':'+propertyId+':'+amountBDT;
+   let idempotencyKey='';
+   try{idempotencyKey=sessionStorage.getItem(pendingKey)||'';}catch(_){}
+   if(!idempotencyKey){idempotencyKey=crypto.randomUUID().replace(/-/g,'');try{sessionStorage.setItem(pendingKey,idempotencyKey);}catch(_){}}
+   const response=await fetch(apiUrl.href+'/v1/package-purchase',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({propertyId,propertyTitle:p.name,amountBDT,idempotencyKey})
    });
-   status.textContent='Package of ৳'+Number(packageAmount).toLocaleString('en-US')+' activated successfully.';
-   await loadDashboardStats();await loadWalletAndEarnings();
+   const result=await response.json().catch(()=>({}));
+   if(!response.ok){
+    const messages={
+     MIGRATION_PENDING:'Your wallet is not migrated yet. Package purchase is temporarily unavailable.',
+     INSUFFICIENT_DEPOSIT_BALANCE:'Insufficient Deposit Balance. Please deposit funds first.',
+     INVALID_PACKAGE_AMOUNT:'Invalid package amount.',
+     BACKEND_NOT_CONFIGURED:'Wallet backend is not configured yet.',
+     UNAUTHORIZED:'Your session expired. Please log in again.'
+    };
+    throw new Error(messages[result.error]||'Package purchase could not be completed. Please try again.');
+   }
+   try{sessionStorage.removeItem(pendingKey);}catch(_){}
+   status.textContent=result.duplicate?'This package purchase was already processed. Your balance was not charged again.':'Package of ৳'+amountBDT.toLocaleString('en-US')+' activated successfully. Deposit Balance reduced and Package Balance increased.';
+   await loadDashboardStats();await loadWalletAndEarnings();await showPropertyPackages(propertyId);
   }catch(e){status.textContent=e.message||'Could not activate package.';}
   finally{buttons.forEach(b=>b.disabled=false);}
 }
-
 
 function selectWalletMethod(kind,method,button){
  const field=document.getElementById(kind+'Method');if(!field)return;field.value=method;
