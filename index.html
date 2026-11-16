@@ -791,7 +791,13 @@ async function setWithdrawAllAmount(){
  try{
   let balance;
   if(type==='available')balance=await getWithdrawAvailableBalanceBDT();
-  else balance=(await getWalletLedgerSourceBalance(type)).available;
+  else if(type==='package'){
+   const packageId=document.getElementById('withdrawPackageId')?.value||'';
+   if(!packageId)throw new Error('আগে একটি Active Package নির্বাচন করুন।');
+   const f=await getFirebase(),snap=await f.firestore.getDoc(f.firestore.doc(f.db,'activePackages',packageId));
+   if(!snap.exists()||snap.data().uid!==currentUser.uid||snap.data().status!=='active')throw new Error('Selected package is no longer active.');
+   balance=Number(snap.data().amountBDT||0);
+  }else balance=(await getWalletLedgerSourceBalance(type)).available;
   if(Number.isFinite(balance)&&balance>0){
    el.value=String(Math.floor(balance));updateWalletAmountPreview('withdraw');
    if(status)status.textContent='Maximum available amount selected.';
