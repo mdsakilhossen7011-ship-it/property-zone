@@ -179,7 +179,7 @@ service cloud.firestore {
             && request.resource.data.keys().hasOnly([
               "requestType", "uid", "email", "name", "amountBDT", "paymentCurrency",
               "paymentMethod", "walletNumber", "paymentAccount", "senderAccount",
-              "receivingAccount", "adminPayoutAccount", "transactionId", "paymentProofPath",
+              "receivingAccount", "adminPayoutAccount", "transactionId", "paymentProofData",
               "message", "status", "createdAt", "reservedFunds"
             ])
             && request.resource.data.amountBDT is int
@@ -205,10 +205,9 @@ service cloud.firestore {
                 && request.resource.data.senderAccount is string
                 && request.resource.data.receivingAccount is string
                 && request.resource.data.receivingAccount.size() > 0
-                && request.resource.data.paymentProofPath is string
-                && request.resource.data.paymentProofPath.matches(
-                  '^wallet-deposit-proofs/' + request.auth.uid + '/[A-Za-z0-9_-]+/[0-9]+\\.(jpg|jpeg|png|webp)$'
-                )
+                && request.resource.data.paymentProofData is string
+                && request.resource.data.paymentProofData.size() <= 700000
+                && request.resource.data.paymentProofData.matches('^data:image/jpeg;base64,[A-Za-z0-9+/]+=*$')
               )
               || (
                 request.resource.data.requestType == "wallet-withdraw"
