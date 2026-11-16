@@ -467,17 +467,31 @@ async function accruePackageProfit(env, adminUid, packageId) {
     const principalPoisha = amountToPoisha(principalBDT), rate = p.dailyRate == null ? 0.02 : Number(p.dailyRate);
     if (!Number.isFinite(rate) || rate < 0 || rate > 1) throw new Error("INVALID_PROFIT_RATE");
     const nowMs = Date.now(), elapsedDays = Math.min(termDays, Math.floor((nowMs - startedAt) / 86400000));
-    const creditedDays = Math.max(0, Number(p.creditedDays || 0)), dueDays = Math.max(0, elapsedDays - creditedDays);
+    const creditedDays = Number(p.creditedDays || 0);
+    if (!Number.isSafeInteger(creditedDays) || creditedDays < 0 || creditedDays > termDays) throw new Error("INVALID_CREDITED_DAYS");
+    const dueDays = Math.max(0, elapsedDays - creditedDays);
     if (!dueDays) { await rollbackTxn(env, transaction, token); return { skipped: true, reason: "not-due" }; }
     const earningsPoisha = Math.round(principalPoisha * rate * dueDays), ledgerPath = "walletLedgers/" + p.uid;
     const ledgerDocs = await batchRead(env, [ledgerPath], transaction, token), ledgerDoc = ledgerDocs[ledgerPath];
     if (!ledgerDoc) throw new Error("MIGRATION_PENDING");
     const ledger = firestoreFields(ledgerDoc.fields || {});
     if (Number(ledger.schemaVersion || 0) !== 1) throw new Error("MIGRATION_PENDING");
-    const nextProfit = Number(ledger.profitAvailablePoisha || 0) + earningsPoisha, matured = elapsedDays >= termDays;
-    const nextPrincipal = Number(ledger.packagePrincipalPoisha || 0) - (matured ? principalPoisha : 0);
-    const nextDeposit = Number(ledger.depositAvailablePoisha || 0) + (matured ? principalPoisha : 0);
-    if (!Number.isSafeInteger(nextProfit) || nextPrincipal < 0 || !Number.isSafeInteger(nextDeposit)) throw new Error("INVALID_LEDGER_BALANCE");
+    const currentProfit = Number(ledger.profitAvailablePoisha || 0);
+    const currentPrincipal = Number(ledger.packagePrincipalPoisha || 0);
+    const currentDeposit = Number(ledger.depositAvailablePoisha || 0);
+    const pendingProfit = Number(ledger.pendingProfitWithdrawalPoisha || 0);
+    const pendingPackage = Number(ledger.pendingPackageWithdrawalPoisha || 0);
+    const pendingDeposit = Number(ledger.pendingDepositWithdrawalPoisha || 0);
+    const matured = elapsedDays >= termDays;
+    const nextProfit = currentProfit + earningsPoisha;
+    const nextPrincipal = currentPrincipal - (matured ? principalPoisha : 0);
+    const nextDeposit = currentDeposit + (matured ? principalPoisha : 0);
+    if (![currentProfit, currentPrincipal, currentDeposit, pendingProfit, pendingPackage, pendingDeposit, nextProfit, nextPrincipal, nextDeposit].every(Number.isSafeInteger)
+      || currentProfit < 0 || currentPrincipal < 0 || currentDeposit < 0
+      || pendingProfit < 0 || pendingProfit > currentProfit
+      || pendingPackage < 0 || pendingPackage > currentPrincipal
+      || pendingDeposit < 0 || pendingDeposit > currentDeposit
+      || nextProfit < 0 || nextPrincipal < 0 || nextDeposit < 0) throw new Error("INVALID_LEDGER_BALANCE");
     const now = new Date(), nextCreditedDays = creditedDays + dueDays;
     const writes = [
       updateDocWrite(env, ledgerPath, ledgerDoc, { ...ledger, profitAvailablePoisha: nextProfit, packagePrincipalPoisha: nextPrincipal, depositAvailablePoisha: nextDeposit, updatedAt: now }, ["profitAvailablePoisha", "packagePrincipalPoisha", "depositAvailablePoisha", "updatedAt"]),
@@ -682,7 +696,7 @@ export default {
     } catch (error) {
       const message = String(error && error.message || "");
       const authError = /token|bearer|signature|claims|signing key/i.test(message);
-      const clientErrors = new Set(["MIGRATION_PENDING", "INSUFFICIENT_DEPOSIT_BALANCE", "INVALID_PACKAGE_AMOUNT", "INVALID_IDEMPOTENCY_KEY", "INVALID_PROPERTY", "INVALID_LEDGER_BALANCE", "INVALID_PROFIT_RATE", "INVALID_AMOUNT", "INVALID_WITHDRAWAL_SOURCE", "PAYOUT_DETAILS_REQUIRED", "INVALID_PAYOUT_METHOD", "INSUFFICIENT_BALANCE", "WITHDRAW_DISABLED", "BELOW_MINIMUM_WITHDRAWAL", "PACKAGE_ID_REQUIRED", "PACKAGE_NOT_FOUND", "PACKAGE_WITHDRAWAL_MUST_MATCH_FULL_ACTIVE_PACKAGE", "ADMIN_REQUIRED", "INVALID_REVIEW_ACTION", "REQUEST_NOT_FOUND", "REQUEST_ALREADY_PROCESSED", "UNSUPPORTED_REQUEST_TYPE", "LEGACY_WITHDRAWAL_REQUIRES_MANUAL_RECONCILIATION", "WITHDRAWAL_RESERVE_MISMATCH", "PACKAGE_STATE_MISMATCH", "PACKAGE_START_DATE_INVALID", "PROFIT_SCHEDULE_INVALID", "INVALID_MEMBER_UID", "TOO_MANY_ACTIVE_PACKAGES", "PACKAGE_MIGRATION_REVIEW_FAILED", "PACKAGE_TOTAL_MISMATCH", "LEGACY_WALLET_NOT_FOUND", "LEGACY_WALLET_BALANCE_UNRESOLVED", "LEGACY_BALANCE_SPLIT_MISMATCH", "LEGACY_PENDING_WITHDRAWALS_REQUIRE_REVIEW", "LEGACY_PENDING_WITHDRAWAL_REQUESTS_REQUIRE_REVIEW", "TOO_MANY_MEMBER_REQUESTS", "MIGRATION_STATE_CHANGED", "LEDGER_ALREADY_EXISTS", "LEGACY_BALANCE_CHANGED"]);
+      const clientErrors = new Set(["MIGRATION_PENDING", "INSUFFICIENT_DEPOSIT_BALANCE", "INVALID_PACKAGE_AMOUNT", "INVALID_IDEMPOTENCY_KEY", "INVALID_PROPERTY", "INVALID_LEDGER_BALANCE", "INVALID_PROFIT_RATE", "INVALID_AMOUNT", "INVALID_WITHDRAWAL_SOURCE", "PAYOUT_DETAILS_REQUIRED", "INVALID_PAYOUT_METHOD", "INSUFFICIENT_BALANCE", "INVALID_CREDITED_DAYS", "WITHDRAW_DISABLED", "BELOW_MINIMUM_WITHDRAWAL", "PACKAGE_ID_REQUIRED", "PACKAGE_NOT_FOUND", "PACKAGE_WITHDRAWAL_MUST_MATCH_FULL_ACTIVE_PACKAGE", "ADMIN_REQUIRED", "INVALID_REVIEW_ACTION", "REQUEST_NOT_FOUND", "REQUEST_ALREADY_PROCESSED", "UNSUPPORTED_REQUEST_TYPE", "LEGACY_WITHDRAWAL_REQUIRES_MANUAL_RECONCILIATION", "WITHDRAWAL_RESERVE_MISMATCH", "PACKAGE_STATE_MISMATCH", "PACKAGE_START_DATE_INVALID", "PROFIT_SCHEDULE_INVALID", "INVALID_MEMBER_UID", "TOO_MANY_ACTIVE_PACKAGES", "PACKAGE_MIGRATION_REVIEW_FAILED", "PACKAGE_TOTAL_MISMATCH", "LEGACY_WALLET_NOT_FOUND", "LEGACY_WALLET_BALANCE_UNRESOLVED", "LEGACY_BALANCE_SPLIT_MISMATCH", "LEGACY_PENDING_WITHDRAWALS_REQUIRE_REVIEW", "LEGACY_PENDING_WITHDRAWAL_REQUESTS_REQUIRE_REVIEW", "TOO_MANY_MEMBER_REQUESTS", "MIGRATION_STATE_CHANGED", "LEDGER_ALREADY_EXISTS", "LEGACY_BALANCE_CHANGED"]);
       const status = authError ? 401 : message === "ADMIN_REQUIRED" ? 403 : clientErrors.has(message) ? (["MIGRATION_PENDING", "INSUFFICIENT_DEPOSIT_BALANCE", "INSUFFICIENT_BALANCE", "REQUEST_ALREADY_PROCESSED"].includes(message) ? 409 : 400) : 500;
       return json({ error: authError ? "UNAUTHORIZED" : clientErrors.has(message) ? message : "BACKEND_ERROR" }, status, cors);
     }
