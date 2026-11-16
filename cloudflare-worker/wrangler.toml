@@ -1,0 +1,8 @@
+name = "property-zone-signup-otp"
+main = "index.js"
+compatibility_date = "2026-11-16"
+
+# Create a KV namespace in Cloudflare and replace the placeholder ID below.
+[[kv_namespaces]]
+binding = "OTP_STORE"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
