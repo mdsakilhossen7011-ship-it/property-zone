@@ -493,6 +493,20 @@ async function listActivePackages(env, uid, token) {
   }, token);
   return rows.map(row => row.document).filter(Boolean);
 }
+async function listMemberWalletRequests(env, uid, token) {
+  const rows = await firestorePost(env, "documents:runQuery", {
+    structuredQuery: {
+      from: [{ collectionId: "propertyEnquiries" }],
+      where: { fieldFilter: { field: { fieldPath: "uid" }, op: "EQUAL", value: { stringValue: uid } } },
+      limit: 400
+    }
+  }, token);
+  if (rows.length >= 400) throw new Error("TOO_MANY_MEMBER_REQUESTS");
+  return rows.map(row => row.document).filter(Boolean).map(document => ({
+    id: document.name.split("/").pop(),
+    ...firestoreFields(document.fields || {})
+  }));
+}
 async function migrateMemberLedger(env, adminUid, input) {
   const uid = String(input.uid || "");
   if (!/^[A-Za-z0-9_-]{1,128}$/.test(uid)) throw new Error("INVALID_MEMBER_UID");
@@ -501,8 +515,14 @@ async function migrateMemberLedger(env, adminUid, input) {
   const depositPoisha = amountToPoisha(input.depositBDT || 0, true);
   const profitPoisha = amountToPoisha(input.profitBDT || 0, true);
   const packagePoisha = amountToPoisha(input.packageBDT || 0, true);
-  const packages = await listActivePackages(env, uid, token);
+  const [packages, memberRequests] = await Promise.all([
+    listActivePackages(env, uid, token),
+    listMemberWalletRequests(env, uid, token)
+  ]);
   if (packages.length >= 400) throw new Error("TOO_MANY_ACTIVE_PACKAGES");
+  if (memberRequests.some(request => request.requestType === "wallet-withdraw" && ["pending", "open"].includes(String(request.status || "").toLowerCase()))) {
+    throw new Error("LEGACY_PENDING_WITHDRAWAL_REQUESTS_REQUIRE_REVIEW");
+  }
   let calculatedPackagePoisha = 0;
   const packagePaths = packages.map(doc => {
     const fields = firestoreFields(doc.fields || {});
@@ -647,7 +667,7 @@ export default {
     } catch (error) {
       const message = String(error && error.message || "");
       const authError = /token|bearer|signature|claims|signing key/i.test(message);
-      const clientErrors = new Set(["MIGRATION_PENDING", "INSUFFICIENT_DEPOSIT_BALANCE", "INVALID_PACKAGE_AMOUNT", "INVALID_IDEMPOTENCY_KEY", "INVALID_PROPERTY", "INVALID_LEDGER_BALANCE", "INVALID_PROFIT_RATE", "INVALID_AMOUNT", "INVALID_WITHDRAWAL_SOURCE", "PAYOUT_DETAILS_REQUIRED", "INVALID_PAYOUT_METHOD", "INSUFFICIENT_BALANCE", "WITHDRAW_DISABLED", "BELOW_MINIMUM_WITHDRAWAL", "PACKAGE_ID_REQUIRED", "PACKAGE_NOT_FOUND", "PACKAGE_WITHDRAWAL_MUST_MATCH_FULL_ACTIVE_PACKAGE", "ADMIN_REQUIRED", "INVALID_REVIEW_ACTION", "REQUEST_NOT_FOUND", "REQUEST_ALREADY_PROCESSED", "UNSUPPORTED_REQUEST_TYPE", "LEGACY_WITHDRAWAL_REQUIRES_MANUAL_RECONCILIATION", "WITHDRAWAL_RESERVE_MISMATCH", "PACKAGE_STATE_MISMATCH", "PACKAGE_START_DATE_INVALID", "PROFIT_SCHEDULE_INVALID", "INVALID_MEMBER_UID", "TOO_MANY_ACTIVE_PACKAGES", "PACKAGE_MIGRATION_REVIEW_FAILED", "PACKAGE_TOTAL_MISMATCH", "LEGACY_WALLET_NOT_FOUND", "LEGACY_WALLET_BALANCE_UNRESOLVED", "LEGACY_BALANCE_SPLIT_MISMATCH", "LEGACY_PENDING_WITHDRAWALS_REQUIRE_REVIEW", "MIGRATION_STATE_CHANGED", "LEDGER_ALREADY_EXISTS", "LEGACY_BALANCE_CHANGED"]);
+      const clientErrors = new Set(["MIGRATION_PENDING", "INSUFFICIENT_DEPOSIT_BALANCE", "INVALID_PACKAGE_AMOUNT", "INVALID_IDEMPOTENCY_KEY", "INVALID_PROPERTY", "INVALID_LEDGER_BALANCE", "INVALID_PROFIT_RATE", "INVALID_AMOUNT", "INVALID_WITHDRAWAL_SOURCE", "PAYOUT_DETAILS_REQUIRED", "INVALID_PAYOUT_METHOD", "INSUFFICIENT_BALANCE", "WITHDRAW_DISABLED", "BELOW_MINIMUM_WITHDRAWAL", "PACKAGE_ID_REQUIRED", "PACKAGE_NOT_FOUND", "PACKAGE_WITHDRAWAL_MUST_MATCH_FULL_ACTIVE_PACKAGE", "ADMIN_REQUIRED", "INVALID_REVIEW_ACTION", "REQUEST_NOT_FOUND", "REQUEST_ALREADY_PROCESSED", "UNSUPPORTED_REQUEST_TYPE", "LEGACY_WITHDRAWAL_REQUIRES_MANUAL_RECONCILIATION", "WITHDRAWAL_RESERVE_MISMATCH", "PACKAGE_STATE_MISMATCH", "PACKAGE_START_DATE_INVALID", "PROFIT_SCHEDULE_INVALID", "INVALID_MEMBER_UID", "TOO_MANY_ACTIVE_PACKAGES", "PACKAGE_MIGRATION_REVIEW_FAILED", "PACKAGE_TOTAL_MISMATCH", "LEGACY_WALLET_NOT_FOUND", "LEGACY_WALLET_BALANCE_UNRESOLVED", "LEGACY_BALANCE_SPLIT_MISMATCH", "LEGACY_PENDING_WITHDRAWALS_REQUIRE_REVIEW", "LEGACY_PENDING_WITHDRAWAL_REQUESTS_REQUIRE_REVIEW", "TOO_MANY_MEMBER_REQUESTS", "MIGRATION_STATE_CHANGED", "LEDGER_ALREADY_EXISTS", "LEGACY_BALANCE_CHANGED"]);
       const status = authError ? 401 : message === "ADMIN_REQUIRED" ? 403 : clientErrors.has(message) ? (["MIGRATION_PENDING", "INSUFFICIENT_DEPOSIT_BALANCE", "INSUFFICIENT_BALANCE", "REQUEST_ALREADY_PROCESSED"].includes(message) ? 409 : 400) : 500;
       return json({ error: authError ? "UNAUTHORIZED" : clientErrors.has(message) ? message : "BACKEND_ERROR" }, status, cors);
     }
