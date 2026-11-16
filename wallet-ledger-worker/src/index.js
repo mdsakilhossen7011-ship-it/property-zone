@@ -116,6 +116,18 @@ function corsHeaders(request, env) {
 }
 
 
+function parseBatchGetResponse(text) {
+  const trimmed = String(text || "").trim();
+  if (!trimmed) return [];
+  try {
+    const parsed = JSON.parse(trimmed);
+    return Array.isArray(parsed) ? parsed : [parsed];
+  } catch (_) {
+    // Firestore batchGet is a streaming endpoint: it may return adjacent JSON
+    // objects rather than a single JSON array. Parse each complete JSON line.
+    return trimmed.split(/\r?\n/).filter(Boolean).map(line => JSON.parse(line));
+  }
+}
 function firestoreString(value) { return { stringValue: String(value) }; }
 function firestoreInteger(value) { return { integerValue: String(value) }; }
 function firestoreTimestamp(value) { return { timestampValue: new Date(value).toISOString() }; }
@@ -140,9 +152,10 @@ async function firestorePost(env, path, body, token) {
       headers: { authorization: "Bearer " + accessToken, "content-type": "application/json" },
       body: JSON.stringify(body)
     });
-  const payload = await response.json().catch(() => ({}));
+  const raw = await response.text();
   if (!response.ok) throw new Error("Firestore transaction request failed (" + response.status + ").");
-  return payload;
+  if (path === "documents:batchGet") return parseBatchGetResponse(raw);
+  try { return raw ? JSON.parse(raw) : {}; } catch (_) { throw new Error("Firestore returned an invalid response."); }
 }
 async function purchasePackage(env, uid, input) {
   const amountBDT = Number(input.amountBDT);
@@ -288,4 +301,4 @@ export default {
 };
 
 
-export { firestoreValue, firestoreFields, sourceBalance, purchasePackage };
+export { firestoreValue, firestoreFields, sourceBalance, purchasePackage, parseBatchGetResponse };
