@@ -280,7 +280,9 @@ export default {
     } catch (error) {
       const message = String(error && error.message || "");
       const authError = /token|bearer|signature|claims|signing key/i.test(message);
-      return json({ error: authError ? "UNAUTHORIZED" : "BACKEND_ERROR" }, authError ? 401 : 500, cors);
+      const clientErrors = new Set(["MIGRATION_PENDING", "INSUFFICIENT_DEPOSIT_BALANCE", "INVALID_PACKAGE_AMOUNT", "INVALID_IDEMPOTENCY_KEY", "INVALID_PROPERTY", "INVALID_LEDGER_BALANCE", "INVALID_PROFIT_RATE"]);
+      const status = authError ? 401 : clientErrors.has(message) ? (message === "MIGRATION_PENDING" || message === "INSUFFICIENT_DEPOSIT_BALANCE" ? 409 : 400) : 500;
+      return json({ error: authError ? "UNAUTHORIZED" : clientErrors.has(message) ? message : "BACKEND_ERROR" }, status, cors);
     }
   }
 };
