@@ -12,7 +12,7 @@
 - POST /v1/admin/profit-accrual: admin-only single-package accrual. It credits whole 24-hour periods, capped at the package term; at maturity it moves principal from Package Balance back to Deposit Balance and marks the package completed.
 - POST /v1/admin/migrate-member: admin-only, explicit reviewed migration. It requires the operator to classify legacy wallet funds into Deposit and Profit so their sum exactly equals the legacy combined wallet. Package Balance must exactly equal the sum of that member's active package principals. Existing ledgers, pending legacy withdrawals, mismatched totals, and unresolved amounts are hard stops.
 
-The Worker has an hourly Cloudflare Cron trigger. It scans active packages and runs the same idempotent 24-hour accrual logic; package creditedDays and transaction entries prevent duplicate credits.
+The Worker has an 15-minute Cloudflare Cron trigger. It scans active packages and runs the same idempotent 24-hour accrual logic; package creditedDays and transaction entries prevent duplicate credits.
 
 ## Migration rules
 
