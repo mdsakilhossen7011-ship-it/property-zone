@@ -630,7 +630,7 @@ async function requestPropertyPurchase(propertyId,packageAmount){
   try{
    const f=await getFirebase(),fs=f.firestore;
    const settingsSnap=await fs.getDoc(fs.doc(f.db,'siteSettings','wallet'));
-   const apiBase=String((settingsSnap.exists()?settingsSnap.data().walletLedgerApiUrl:'')||'').trim().replace(/\\/+$/,'');
+   const apiBase=String((settingsSnap.exists()?settingsSnap.data().walletLedgerApiUrl:'')||'').trim().replace(/\/+$/,'');
    if(!apiBase)throw new Error('The new wallet system is not enabled yet. Please contact support.');
    let apiUrl;
    try{apiUrl=new URL(apiBase);}catch(_){throw new Error('Wallet backend URL is not configured correctly.');}
