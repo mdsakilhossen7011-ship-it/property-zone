@@ -511,10 +511,24 @@ async function migrateMemberLedger(env, adminUid, input) {
     if (!docs[walletPath]) throw new Error("MIGRATION_STATE_CHANGED");
     if (docs[ledgerPath] || docs[migrationPath]) throw new Error("LEDGER_ALREADY_EXISTS");
     const currentWallet = firestoreFields(docs[walletPath].fields || {});
-    const currentBalance = Number.isFinite(Number(currentWallet.balanceBDT))
+    const currentBalance = currentWallet.balanceBDT != null && Number.isFinite(Number(currentWallet.balanceBDT))
       ? Math.round(Number(currentWallet.balanceBDT) * 100)
       : legacyPoisha;
-    if (currentBalance !== legacyPoisha) throw new Error("LEGACY_BALANCE_CHANGED");
+    if (currentBalance !== legacyPoisha || Number(currentWallet.pendingWithdrawalBDT || 0) > 0) throw new Error("LEGACY_BALANCE_CHANGED");
+    let transactionPackagePoisha = 0;
+    for (const packagePath of packagePaths) {
+      const packageDocument = docs[packagePath];
+      if (!packageDocument) throw new Error("MIGRATION_STATE_CHANGED");
+      const packageData = firestoreFields(packageDocument.fields || {});
+      if (packageData.uid !== uid || packageData.status !== "active") throw new Error("MIGRATION_STATE_CHANGED");
+      const packageAmount = packageData.amountBDT != null
+        ? Number(packageData.amountBDT)
+        : Number(packageData.amountUSD || 0) * Number(packageData.exchangeRateBDT || 0);
+      const packageAmountPoisha = Math.round(packageAmount * 100);
+      if (!Number.isSafeInteger(packageAmountPoisha) || packageAmountPoisha <= 0) throw new Error("MIGRATION_STATE_CHANGED");
+      transactionPackagePoisha += packageAmountPoisha;
+    }
+    if (transactionPackagePoisha !== packagePoisha) throw new Error("PACKAGE_TOTAL_MISMATCH");
     const writes = [
       createDocWrite(env, ledgerPath, {
         uid, schemaVersion: 1, currency: "BDT",
@@ -540,6 +554,7 @@ async function migrateMemberLedger(env, adminUid, input) {
 async function runScheduledProfitAccrual(env) {
   const token = await createServiceAccountAccessToken(env);
   const packages = await listActivePackages(env, "", token);
+  if (packages.length >= 400) throw new Error("TOO_MANY_ACTIVE_PACKAGES");
   const results = [];
   for (const document of packages) {
     const id = document.name.split("/").pop();
@@ -553,7 +568,7 @@ export default {
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(runScheduledProfitAccrual(env).then(results => {
       console.log(JSON.stringify({ scheduledProfitAccrual: results.length, failures: results.filter(x => x.error).length }));
-    }));
+    }).catch(error => console.error("Scheduled wallet accrual failed:", error.message)));
   },
   async fetch(request, env) {
     const cors = corsHeaders(request, env);
