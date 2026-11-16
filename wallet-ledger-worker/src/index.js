@@ -404,8 +404,13 @@ async function decideWalletRequest(env, adminUid, input) {
         } else {
           const ledger = firestoreFields(ledgerDoc.fields || {});
           if (Number(ledger.schemaVersion || 0) !== 1) throw new Error("MIGRATION_PENDING");
-          const next = Number(ledger.depositAvailablePoisha || 0) + amountPoisha;
-          if (!Number.isSafeInteger(next)) throw new Error("INVALID_LEDGER_BALANCE");
+          const currentDeposit = Number(ledger.depositAvailablePoisha || 0);
+          const pendingDeposit = Number(ledger.pendingDepositWithdrawalPoisha || 0);
+          const next = currentDeposit + amountPoisha;
+          if (!Number.isSafeInteger(currentDeposit) || currentDeposit < 0 || !Number.isSafeInteger(pendingDeposit)
+            || pendingDeposit < 0 || pendingDeposit > currentDeposit || !Number.isSafeInteger(next)) {
+            throw new Error("INVALID_LEDGER_BALANCE");
+          }
           writes.push(updateDocWrite(env, ledgerPath, ledgerDoc, { ...ledger, depositAvailablePoisha: next, updatedAt: now }, ["depositAvailablePoisha", "updatedAt"]));
         }
         writes.push(createDocWrite(env, "walletLedgerEntries/deposit_" + requestId, { uid: r.uid, type: "deposit-credit", requestId, amountPoisha, createdAt: now, adminUid }));
