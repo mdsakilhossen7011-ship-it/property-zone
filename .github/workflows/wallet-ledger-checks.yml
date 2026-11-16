@@ -18,6 +18,8 @@ on:
       - "package.json"
       - "backend/**"
       - "wallet-ledger-worker/**"
+      - "index.html"
+      - "scripts/check-inline-scripts.js"
       - ".github/workflows/wallet-ledger-checks.yml"
 
 permissions:
