@@ -718,7 +718,7 @@ async function getWalletLedgerSourceBalance(type){
  const f=await getFirebase(),fs=f.firestore;
  const settingsSnap=await fs.getDoc(fs.doc(f.db,'siteSettings','wallet'));
  walletSettingsCache=settingsSnap.exists()?settingsSnap.data():{};
- const apiBase=String(walletSettingsCache.walletLedgerApiUrl||'').trim().replace(/\\/+$/,'');
+ const apiBase=String(walletSettingsCache.walletLedgerApiUrl||'').trim().replace(/\/+$/,'');
  if(!apiBase)throw new Error('নতুন Wallet API এখনো চালু হয়নি।');
  let apiUrl;try{apiUrl=new URL(apiBase);}catch(_){throw new Error('Wallet API URL সঠিক নয়।');}
  if(apiUrl.protocol!=='https:')throw new Error('Wallet API অবশ্যই HTTPS হতে হবে।');
