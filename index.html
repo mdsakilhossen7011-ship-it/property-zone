@@ -770,7 +770,7 @@ async function setWithdrawAllAmount(){
 async function compressDepositProof(file){const bitmap=await createImageBitmap(file);try{const scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height)),canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)throw new Error('Could not prepare the screenshot.');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);let blob=null;for(const q of [.82,.72,.62,.52,.42]){blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',q));if(blob&&blob.size<=480*1024)break;}if(!blob||blob.size>480*1024)throw new Error('Screenshot is too large after compression. Choose a smaller image.');return await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error('Could not read the compressed screenshot.'));reader.readAsDataURL(blob);});}finally{bitmap.close();}}
 async function submitWalletRequest(event,kind){
  event.preventDefault();if(!currentUser){setStatus('Please log in first.',true);showView('login');return;}
- const selectedWithdrawSource=document.getElementById('withdrawBalanceType')?.value||'available';if(kind==='withdraw'){const sourceName=selectedWithdrawSource==='deposit'?'Deposit':selectedWithdrawSource==='package'?'Package':selectedWithdrawSource==='profit'?'Profit':'Legacy';const sourceStatus=document.getElementById('withdrawStatus');if(sourceStatus)sourceStatus.textContent=sourceName+' Balance-এর নিরাপদ server-side Withdrawal API এখনো চালু হয়নি। ভুল Wallet থেকে টাকা কাটা ঠেকাতে আপাতত কোনো Withdrawal Request নেওয়া হচ্ছে না।';return;}
+
  const isDeposit=kind==='deposit',amountBDT=Number(document.getElementById(isDeposit?'depositAmount':'withdrawAmount').value),method=document.getElementById(isDeposit?'depositMethod':'withdrawMethod').value,account=document.getElementById(isDeposit?'depositNumber':'withdrawNumber').value.trim(),proofFile=isDeposit?document.getElementById('depositProof').files[0]:null,status=document.getElementById(kind+'Status'),form=event.currentTarget,submit=form.querySelector('button[type="submit"]');
  await loadWalletSettings(kind);
  const settings=walletSettingsCache||{},minimumDeposit=Math.max(1,Number(settings.minimumDepositBDT||500)),minimumWithdraw=Math.max(1,Number(settings.minimumWithdrawBDT||500)),enabled=isDeposit?settings.depositEnabled===true:settings.withdrawEnabled===true,accounts=isDeposit?settings.depositAccounts:settings.withdrawAccounts,officialAccount=String(accounts?.[method]||'').trim();
@@ -783,14 +783,25 @@ async function submitWalletRequest(event,kind){
  if(isDeposit&&(!proofFile||!['image/jpeg','image/png','image/webp'].includes(proofFile.type)||proofFile.size<=0||proofFile.size>5*1024*1024)){status.textContent='Please upload a JPG, PNG or WebP payment screenshot up to 5 MB.';return;}
  submit.disabled=true;status.textContent='Submitting your request…';
  try{
-  const f=await getFirebase(),fs=f.firestore,requestRef=fs.doc(fs.collection(f.db,'propertyEnquiries')),publicId=await ensurePublicUserId(f,currentUser);
-  const payload={requestType:isDeposit?'wallet-deposit':'wallet-withdraw',uid:currentUser.uid,publicId,email:currentUser.email||'',name:currentUser.displayName||'',amountBDT,paymentCurrency:'BDT',paymentMethod:method,walletNumber:account,paymentAccount:account,senderAccount:isDeposit?account:'',receivingAccount:isDeposit?officialAccount:'',adminPayoutAccount:isDeposit?'':officialAccount,message:(isDeposit?'DEPOSIT':'WITHDRAWAL')+' request: ৳'+amountBDT.toLocaleString('en-US')+' via '+method+'. '+(isDeposit?'Sender: '+account+' · Paid to: '+officialAccount:'User payout account: '+account+' · Admin payout info: '+officialAccount),status:'pending',createdAt:fs.serverTimestamp()};
+  const f=await getFirebase(),fs=f.firestore,publicId=await ensurePublicUserId(f,currentUser);
   if(isDeposit){
+   const requestRef=fs.doc(fs.collection(f.db,'propertyEnquiries'));
+   const payload={requestType:'wallet-deposit',uid:currentUser.uid,publicId,email:currentUser.email||'',name:currentUser.displayName||'',amountBDT,paymentCurrency:'BDT',paymentMethod:method,walletNumber:account,paymentAccount:account,senderAccount:account,receivingAccount:officialAccount,message:'DEPOSIT request: ৳'+amountBDT.toLocaleString('en-US')+' via '+method+'. Sender: '+account+' · Paid to: '+officialAccount,status:'pending',createdAt:fs.serverTimestamp()};
    status.textContent='Preparing screenshot…';payload.paymentProofData=await compressDepositProof(proofFile);await fs.setDoc(requestRef,payload);
   }else{
-   payload.transactionId='';
-   const walletRef=fs.doc(f.db,'wallets',currentUser.uid);
-   await fs.runTransaction(f.db,async tx=>{const walletSnap=await tx.get(walletRef);if(!walletSnap.exists())throw new Error('Your wallet has no available balance.');const walletData=walletSnap.data(),balance=walletBalanceInBDT(walletData),pending=Math.max(0,Number(walletData.pendingWithdrawalBDT||0)),available=Math.max(0,Math.round((balance-pending)*100)/100);if(available+0.000001<amountBDT)throw new Error('Your available BDT balance is not enough. Pending withdrawal requests are already reserved.');tx.update(walletRef,{pendingWithdrawalBDT:Math.round((pending+amountBDT)*100)/100,lastWithdrawalRequestId:requestRef.id,updatedAt:fs.serverTimestamp()});tx.set(requestRef,{...payload,reservedFunds:true});});
+   if(selectedWithdrawSource==='available')throw new Error('পুরোনো Combined Balance থেকে Withdrawal বন্ধ। Deposit, Package অথবা Profit Balance নির্বাচন করুন।');
+   let packageId='';
+   if(selectedWithdrawSource==='package'){
+    packageId=document.getElementById('withdrawPackageId')?.value||'';
+    if(!packageId)throw new Error('উত্তোলনের জন্য একটি Active Package নির্বাচন করুন।');
+   }
+   const settingsSnap=await fs.getDoc(fs.doc(f.db,'siteSettings','wallet')),apiBase=String((settingsSnap.exists()?settingsSnap.data().walletLedgerApiUrl:'')||'').trim().replace(/\\/+$/,'');
+   if(!apiBase)throw new Error('Wallet Ledger API এখনো Configure করা হয়নি।');
+   const apiUrl=new URL(apiBase);if(apiUrl.protocol!=='https:')throw new Error('Wallet API অবশ্যই HTTPS হতে হবে।');
+   const token=await currentUser.getIdToken();
+   const response=await fetch(apiUrl.href+'/v1/withdrawal-request',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({source:selectedWithdrawSource,amountBDT,paymentMethod:method,walletNumber:account,packageId,publicId,email:currentUser.email||'',name:currentUser.displayName||'',adminPayoutAccount:officialAccount})});
+   const result=await response.json().catch(()=>({}));
+   if(!response.ok)throw new Error(result.error==='MIGRATION_PENDING'?'আপনার Wallet Migration এখনো সম্পন্ন হয়নি।':result.error||'Withdrawal Request ব্যর্থ হয়েছে।');
   }
   status.textContent=(isDeposit?'Deposit':'Withdrawal')+' request submitted. Status: Pending admin review.';form.reset();if(!isDeposit)refreshWithdrawAvailableBalance();
   const field=document.getElementById(kind+'Method');if(field)field.value='bKash';
