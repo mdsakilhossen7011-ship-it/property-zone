@@ -771,12 +771,19 @@ async function loadWithdrawPackageOptions(){
  select.innerHTML='<option value="">Loading active packages…</option>';
  try{
   const f=await getFirebase(),fs=f.firestore;
-  const snap=await fs.getDocs(fs.query(fs.collection(f.db,'activePackages'),fs.where('uid','==',currentUser.uid),fs.where('status','==','active')));
-  const packages=snap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>Number.isSafeInteger(Number(p.amountBDT))&&Number(p.amountBDT)>0);
+  const [snap,settingsSnap]=await Promise.all([
+   fs.getDocs(fs.query(fs.collection(f.db,'activePackages'),fs.where('uid','==',currentUser.uid),fs.where('status','==','active'))),
+   fs.getDoc(fs.doc(f.db,'siteSettings','wallet'))
+  ]);
+  const fallbackRate=Number(settingsSnap.exists()?settingsSnap.data().exchangeRateBDT||0:0);
+  const packages=snap.docs.map(d=>{
+   const p=d.data(),amount=Number(p.amountBDT!=null?p.amountBDT:Number(p.amountUSD||0)*Number(p.exchangeRateBDT||fallbackRate));
+   return {id:d.id,...p,withdrawAmountBDT:amount};
+  }).filter(p=>Number.isFinite(p.withdrawAmountBDT)&&p.withdrawAmountBDT>0);
   select.replaceChildren();
   if(!packages.length){select.innerHTML='<option value="">No active package available</option>';return;}
   select.add(new Option('Choose an active package',''));
-  packages.forEach(p=>select.add(new Option((p.propertyTitle||p.propertyName||'Property Package')+' · ৳'+Number(p.amountBDT).toLocaleString('en-US'),p.id)));
+  packages.forEach(p=>select.add(new Option((p.propertyTitle||p.propertyName||'Property Package')+' · ৳'+p.withdrawAmountBDT.toLocaleString('en-US',{maximumFractionDigits:2}),p.id)));
  }catch(error){select.innerHTML='<option value="">Could not load packages</option>';console.warn('Active packages could not load:',error);}
 }
 function changeWithdrawBalanceType(){
@@ -791,9 +798,11 @@ document.getElementById('withdrawPackageId')?.addEventListener('change',async fu
  const id=this.value,amountInput=document.getElementById('withdrawAmount');
  if(!id||!amountInput||!currentUser)return;
  try{
-  const f=await getFirebase(),snap=await f.firestore.getDoc(f.firestore.doc(f.db,'activePackages',id));
+  const f=await getFirebase(),fs=f.firestore,snap=await fs.getDoc(fs.doc(f.db,'activePackages',id)),settingsSnap=await fs.getDoc(fs.doc(f.db,'siteSettings','wallet'));
   if(!snap.exists()||snap.data().uid!==currentUser.uid||snap.data().status!=='active')throw new Error('Selected package is no longer active.');
-  amountInput.value=String(Number(snap.data().amountBDT||0));updateWalletAmountPreview('withdraw');
+  const p=snap.data(),rate=Number(settingsSnap.exists()?settingsSnap.data().exchangeRateBDT||0:0),amount=Number(p.amountBDT!=null?p.amountBDT:Number(p.amountUSD||0)*Number(p.exchangeRateBDT||rate));
+  if(!Number.isFinite(amount)||amount<=0)throw new Error('Package principal could not be converted safely.');
+  amountInput.value=String(amount);updateWalletAmountPreview('withdraw');
  }catch(error){this.value='';const status=document.getElementById('withdrawStatus');if(status)status.textContent=error.message;}
 });
 async function setWithdrawAllAmount(){
@@ -809,7 +818,8 @@ async function setWithdrawAllAmount(){
    if(!packageId)throw new Error('আগে একটি Active Package নির্বাচন করুন।');
    const f=await getFirebase(),snap=await f.firestore.getDoc(f.firestore.doc(f.db,'activePackages',packageId));
    if(!snap.exists()||snap.data().uid!==currentUser.uid||snap.data().status!=='active')throw new Error('Selected package is no longer active.');
-   balance=Number(snap.data().amountBDT||0);
+   const p=snap.data(),settingsSnap=await f.firestore.getDoc(f.firestore.doc(f.db,'siteSettings','wallet')),rate=Number(settingsSnap.exists()?settingsSnap.data().exchangeRateBDT||0:0);
+   balance=Number(p.amountBDT!=null?p.amountBDT:Number(p.amountUSD||0)*Number(p.exchangeRateBDT||rate));
   }else balance=(await getWalletLedgerSourceBalance(type)).available;
   if(Number.isFinite(balance)&&balance>0){
    el.value=String(Math.floor(balance));updateWalletAmountPreview('withdraw');
