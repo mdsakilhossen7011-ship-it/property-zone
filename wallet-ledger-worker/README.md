@@ -6,6 +6,7 @@ This first Worker stage provides:
 - Firebase ID-token signature and claim verification.
 - Server-side service-account OAuth token exchange.
 - Read-only Firestore lookup of `walletLedgers/{uid}`.
+- Staged `POST /v1/package-purchase` endpoint: atomically debits Deposit Balance, credits Package Balance, creates the active package, and records an idempotency entry in one Firestore transaction.
 - A summary endpoint that refuses accounts without an explicitly migrated ledger (`MIGRATION_PENDING`).
 - Strict no-store responses and origin allowlisting.
 
@@ -19,9 +20,10 @@ This first Worker stage provides:
 ## Endpoints
 - `GET /health`: non-sensitive health response.
 - `GET /v1/wallet-summary`: requires `Authorization: Bearer <Firebase ID token>`; returns only the authenticated user's server-owned ledger summary. It returns HTTP 409 `MIGRATION_PENDING` if no ledger exists.
+- `POST /v1/package-purchase`: requires the same bearer token and JSON `{\"propertyId\":\"...\",\"propertyTitle\":\"...\",\"amountBDT\":1000,\"idempotencyKey\":\"unique-client-request-id\"}`. It only operates on an existing migrated ledger; it refuses missing/unmigrated ledgers and insufficient Deposit Balance. It writes the package and immutable purchase entry atomically.
 
 ## Deliberately not implemented
-No deposit approval, package purchase, profit accrual, withdrawal request, withdrawal approval/rejection, or migration writes. No changes to Firestore Rules. The existing combined-wallet flow remains the production path until all source-specific operations are implemented, tested, and deliberately switched over.
+No deposit approval, profit accrual, withdrawal request, withdrawal approval/rejection, or migration writes. The package-purchase endpoint is staged only and cannot serve existing customers until each customer's Deposit/Package ledger has been safely reconciled and migrated. No changes to Firestore Rules. The existing combined-wallet flow remains the production path until all source-specific operations are implemented, tested, and deliberately switched over.
 
 ## Safety
 - Never grant broad project-owner/editor access to this service account.
