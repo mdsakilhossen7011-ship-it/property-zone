@@ -179,7 +179,7 @@ service cloud.firestore {
             && request.resource.data.keys().hasOnly([
               "requestType", "uid", "email", "name", "amountBDT", "paymentCurrency",
               "paymentMethod", "walletNumber", "paymentAccount", "senderAccount",
-              "receivingAccount", "adminPayoutAccount", "transactionId", "message",
+              "receivingAccount", "adminPayoutAccount", "transactionId", "paymentProofPath", "message",
               "status", "createdAt", "reservedFunds"
             ])
              && request.resource.data.amountBDT is int
@@ -197,11 +197,108 @@ service cloud.firestore {
                 && request.resource.data.senderAccount is string
                 && request.resource.data.receivingAccount is string
                 && request.resource.data.receivingAccount.size() > 0
-                && request.resource.data.transactionId is string
-                && request.resource.data.transactionId.matches("^[A-Z0-9-]{6,100}$")
-                && existsAfter(/databases/$(database)/documents/depositTrxIds/$("trx_" + request.resource.data.transactionId))
-                && getAfter(/databases/$(database)/documents/depositTrxIds/$("trx_" + request.resource.data.transactionId)).data.uid == request.auth.uid
-                && getAfter(/databases/$(database)/documents/depositTrxIds/$("trx_" + request.resource.data.transactionId)).data.enquiryId == enquiryId)
+                && request.resource.data.paymentProofPath is string
+                && request.resource.data.paymentProofPath.matches('^wallet-deposit-proofs/' + request.auth.uid + '/[A-Za-z0-9_-]+/[0-9]+\\.(jpg|png|webp))
+              || (request.resource.data.requestType == "wallet-withdraw"
+                && request.resource.data.reservedFunds == true
+                && request.resource.data.adminPayoutAccount is string
+                && request.resource.data.adminPayoutAccount.size() > 0
+                && existsAfter(/databases/$(database)/documents/wallets/$(request.auth.uid))
+                && getAfter(/databases/$(database)/documents/wallets/$(request.auth.uid)).data.lastWithdrawalRequestId == enquiryId
+                && getAfter(/databases/$(database)/documents/wallets/$(request.auth.uid)).data.pendingWithdrawalBDT
+                  == (get(/databases/$(database)/documents/wallets/$(request.auth.uid)).data.keys().hasAny(['pendingWithdrawalBDT']) ? get(/databases/$(database)/documents/wallets/$(request.auth.uid)).data.pendingWithdrawalBDT : 0)
+                    + request.resource.data.amountBDT)
+            )
+          )
+        );
+       allow get, list: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    match /supportChats/{chatId} {
+      allow create: if signedIn() && request.auth.uid == chatId
+        && request.resource.data.uid == chatId
+        && request.resource.data.status == "open";
+      allow get: if signedIn() && (request.auth.uid == chatId || isAdmin());
+      allow list: if isAdmin();
+      allow update: if isAdmin() || (signedIn() && request.auth.uid == chatId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastMessage','updatedAt','status']));
+      allow delete: if isAdmin();
+      match /messages/{messageId} {
+        allow create: if signedIn()
+          && ((request.auth.uid == chatId && request.resource.data.senderRole == 'user')
+            || (isAdmin() && request.resource.data.senderRole == 'admin'))
+          && request.resource.data.senderUid == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() <= 2000
+          && (request.resource.data.text.size() > 0
+            || (request.resource.data.imageData is string && request.resource.data.imageData.size() > 0))
+          && request.resource.data.createdAt is timestamp
+          && exists(/databases/$(database)/documents/supportChats/$(chatId));
+        allow get, list: if signedIn() && (request.auth.uid == chatId || isAdmin());
+        allow update, delete: if false;
+      }
+    }
+
+    match /supportMessages/{messageId} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.subject is string
+        && request.resource.data.message is string
+        && request.resource.data.status == "open";
+      allow get, list: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    match /offers/{offerId} {
+      allow get, list: if isAdmin() || resource.data.status == "published";
+      allow create, update, delete: if isAdmin();
+    }
+    match /notices/{noticeId} {
+      allow get, list: if isAdmin() || (signedIn() && resource.data.status == "published");
+      allow create, update, delete: if isAdmin();
+    }
+    match /siteSettings/{settingId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /referralSettings/{settingId} {
+      allow get, list: if isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+    match /referralRegistrations/{code}/members/{memberId} {
+      allow get, list: if isAdmin() || (signedIn()
+        && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.referralCode == code);
+      allow create: if isAdmin() || (signedIn()
+        && request.auth.uid == memberId
+        && exists(/databases/$(database)/documents/members/$(memberId))
+        && get(/databases/$(database)/documents/members/$(memberId)).data.referredByCode == code
+        && request.resource.data.keys().hasAll(['createdAt'])
+        && request.resource.data.keys().hasOnly(['createdAt'])
+        && request.resource.data.createdAt is timestamp);
+      allow update, delete: if false;
+    }
+    match /referralCodes/{code} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if isAdmin() || (signedIn()
+        && exists(/databases/$(database)/documents/members/$(request.auth.uid))
+        && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.referralCode == code
+        && request.resource.data.keys().hasAll(['code','active','createdAt'])
+        && request.resource.data.keys().hasOnly(['code','active','createdAt'])
+        && request.resource.data.code == code
+        && request.resource.data.active == true
+        && request.resource.data.createdAt is timestamp);
+      allow update, delete: if isAdmin();
+    }
+    match /activityLogs/{logId} {
+      allow get, list, create, update, delete: if isAdmin();
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}))
               || (request.resource.data.requestType == "wallet-withdraw"
                 && request.resource.data.reservedFunds == true
                 && request.resource.data.adminPayoutAccount is string
