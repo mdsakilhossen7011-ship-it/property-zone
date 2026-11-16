@@ -124,6 +124,7 @@ function encodeFields(value) {
   for (const [key, item] of Object.entries(value)) {
     if (typeof item === "string") out[key] = firestoreString(item);
     else if (Number.isSafeInteger(item)) out[key] = firestoreInteger(item);
+    else if (typeof item === "number" && Number.isFinite(item)) out[key] = { doubleValue: item };
     else if (item instanceof Date) out[key] = firestoreTimestamp(item);
     else if (typeof item === "boolean") out[key] = { booleanValue: item };
     else if (item === null) out[key] = { nullValue: null };
@@ -202,7 +203,7 @@ async function purchasePackage(env, uid, input) {
           packagePrincipalPoisha: principal + amountPoisha,
           updatedAt: now
         }) },
-        updateMask: { fieldPaths: Object.keys(ledger).concat(["depositAvailablePoisha", "packagePrincipalPoisha", "updatedAt"]) },
+        updateMask: { fieldPaths: ["depositAvailablePoisha", "packagePrincipalPoisha", "updatedAt"] },
         currentDocument: { updateTime: ledgerDoc.updateTime }
       },
       {
