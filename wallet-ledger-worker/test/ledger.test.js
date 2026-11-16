@@ -57,3 +57,14 @@ test("amount conversion uses integer poisha and allows explicit zero only for mi
   assert.throws(() => amountToPoisha(0), /INVALID_AMOUNT/);
   assert.throws(() => amountToPoisha(1.001), /INVALID_AMOUNT/);
 });
+
+test("zero source balances are valid for a newly migrated wallet", () => {
+  assert.deepEqual(sourceBalance({
+    depositAvailablePoisha: 0,
+    pendingDepositWithdrawalPoisha: 0
+  }, "depositAvailablePoisha", "pendingDepositWithdrawalPoisha"), {
+    balancePoisha: 0,
+    pendingWithdrawalPoisha: 0,
+    withdrawablePoisha: 0
+  });
+});
