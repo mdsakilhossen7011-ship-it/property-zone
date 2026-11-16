@@ -305,17 +305,25 @@ async function requestWithdrawal(env, uid, input) {
   const method = String(input.paymentMethod || "").trim().slice(0, 40);
   const account = String(input.walletNumber || "").trim().slice(0, 120);
   if (!method || !account) throw new Error("PAYOUT_DETAILS_REQUIRED");
+  const idempotencyKey = String(input.idempotencyKey || "").trim();
+  if (!/^[A-Za-z0-9_-]{8,100}$/.test(idempotencyKey)) throw new Error("INVALID_IDEMPOTENCY_KEY");
   const requestId = crypto.randomUUID().replace(/-/g, "");
   const requestPath = "propertyEnquiries/" + requestId;
   const ledgerPath = "walletLedgers/" + uid;
+  const idempotencyPath = "walletLedgerEntries/withdrawal_request_" + uid + "_" + idempotencyKey;
   const token = await createServiceAccountAccessToken(env);
   const transaction = await beginTxn(env, token);
   try {
     const packageId = source === "package" ? String(input.packageId || "") : "";
     if (source === "package" && !/^[A-Za-z0-9_-]{1,120}$/.test(packageId)) throw new Error("PACKAGE_ID_REQUIRED");
-    const paths = [ledgerPath];
+    const paths = [ledgerPath, idempotencyPath];
     if (packageId) paths.push("activePackages/" + packageId);
     const docs = await batchRead(env, paths, transaction, token);
+    if (docs[idempotencyPath]) {
+      const previous = firestoreFields(docs[idempotencyPath].fields || {});
+      await rollbackTxn(env, transaction, token);
+      return { duplicate: true, requestId: previous.requestId, status: previous.status || "pending" };
+    }
     const ledgerDoc = docs[ledgerPath];
     if (!ledgerDoc) throw new Error("MIGRATION_PENDING");
     const ledger = firestoreFields(ledgerDoc.fields || {});
@@ -335,7 +343,8 @@ async function requestWithdrawal(env, uid, input) {
     const now = new Date();
     const writes = [
       updateDocWrite(env, ledgerPath, ledgerDoc, { ...ledger, [pendingField]: pending + amountPoisha, updatedAt: now }, [pendingField, "updatedAt"]),
-      createDocWrite(env, requestPath, { uid, requestType: "wallet-withdraw", status: "pending", amountBDT: Number(input.amountBDT), source, paymentMethod: method, walletNumber: account, reservedFunds: true, packageId: packageId || "", createdAt: now, ledgerRequestId: requestId, publicId: String(input.publicId || "").slice(0, 32), email: String(input.email || "").slice(0, 160), name: String(input.name || "").slice(0, 100), adminPayoutAccount: String(input.adminPayoutAccount || "").slice(0, 120) })
+      createDocWrite(env, requestPath, { uid, requestType: "wallet-withdraw", status: "pending", amountBDT: Number(input.amountBDT), source, paymentMethod: method, walletNumber: account, reservedFunds: true, packageId: packageId || "", createdAt: now, ledgerRequestId: requestId, publicId: String(input.publicId || "").slice(0, 32), email: String(input.email || "").slice(0, 160), name: String(input.name || "").slice(0, 100), adminPayoutAccount: String(input.adminPayoutAccount || "").slice(0, 120) }),
+      createDocWrite(env, idempotencyPath, { uid, type: "withdrawal-request-idempotency", requestId, status: "pending", idempotencyKey, createdAt: now })
     ];
     if (packageDoc) {
       const p = firestoreFields(packageDoc.fields || {});
