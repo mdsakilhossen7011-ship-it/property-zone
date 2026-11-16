@@ -276,7 +276,7 @@ html.pz-auth-pending #sideMenu{pointer-events:none!important}
 
 <section id="details" class="view"><button class="btn" type="button" onclick="showView('properties')">← Back to properties</button><div id="detailContent"></div></section>
 <section id="login" class="view"><div class="panel form"><div class="eyebrow">Welcome back</div><h2>Member Login</h2><div id="emailLogin"><input id="loginEmail" type="email" placeholder="Email address" autocomplete="email"><input id="loginPassword" type="password" placeholder="Password" autocomplete="current-password"><button class="btn primary" id="loginButton" style="width:100%" onclick="loginEmailPassword()">Login</button><p style="text-align:right;margin:10px 0"><a href="#" onclick="resetLoginPassword();return false" style="color:var(--gold2)">Forgot password?</a></p></div><p class="notice">Sign in with your email and password.</p><p>New here? <a href="#" onclick="showView('register')" style="color:var(--gold2)">Create account</a></p></div></section>
-<section id="register" class="view"><div class="panel form"><div class="eyebrow">Become a member</div><h2>Create Account</h2><input id="regUsername" type="text" placeholder="Choose a username" autocomplete="username"><input id="regFirst" placeholder="First name" autocomplete="given-name"><input id="regLast" placeholder="Last name" autocomplete="family-name"><input id="regEmail" type="email" placeholder="Email address" autocomplete="email" required><input id="regPassword" type="password" placeholder="Create password (min. 8 characters)" autocomplete="new-password"><input id="regConfirm" type="password" placeholder="Confirm password" autocomplete="new-password"><input id="regReferral" placeholder="Referral code (optional)" autocomplete="off"><button class="btn primary" id="regCreate" style="width:100%" onclick="registerWithEmail()">Create Account</button><p class="notice">Enter your Gmail and password to create your account. No email link is required.</p></div></section>
+<section id="register" class="view"><div class="panel form"><div class="eyebrow">Become a member</div><h2>Create Account</h2><input id="regUsername" type="text" placeholder="Choose a username" autocomplete="username"><input id="regFirst" placeholder="First name" autocomplete="given-name"><input id="regLast" placeholder="Last name" autocomplete="family-name"><input id="regEmail" type="email" placeholder="Email address" autocomplete="email" required><input id="regPhone" type="tel" inputmode="tel" placeholder="Bangladesh phone number (01XXXXXXXXX)" autocomplete="tel" maxlength="16" oninput="resetSignupOtpState()" required><div style="display:flex;gap:8px;align-items:center;margin:8px 0"><button class="btn" id="regSendOtp" type="button" onclick="sendSignupOtp()">Send OTP</button><span class="notice">OTP is required only for new account creation.</span></div><div id="regOtpBox" style="display:flex;gap:8px;align-items:center;margin:8px 0"><input id="regOtp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Enter 6-digit OTP" style="flex:1;min-width:0;margin:0"><button class="btn" id="regVerifyOtp" type="button" onclick="verifySignupOtp()">Verify</button></div><input id="regPassword" type="password" placeholder="Create password (min. 8 characters)" autocomplete="new-password"><input id="regConfirm" type="password" placeholder="Confirm password" autocomplete="new-password"><input id="regReferral" placeholder="Referral code (optional)" autocomplete="off"><button class="btn primary" id="regCreate" style="width:100%" onclick="registerWithEmail()" disabled>Create Account</button><p class="notice">Verify your Bangladesh phone number to create an account. Login remains email and password only.</p></div></section>
 
 <section id="dashboard" class="view">
  <div class="dash-earnings" style="grid-template-columns:repeat(2,minmax(0,1fr))">
@@ -888,16 +888,78 @@ async function ensureMemberProfile(f,user,referralCode='',phoneNumber=''){
   if(!referralSnap.exists()||referralSnap.data().active!==true)throw new Error('Referral code is invalid or inactive. Check the code and try again.');
  }
  const name=(user.displayName||user.email.split('@')[0]||'Member').trim(),ownCode=('PZ'+user.uid.replace(/[^a-z0-9]/gi,'').slice(0,8)).toUpperCase();
- const memberData={uid:user.uid,name,email:user.email,status:'active',referralCode:ownCode,referredByCode:usedCode,createdAt:fs.serverTimestamp(),updatedAt:fs.serverTimestamp()};
+ const memberData={uid:user.uid,name,email:user.email,phoneNumber:phoneNumber||'',status:'active',referralCode:ownCode,referredByCode:usedCode,createdAt:fs.serverTimestamp(),updatedAt:fs.serverTimestamp()};
  await fs.setDoc(memberRef,memberData);
  const ownCodeRef=fs.doc(f.db,'referralCodes',ownCode),ownCodeSnap=await fs.getDoc(ownCodeRef);
  if(!ownCodeSnap.exists())await fs.setDoc(ownCodeRef,{code:ownCode,active:true,createdAt:fs.serverTimestamp()});
  if(usedCode)await fs.setDoc(fs.doc(f.db,'referralRegistrations',usedCode,'members',user.uid),{createdAt:fs.serverTimestamp(),uid:user.uid,publicId,name});
  return memberData;
 }
-async function registerWithEmail(){clearStatus();let f=null;try{const first=document.getElementById('regFirst').value.trim(),last=document.getElementById('regLast').value.trim(),email=document.getElementById('regEmail').value.trim(),pw=document.getElementById('regPassword').value,confirm=document.getElementById('regConfirm').value,ref=(document.getElementById('regReferral').value.trim()||new URLSearchParams(location.search).get('ref')||'').trim();if(!first||!last)throw new Error('Enter first and last name.');if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Enter a valid email address.');if(pw.length<8)throw new Error('Password must be at least 8 characters.');if(pw!==confirm)throw new Error('Passwords do not match.');f=await getFirebase();if(ref&&ref.toUpperCase()!=='PZWYYMWLBZ'){const referral=await f.firestore.getDoc(f.firestore.doc(f.db,'referralCodes',ref.toUpperCase()));if(!referral.exists()||referral.data().active!==true)throw new Error('Referral code is invalid or inactive. Check the code and try again.');}const result=await f.createUserWithEmailAndPassword(f.auth,email,pw);await f.updateProfile(result.user,{displayName:first+' '+last});await ensureMemberProfile(f,result.user,ref);await ensurePublicUserId(f,result.user);currentUser=result.user;currentMemberStatus='active';authReady=true;syncNavigation();updateDashboard();showView('home');setStatus('Account created successfully. You can now use your account.');}catch(e){if(f?.auth?.currentUser&&!f.auth.currentUser.emailVerified){try{await f.signOut(f.auth)}catch(signOutError){console.warn('Could not clear unverified session:',signOutError)}}const msg=e.code==='auth/email-already-in-use'?'This email already has an account. Please log in, or use Forgot password to reset its password.':(e.message||'Could not create account. Please try again.');setStatus(msg,true)}}
-
-/* Website language switcher - robust text and dynamic content translation */
+const PZ_SIGNUP_OTP_API='https://YOUR-CLOUDFLARE-WORKER.workers.dev';
+let pzSignupOtpVerifiedPhone='',pzSignupOtpVerificationToken='';
+function normalizeSignupPhone(value){
+ let digits=String(value||'').replace(/[^0-9]/g,'');
+ if(digits.startsWith('00880'))digits=digits.slice(2);
+ if(digits.startsWith('880'))digits=digits.slice(3);
+ if(digits.startsWith('0'))digits=digits.slice(1);
+ if(!/^1[3-9][0-9]{8}$/.test(digits))throw new Error('Enter a valid Bangladesh mobile number, e.g. 01XXXXXXXXX.');
+ return '880'+digits;
+}
+function resetSignupOtpState(){
+ pzSignupOtpVerifiedPhone='';pzSignupOtpVerificationToken='';
+ const create=document.getElementById('regCreate');if(create)create.disabled=true;
+}
+async function signupOtpRequest(path,payload){
+ if(!PZ_SIGNUP_OTP_API||PZ_SIGNUP_OTP_API.includes('YOUR-CLOUDFLARE-WORKER'))throw new Error('Phone OTP service is not connected yet. Cloudflare setup is required.');
+ const response=await fetch(PZ_SIGNUP_OTP_API.replace(/\/$/,'')+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok||data.success!==true)throw new Error(data.message||'Phone OTP request failed. Please try again.');
+ return data;
+}
+async function sendSignupOtp(){
+ const button=document.getElementById('regSendOtp');if(button?.disabled)return;
+ try{
+  const phone=normalizeSignupPhone(document.getElementById('regPhone').value);resetSignupOtpState();
+  if(button){button.disabled=true;button.textContent='Sending…';}
+  const result=await signupOtpRequest('/send-otp',{phone});setStatus(result.message||'OTP sent to your phone number.');
+ }catch(e){setStatus(e.message||'Could not send OTP.',true);}
+ finally{if(button){button.disabled=false;button.textContent='Send OTP';}}
+}
+async function verifySignupOtp(){
+ try{
+  const phone=normalizeSignupPhone(document.getElementById('regPhone').value),code=document.getElementById('regOtp').value.trim();
+  if(!/^\d{6}$/.test(code))throw new Error('Enter the 6-digit OTP sent to your phone.');
+  const result=await signupOtpRequest('/verify-otp',{phone,code});
+  if(!result.verificationToken)throw new Error('OTP verification response was incomplete. Please try again.');
+  pzSignupOtpVerifiedPhone=phone;pzSignupOtpVerificationToken=result.verificationToken;
+  const create=document.getElementById('regCreate');if(create)create.disabled=false;
+  setStatus('Phone number verified. You can now create your account.');
+ }catch(e){resetSignupOtpState();setStatus(e.message||'OTP verification failed.',true);}
+}
+async function registerWithEmail(){
+ clearStatus();let f=null;
+ try{
+  const first=document.getElementById('regFirst').value.trim(),last=document.getElementById('regLast').value.trim(),email=document.getElementById('regEmail').value.trim(),phone=normalizeSignupPhone(document.getElementById('regPhone').value),pw=document.getElementById('regPassword').value,confirm=document.getElementById('regConfirm').value,ref=(document.getElementById('regReferral').value.trim()||new URLSearchParams(location.search).get('ref')||'').trim();
+  if(pzSignupOtpVerifiedPhone!==phone||!pzSignupOtpVerificationToken)throw new Error('Verify your phone number with OTP before creating an account.');
+  if(!first||!last)throw new Error('Enter first and last name.');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Enter a valid email address.');
+  if(pw.length<8)throw new Error('Password must be at least 8 characters.');
+  if(pw!==confirm)throw new Error('Passwords do not match.');
+  f=await getFirebase();
+  if(ref&&ref.toUpperCase()!=='PZWYYMWLBZ'){const referral=await f.firestore.getDoc(f.firestore.doc(f.db,'referralCodes',ref.toUpperCase()));if(!referral.exists()||referral.data().active!==true)throw new Error('Referral code is invalid or inactive. Check the code and try again.');}
+  const result=await f.createUserWithEmailAndPassword(f.auth,email,pw);
+  await f.updateProfile(result.user,{displayName:first+' '+last});
+  await ensureMemberProfile(f,result.user,ref,phone);
+  await ensurePublicUserId(f,result.user);
+  try{await signupOtpRequest('/consume-otp',{phone,verificationToken:pzSignupOtpVerificationToken});}catch(consumeError){console.warn('OTP consumption did not complete after account creation:',consumeError);}
+  pzSignupOtpVerifiedPhone='';pzSignupOtpVerificationToken='';
+  currentUser=result.user;currentMemberStatus='active';authReady=true;syncNavigation();updateDashboard();showView('home');setStatus('Account created successfully. You can now use your account.');
+ }catch(e){
+  if(f?.auth?.currentUser&&!f.auth.currentUser.emailVerified){try{await f.signOut(f.auth)}catch(signOutError){console.warn('Could not clear unverified session:',signOutError)}}
+  const msg=e.code==='auth/email-already-in-use'?'This email already has an account. Please log in, or use Forgot password to reset its password.':(e.message||'Could not create account. Please try again.');
+  setStatus(msg,true);
+ }
+}/* Website language switcher - robust text and dynamic content translation */
 const PZ_EN_TO_BN={
  "Menu":"মেনু","Add image":"ছবি যোগ করুন","Selected image: ":"ছবি নির্বাচিত: ","Please select an image file.":"শুধু ছবির ফাইল নির্বাচন করুন।","Image must be smaller than 8 MB.":"ছবির সাইজ ৮ MB-এর কম হতে হবে।","Please choose a smaller image and try again.":"ছবিটি ছোট করে আবার চেষ্টা করুন।","Image sent":"ছবি পাঠানো হয়েছে","Checking package and wallet balance…":"প্যাকেজ ও ওয়ালেট ব্যালেন্স যাচাই হচ্ছে…","Could not calculate the package amount.":"প্যাকেজের টাকার হিসাব করা যায়নি।","Package of ৳":"প্যাকেজের পরিমাণ ৳"," activated successfully.":" প্যাকেজ সফলভাবে চালু হয়েছে।","Home":"হোম","Properties":"প্রপার্টি","My Profile":"আমার প্রোফাইল","Dashboard":"ড্যাশবোর্ড","Admin Panel":"অ্যাডমিন প্যানেল","Refer & Commission":"রেফার ও কমিশন","Support Inbox":"সাপোর্ট ইনবক্স","Help & Support":"সাহায্য ও সাপোর্ট","Login":"লগইন","Sign In":"নতুন অ্যাকাউন্ট","Logout":"লগআউট","Website Language":"ওয়েবসাইটের ভাষা",
  "PROPERTY MARKETPLACE":"প্রপার্টি মার্কেটপ্লেস","Find Your":"খুঁজুন","Next Property":"পরবর্তী প্রপার্টি","Explore Properties":"প্রপার্টি দেখুন","Browse verified property opportunities in one place. Manage your member account securely. Online payments are not active yet.":"এক জায়গায় যাচাইকৃত প্রপার্টির সুযোগ দেখুন। নিরাপদে আপনার সদস্য অ্যাকাউন্ট পরিচালনা করুন। অনলাইন পেমেন্ট এখনো চালু হয়নি।","Own the view.":"নিজের পছন্দের দৃশ্য উপভোগ করুন।","Explore the future.":"ভবিষ্যতের সম্ভাবনা দেখুন।",
