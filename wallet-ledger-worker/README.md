@@ -1,6 +1,6 @@
-# Property Zone Wallet Ledger Worker — read-only foundation
+# Property Zone Wallet Ledger Worker — staged package-purchase integration
 
-**Not deployed. Not connected to the customer/admin UI. No balance writes are implemented.**
+**Not deployed. Customer Package Buy UI is wired to this API but remains fail-closed until the Worker URL is configured and the account has a migrated ledger. No live customer transactions are enabled by this change.**
 
 This first Worker stage provides:
 - Firebase ID-token signature and claim verification.
@@ -11,7 +11,7 @@ This first Worker stage provides:
 - Strict no-store responses and origin allowlisting.
 
 ## Configure locally / in Cloudflare
-1. Create a dedicated Firebase service account with the minimum Firestore read permission needed for this read-only stage.
+1. Create a dedicated Firebase service account with the minimum Firestore read/write permission needed for the package-purchase transaction.
 2. Store its entire JSON key as the Cloudflare Worker secret named `FIREBASE_SERVICE_ACCOUNT`. Never commit it or send it in chat.
 3. Confirm `FIREBASE_PROJECT_ID` matches the Firebase project. The checked-in wrangler file contains the known project ID, but verify it in Firebase before deploying.
 4. Set `ALLOWED_ORIGINS` to the exact deployed site origin(s), comma-separated.
@@ -23,10 +23,10 @@ This first Worker stage provides:
 - `POST /v1/package-purchase`: requires the same bearer token and JSON `{\"propertyId\":\"...\",\"propertyTitle\":\"...\",\"amountBDT\":1000,\"idempotencyKey\":\"unique-client-request-id\"}`. It only operates on an existing migrated ledger; it refuses missing/unmigrated ledgers and insufficient Deposit Balance. It writes the package and immutable purchase entry atomically.
 
 ## Deliberately not implemented
-No deposit approval, profit accrual, withdrawal request, withdrawal approval/rejection, or migration writes. The package-purchase endpoint is staged only and cannot serve existing customers until each customer's Deposit/Package ledger has been safely reconciled and migrated. No changes to Firestore Rules. The existing combined-wallet flow remains the production path until all source-specific operations are implemented, tested, and deliberately switched over.
+No deposit approval, profit accrual, withdrawal request, withdrawal approval/rejection, or migration writes. The package-purchase endpoint is staged only and cannot serve existing customers until each customer's Deposit/Package ledger has been safely reconciled and migrated. No changes to Firestore Rules. The customer UI reads `siteSettings/wallet.walletLedgerApiUrl` and calls the new endpoint only when that HTTPS URL is configured. Without it, package purchase is blocked rather than falling back to the legacy combined wallet. The existing combined-wallet flow is not used by this updated customer buy handler.
 
 ## Safety
 - Never grant broad project-owner/editor access to this service account.
 - Keep service account JSON out of GitHub, browser code, issue comments, and chat.
-- The Worker has no write endpoints in this stage. Do not expand its IAM permissions until write operations are implemented and reviewed.
+- The package-purchase endpoint writes `walletLedgers`, `activePackages`, and `walletLedgerEntries` in a single Firestore transaction. Restrict IAM to the minimum required Firestore data access.
 - The endpoint does not derive or migrate legacy balances. An absent ledger is a hard stop.
