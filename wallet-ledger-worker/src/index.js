@@ -343,7 +343,8 @@ async function requestWithdrawal(env, uid, input) {
       packageDoc = docs["activePackages/" + packageId];
       if (!packageDoc) throw new Error("PACKAGE_NOT_FOUND");
       const p = firestoreFields(packageDoc.fields || {});
-      const principal = amountToPoisha(p.amountBDT);
+      const principalBDT = p.amountBDT != null ? Number(p.amountBDT) : Number(p.amountUSD || 0) * Number(p.exchangeRateBDT || 0);
+      const principal = amountToPoisha(principalBDT);
       if (p.uid !== uid || p.status !== "active" || principal !== amountPoisha || p.withdrawalRequestId) throw new Error("PACKAGE_WITHDRAWAL_MUST_MATCH_FULL_ACTIVE_PACKAGE");
     }
     const now = new Date();
