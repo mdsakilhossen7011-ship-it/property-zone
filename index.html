@@ -720,7 +720,18 @@ function refreshWalletPaymentInfo(kind){
 function walletExchangeRate(){const rate=Number(walletSettingsCache?.exchangeRateBDT);return Number.isFinite(rate)&&rate>0?rate:0;}
 function walletBalanceInBDT(data,rate){if(data&&Number.isFinite(Number(data.balanceBDT)))return Math.max(0,Number(data.balanceBDT));const legacy=Number(data?.balanceUSD||0);if(!Number.isFinite(legacy)||legacy<0)throw new Error('Wallet balance is invalid.');if(legacy===0)return 0;if(!Number.isFinite(rate)||rate<=0)throw new Error('Saved conversion rate is unavailable for this legacy balance.');return Math.round(legacy*rate*100)/100;}
 function updateWalletAmountPreview(kind){const input=document.getElementById(kind+'Amount'),preview=document.getElementById(kind+'AmountPreview'),bdt=Number(input?.value||0);if(!preview)return;const label=kind==='deposit'?'Deposit amount':'Withdrawal amount';preview.textContent=Number.isFinite(bdt)&&bdt>0?label+': ৳'+bdt.toLocaleString('en-US',{maximumFractionDigits:0}):label+': ৳0';}
-async function getWithdrawAvailableBalanceBDT(){const f=await getFirebase(),fs=f.firestore,settingsSnap=await fs.getDoc(fs.doc(f.db,'siteSettings','wallet'));walletSettingsCache=settingsSnap.exists()?settingsSnap.data():{};const rate=Number(walletSettingsCache.exchangeRateBDT||0),wallet=await fs.getDoc(fs.doc(f.db,'wallets',currentUser.uid));if(!wallet.exists())return 0;const data=wallet.data(),balance=walletBalanceInBDT(data,rate),pending=Math.max(0,Number(data.pendingWithdrawalBDT||0));return Math.max(0,Math.round((balance-pending)*100)/100);}
+async function getWithdrawAvailableBalanceBDT(){
+ const f=await getFirebase(),fs=f.firestore,settingsSnap=await fs.getDoc(fs.doc(f.db,'siteSettings','wallet'));
+ walletSettingsCache=settingsSnap.exists()?settingsSnap.data():{};
+ const apiBase=String(walletSettingsCache.walletLedgerApiUrl||'').trim().replace(/\\/+$/,'');
+ if(!apiBase)throw new Error('Wallet Ledger API এখনো Configure করা হয়নি।');
+ const apiUrl=new URL(apiBase);if(apiUrl.protocol!=='https:')throw new Error('Wallet API অবশ্যই HTTPS হতে হবে।');
+ const token=await currentUser.getIdToken(),response=await fetch(apiUrl.href+'/v1/wallet-summary',{headers:{Authorization:'Bearer '+token}});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok)throw new Error(data.error==='MIGRATION_PENDING'?'আপনার Wallet Migration এখনো সম্পন্ন হয়নি।':'Wallet balance load করা যায়নি।');
+ const balances=data.balances||{};
+ return ['deposit','package','profit'].reduce((sum,key)=>sum+Math.max(0,Number(balances[key]?.withdrawableBDT||0)),0);
+}
 async function getWalletLedgerSourceBalance(type){
  const f=await getFirebase(),fs=f.firestore;
  const settingsSnap=await fs.getDoc(fs.doc(f.db,'siteSettings','wallet'));
