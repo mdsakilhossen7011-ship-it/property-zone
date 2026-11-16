@@ -1,4 +1,4 @@
-name: Wallet Ledger Preparation Checks
+name: Wallet Ledger Backend and Frontend Checks
 
 on:
   pull_request:
