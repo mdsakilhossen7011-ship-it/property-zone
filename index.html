@@ -284,8 +284,10 @@ html.pz-auth-pending #sideMenu{pointer-events:none!important}
 
 <section id="dashboard" class="view">
  <div class="dash-earnings" style="grid-template-columns:repeat(2,minmax(0,1fr))">
-  <div class="dash-earning-card"><span>Wallet Balance</span><strong id="dashWalletBalance">৳0</strong><small>Available BDT balance</small></div>
-  <div class="dash-earning-card"><span>Hourly Earning</span><strong id="dashHourlyEarning">৳0</strong><small>From active packages · current daily rate</small></div>
+  <div class="dash-earning-card"><span>Deposit Balance</span><strong id="dashDepositBalance">—</strong><small id="dashDepositNote">Segregated wallet balance</small></div>
+  <div class="dash-earning-card"><span>Package Balance</span><strong id="dashPackageBalance">—</strong><small id="dashPackageNote">Active package principal</small></div>
+  <div class="dash-earning-card"><span>Profit Balance</span><strong id="dashProfitBalance">—</strong><small id="dashProfitNote">Matured 24-hour profit</small></div>
+  <div class="dash-earning-card"><span>Hourly Earning</span><strong id="dashHourlyEarning">৳0</strong><small>Estimated from active packages</small></div>
   <div class="dash-earning-card"><span>Today's Earning</span><strong id="dashTodayEarning">৳0</strong><small>Estimated earnings today</small></div>
   <div class="dash-earning-card"><span>Total Earning</span><strong id="dashTotalEarning">৳0</strong><small>Estimated since activation</small></div>
  </div>
@@ -891,8 +893,18 @@ async function loadWalletAndEarnings(){
   const profitHistory=Array.isArray(profitSettings.history)?profitSettings.history:[];
   const currentProfitRate=Number.isFinite(Number(profitSettings.dailyRate))?Number(profitSettings.dailyRate):0.02;
   const rate=Number(walletSettingsCache.exchangeRateBDT||0);
-  const wallet=await fs.getDoc(fs.doc(f.db,'wallets',currentUser.uid));
-  const balance=wallet.exists()?walletBalanceInBDT(wallet.data(),rate):0;
+  let ledgerBalances=null;
+  const apiBase=String(walletSettingsCache.walletLedgerApiUrl||'').trim().replace(/\\/+$/,'');
+  if(apiBase){
+   try{
+    const apiUrl=new URL(apiBase);
+    if(apiUrl.protocol==='https:'){
+     const token=await currentUser.getIdToken(),response=await fetch(apiUrl.href+'/v1/wallet-summary',{headers:{Authorization:'Bearer '+token}});
+     const result=await response.json().catch(()=>({}));
+     if(response.ok)ledgerBalances=result.balances||null;
+    }
+   }catch(apiError){console.warn('Segregated wallet summary is not available yet:',apiError);}
+  }
   const snap=await fs.getDocs(fs.query(fs.collection(f.db,'activePackages'),fs.where('uid','==',currentUser.uid),fs.where('status','==','active')));
   const now=Date.now(),dayStart=new Date();dayStart.setHours(0,0,0,0);
   let hourly=0,today=0,total=0;
@@ -905,11 +917,16 @@ async function loadWalletAndEarnings(){
    total+=propertyProfitBetween(amount,started,earningEnd,profitHistory,Number(p.dailyRate)||0.02);
   });
   const money=n=>'৳'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-  document.getElementById('dashWalletBalance').textContent=money(balance);
+  const balanceIds=[['dashDepositBalance','dashDepositNote','deposit'],['dashPackageBalance','dashPackageNote','package'],['dashProfitBalance','dashProfitNote','profit']];
+  balanceIds.forEach(([valueId,noteId,key])=>{
+   const value=document.getElementById(valueId),note=document.getElementById(noteId),item=ledgerBalances?.[key];
+   if(value)value.textContent=item?money(Number(item.balancePoisha||0)/100):'—';
+   if(note)note.textContent=item?'Available: '+money(Number(item.withdrawablePoisha||0)/100):'Migration pending or Wallet API not configured';
+  });
   document.getElementById('dashHourlyEarning').textContent=money(hourly);
   document.getElementById('dashTodayEarning').textContent=money(today);
   document.getElementById('dashTotalEarning').textContent=money(total);
- }catch(e){['dashWalletBalance','dashHourlyEarning','dashTodayEarning','dashTotalEarning'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='—'});console.warn('Wallet and earnings could not load:',e);}
+ }catch(e){['dashDepositBalance','dashPackageBalance','dashProfitBalance','dashHourlyEarning','dashTodayEarning','dashTotalEarning'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='—'});console.warn('Wallet and earnings could not load:',e);}
 }
 function startWalletEarningsRefresh(){
  if(walletEarningsRefreshTimer)clearInterval(walletEarningsRefreshTimer);
