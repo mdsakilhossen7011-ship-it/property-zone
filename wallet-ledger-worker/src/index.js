@@ -154,7 +154,7 @@ async function firestorePost(env, path, body, token) {
     });
   const raw = await response.text();
   if (!response.ok) throw new Error("Firestore transaction request failed (" + response.status + ").");
-  if (path === "documents:batchGet") return parseBatchGetResponse(raw);
+  if (path === "documents:batchGet" || path === "documents:runQuery") return parseBatchGetResponse(raw);
   try { return raw ? JSON.parse(raw) : {}; } catch (_) { throw new Error("Firestore returned an invalid response."); }
 }
 async function purchasePackage(env, uid, input) {
@@ -331,7 +331,7 @@ async function requestWithdrawal(env, uid, input) {
     const now = new Date();
     const writes = [
       updateDocWrite(env, ledgerPath, ledgerDoc, { ...ledger, [pendingField]: pending + amountPoisha, updatedAt: now }, [pendingField, "updatedAt"]),
-      createDocWrite(env, requestPath, { uid, requestType: "wallet-withdraw", status: "pending", amountBDT: Number(input.amountBDT), source, paymentMethod: method, walletNumber: account, reservedFunds: true, packageId: packageId || "", createdAt: now, ledgerRequestId: requestId })
+      createDocWrite(env, requestPath, { uid, requestType: "wallet-withdraw", status: "pending", amountBDT: Number(input.amountBDT), source, paymentMethod: method, walletNumber: account, reservedFunds: true, packageId: packageId || "", createdAt: now, ledgerRequestId: requestId, publicId: String(input.publicId || "").slice(0, 32), email: String(input.email || "").slice(0, 160), name: String(input.name || "").slice(0, 100), adminPayoutAccount: String(input.adminPayoutAccount || "").slice(0, 120) })
     ];
     if (packageDoc) {
       const p = firestoreFields(packageDoc.fields || {});
@@ -441,7 +441,106 @@ async function accruePackageProfit(env, adminUid, packageId) {
   }
 }
 
+
+async function listActivePackages(env, uid, token) {
+  const where = uid
+    ? { compositeFilter: { op: "AND", filters: [
+        { fieldFilter: { field: { fieldPath: "uid" }, op: "EQUAL", value: { stringValue: uid } } },
+        { fieldFilter: { field: { fieldPath: "status" }, op: "EQUAL", value: { stringValue: "active" } } }
+      ] } }
+    : { fieldFilter: { field: { fieldPath: "status" }, op: "EQUAL", value: { stringValue: "active" } } };
+  const rows = await firestorePost(env, "documents:runQuery", {
+    structuredQuery: { from: [{ collectionId: "activePackages" }], where, limit: 400 }
+  }, token);
+  return rows.map(row => row.document).filter(Boolean);
+}
+async function migrateMemberLedger(env, adminUid, input) {
+  const uid = String(input.uid || "");
+  if (!/^[A-Za-z0-9_-]{1,128}$/.test(uid)) throw new Error("INVALID_MEMBER_UID");
+  const token = await createServiceAccountAccessToken(env);
+  await requireAdmin(env, adminUid, token);
+  const depositPoisha = amountToPoisha(input.depositBDT || 0, true);
+  const profitPoisha = amountToPoisha(input.profitBDT || 0, true);
+  const packagePoisha = amountToPoisha(input.packageBDT || 0, true);
+  const packages = await listActivePackages(env, uid, token);
+  if (packages.length > 400) throw new Error("TOO_MANY_ACTIVE_PACKAGES");
+  let calculatedPackagePoisha = 0;
+  const packagePaths = packages.map(doc => {
+    const fields = firestoreFields(doc.fields || {});
+    if (fields.uid !== uid || fields.status !== "active") throw new Error("PACKAGE_MIGRATION_REVIEW_FAILED");
+    const amount = fields.amountBDT != null ? Number(fields.amountBDT) : Number(fields.amountUSD || 0) * Number(fields.exchangeRateBDT || 0);
+    const poisha = Math.round(amount * 100);
+    if (!Number.isSafeInteger(poisha) || poisha <= 0) throw new Error("PACKAGE_MIGRATION_REVIEW_FAILED");
+    calculatedPackagePoisha += poisha;
+    return doc.name.split("/documents/")[1];
+  });
+  if (calculatedPackagePoisha !== packagePoisha) throw new Error("PACKAGE_TOTAL_MISMATCH");
+  const walletPath = "wallets/" + uid, ledgerPath = "walletLedgers/" + uid, migrationPath = "walletLedgerMigrations/" + uid;
+  const walletDoc = await readDocument(env, walletPath, token);
+  if (!walletDoc) throw new Error("LEGACY_WALLET_NOT_FOUND");
+  const wallet = firestoreFields(walletDoc.fields || {});
+  const settingsDoc = await readDocument(env, "siteSettings/wallet", token);
+  const settings = settingsDoc ? firestoreFields(settingsDoc.fields || {}) : {};
+  let legacyBalance = Number(wallet.balanceBDT);
+  if (!Number.isFinite(legacyBalance)) {
+    const usd = Number(wallet.balanceUSD || 0), rate = Number(settings.exchangeRateBDT || 0);
+    if (!Number.isFinite(usd) || usd < 0 || (usd > 0 && (!Number.isFinite(rate) || rate <= 0))) throw new Error("LEGACY_WALLET_BALANCE_UNRESOLVED");
+    legacyBalance = usd * rate;
+  }
+  const legacyPoisha = Math.round(legacyBalance * 100);
+  if (!Number.isSafeInteger(legacyPoisha) || legacyPoisha < 0 || depositPoisha + profitPoisha !== legacyPoisha) throw new Error("LEGACY_BALANCE_SPLIT_MISMATCH");
+  if (Number(wallet.pendingWithdrawalBDT || 0) > 0) throw new Error("LEGACY_PENDING_WITHDRAWALS_REQUIRE_REVIEW");
+  const transaction = await beginTxn(env, token);
+  try {
+    const paths = [walletPath, ledgerPath, migrationPath, ...packagePaths];
+    const docs = await batchRead(env, paths, transaction, token);
+    if (!docs[walletPath]) throw new Error("MIGRATION_STATE_CHANGED");
+    if (docs[ledgerPath] || docs[migrationPath]) throw new Error("LEDGER_ALREADY_EXISTS");
+    const currentWallet = firestoreFields(docs[walletPath].fields || {});
+    const currentBalance = Number.isFinite(Number(currentWallet.balanceBDT))
+      ? Math.round(Number(currentWallet.balanceBDT) * 100)
+      : legacyPoisha;
+    if (currentBalance !== legacyPoisha) throw new Error("LEGACY_BALANCE_CHANGED");
+    const writes = [
+      createDocWrite(env, ledgerPath, {
+        uid, schemaVersion: 1, currency: "BDT",
+        depositAvailablePoisha: depositPoisha, pendingDepositWithdrawalPoisha: 0,
+        packagePrincipalPoisha: packagePoisha, pendingPackageWithdrawalPoisha: 0,
+        profitAvailablePoisha: profitPoisha, pendingProfitWithdrawalPoisha: 0,
+        migratedAt: new Date(), updatedAt: new Date()
+      }),
+      createDocWrite(env, migrationPath, {
+        uid, status: "completed", legacyWalletBalancePoisha: legacyPoisha,
+        depositPoisha, packagePoisha, profitPoisha,
+        activePackageCount: packages.length, reviewedBy: adminUid,
+        createdAt: new Date(), classification: "admin-reviewed-explicit-split"
+      })
+    ];
+    await commitTxn(env, transaction, writes, token);
+    return { uid, migrated: true, depositBDT: depositPoisha / 100, packageBDT: packagePoisha / 100, profitBDT: profitPoisha / 100, activePackages: packages.length };
+  } catch (error) {
+    await rollbackTxn(env, transaction, token);
+    throw error;
+  }
+}
+async function runScheduledProfitAccrual(env) {
+  const token = await createServiceAccountAccessToken(env);
+  const packages = await listActivePackages(env, "", token);
+  const results = [];
+  for (const document of packages) {
+    const id = document.name.split("/").pop();
+    try { results.push(await accruePackageProfit(env, "", id)); }
+    catch (error) { results.push({ packageId: id, error: String(error.message || "FAILED") }); }
+  }
+  return results;
+}
+
 export default {
+  async scheduled(controller, env, ctx) {
+    ctx.waitUntil(runScheduledProfitAccrual(env).then(results => {
+      console.log(JSON.stringify({ scheduledProfitAccrual: results.length, failures: results.filter(x => x.error).length }));
+    }));
+  },
   async fetch(request, env) {
     const cors = corsHeaders(request, env);
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
@@ -452,7 +551,7 @@ export default {
     const routes = new Map([
       ["/v1/wallet-summary", "GET"], ["/v1/package-purchase", "POST"],
       ["/v1/withdrawal-request", "POST"], ["/v1/admin/wallet-decision", "POST"],
-      ["/v1/admin/profit-accrual", "POST"]
+      ["/v1/admin/profit-accrual", "POST"], ["/v1/admin/migrate-member", "POST"]
     ]);
     if (!routes.has(url.pathname) || routes.get(url.pathname) !== request.method) return json({ error: "NOT_FOUND" }, 404, cors);
     try {
@@ -470,7 +569,7 @@ export default {
         if (url.pathname === "/v1/package-purchase") result = await purchasePackage(env, claims.sub, input || {});
         else if (url.pathname === "/v1/withdrawal-request") result = await requestWithdrawal(env, claims.sub, input || {});
         else if (url.pathname === "/v1/admin/wallet-decision") result = await decideWalletRequest(env, claims.sub, input || {});
-        else if (url.pathname === "/v1/admin/profit-accrual") result = await accruePackageProfit(env, claims.sub, String(input.packageId || ""));
+        else if (url.pathname === "/v1/admin/profit-accrual") result = await accruePackageProfit(env, claims.sub, String(input.packageId || ""));\n        else if (url.pathname === "/v1/admin/migrate-member") result = await migrateMemberLedger(env, claims.sub, input || {});
         return json({ ok: true, ...result }, 200, cors);
       }
       const ledger = await getLedger(env, claims.sub);
@@ -493,7 +592,7 @@ export default {
     } catch (error) {
       const message = String(error && error.message || "");
       const authError = /token|bearer|signature|claims|signing key/i.test(message);
-      const clientErrors = new Set(["MIGRATION_PENDING", "INSUFFICIENT_DEPOSIT_BALANCE", "INVALID_PACKAGE_AMOUNT", "INVALID_IDEMPOTENCY_KEY", "INVALID_PROPERTY", "INVALID_LEDGER_BALANCE", "INVALID_PROFIT_RATE", "INVALID_AMOUNT", "INVALID_WITHDRAWAL_SOURCE", "PAYOUT_DETAILS_REQUIRED", "INSUFFICIENT_BALANCE", "PACKAGE_ID_REQUIRED", "PACKAGE_NOT_FOUND", "PACKAGE_WITHDRAWAL_MUST_MATCH_FULL_ACTIVE_PACKAGE", "ADMIN_REQUIRED", "INVALID_REVIEW_ACTION", "REQUEST_NOT_FOUND", "REQUEST_ALREADY_PROCESSED", "UNSUPPORTED_REQUEST_TYPE", "LEGACY_WITHDRAWAL_REQUIRES_MANUAL_RECONCILIATION", "WITHDRAWAL_RESERVE_MISMATCH", "PACKAGE_STATE_MISMATCH", "PACKAGE_START_DATE_INVALID", "PROFIT_SCHEDULE_INVALID"]);
+      const clientErrors = new Set(["MIGRATION_PENDING", "INSUFFICIENT_DEPOSIT_BALANCE", "INVALID_PACKAGE_AMOUNT", "INVALID_IDEMPOTENCY_KEY", "INVALID_PROPERTY", "INVALID_LEDGER_BALANCE", "INVALID_PROFIT_RATE", "INVALID_AMOUNT", "INVALID_WITHDRAWAL_SOURCE", "PAYOUT_DETAILS_REQUIRED", "INSUFFICIENT_BALANCE", "PACKAGE_ID_REQUIRED", "PACKAGE_NOT_FOUND", "PACKAGE_WITHDRAWAL_MUST_MATCH_FULL_ACTIVE_PACKAGE", "ADMIN_REQUIRED", "INVALID_REVIEW_ACTION", "REQUEST_NOT_FOUND", "REQUEST_ALREADY_PROCESSED", "UNSUPPORTED_REQUEST_TYPE", "LEGACY_WITHDRAWAL_REQUIRES_MANUAL_RECONCILIATION", "WITHDRAWAL_RESERVE_MISMATCH", "PACKAGE_STATE_MISMATCH", "PACKAGE_START_DATE_INVALID", "PROFIT_SCHEDULE_INVALID", "INVALID_MEMBER_UID", "TOO_MANY_ACTIVE_PACKAGES", "PACKAGE_MIGRATION_REVIEW_FAILED", "PACKAGE_TOTAL_MISMATCH", "LEGACY_WALLET_NOT_FOUND", "LEGACY_WALLET_BALANCE_UNRESOLVED", "LEGACY_BALANCE_SPLIT_MISMATCH", "LEGACY_PENDING_WITHDRAWALS_REQUIRE_REVIEW", "MIGRATION_STATE_CHANGED", "LEDGER_ALREADY_EXISTS", "LEGACY_BALANCE_CHANGED"]);
       const status = authError ? 401 : message === "ADMIN_REQUIRED" ? 403 : clientErrors.has(message) ? (["MIGRATION_PENDING", "INSUFFICIENT_DEPOSIT_BALANCE", "INSUFFICIENT_BALANCE", "REQUEST_ALREADY_PROCESSED"].includes(message) ? 409 : 400) : 500;
       return json({ error: authError ? "UNAUTHORIZED" : clientErrors.has(message) ? message : "BACKEND_ERROR" }, status, cors);
     }
@@ -501,4 +600,4 @@ export default {
 };
 
 
-export { firestoreValue, firestoreFields, sourceBalance, purchasePackage, parseBatchGetResponse, requestWithdrawal, decideWalletRequest, accruePackageProfit };
+export { firestoreValue, firestoreFields, sourceBalance, purchasePackage, parseBatchGetResponse, requestWithdrawal, decideWalletRequest, accruePackageProfit, migrateMemberLedger, runScheduledProfitAccrual };
