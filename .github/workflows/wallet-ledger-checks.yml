@@ -29,5 +29,5 @@ jobs:
           node-version: "20"
       - name: Check audit script syntax
         run: node --check scripts/audit-wallet-ledger-migration.js
-      - name: Check package metadata
+      - name: Check Worker module syntax\n        run: node --input-type=module --check < wallet-ledger-worker/src/index.js\n      - name: Check package metadata
         run: node -e "const p=require('./package.json'); if(!p.scripts['audit:wallet-ledger']) process.exit(1)"
