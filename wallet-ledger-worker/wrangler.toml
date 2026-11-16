@@ -7,4 +7,4 @@ FIREBASE_PROJECT_ID = "property-zone-17121"
 ALLOWED_ORIGINS = "https://mdsakilhossen7011-ship-it.github.io"
 
 [triggers]
-crons = ["0 * * * *"]
+crons = ["*/15 * * * *"]
