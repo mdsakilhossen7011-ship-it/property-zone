@@ -551,14 +551,17 @@ async function migrateMemberLedger(env, adminUid, input) {
   if (Number(wallet.pendingWithdrawalBDT || 0) > 0) throw new Error("LEGACY_PENDING_WITHDRAWALS_REQUIRE_REVIEW");
   const transaction = await beginTxn(env, token);
   try {
-    const paths = [walletPath, ledgerPath, migrationPath, ...packagePaths];
+    const settingsPath = "siteSettings/wallet";
+    const paths = [walletPath, ledgerPath, migrationPath, settingsPath, ...packagePaths];
     const docs = await batchRead(env, paths, transaction, token);
     if (!docs[walletPath]) throw new Error("MIGRATION_STATE_CHANGED");
     if (docs[ledgerPath] || docs[migrationPath]) throw new Error("LEDGER_ALREADY_EXISTS");
     const currentWallet = firestoreFields(docs[walletPath].fields || {});
-    const currentBalance = currentWallet.balanceBDT != null && Number.isFinite(Number(currentWallet.balanceBDT))
-      ? Math.round(Number(currentWallet.balanceBDT) * 100)
-      : legacyPoisha;
+    const currentSettings = docs[settingsPath] ? firestoreFields(docs[settingsPath].fields || {}) : {};
+    const currentBalanceValue = currentWallet.balanceBDT != null
+      ? Number(currentWallet.balanceBDT)
+      : Number(currentWallet.balanceUSD || 0) * Number(currentSettings.exchangeRateBDT || 0);
+    const currentBalance = Number.isFinite(currentBalanceValue) ? Math.round(currentBalanceValue * 100) : NaN;
     if (currentBalance !== legacyPoisha || Number(currentWallet.pendingWithdrawalBDT || 0) > 0) throw new Error("LEGACY_BALANCE_CHANGED");
     let transactionPackagePoisha = 0;
     for (const packagePath of packagePaths) {
