@@ -77,10 +77,17 @@ async function main() {
 
         if (newDays === 0 && !matured) return null;
 
-        const settingsRef = db.collection("siteSettings").doc("wallet");
-        const walletRef = db.collection("wallets").doc(String(p.uid || ""));
         if (!p.uid) throw new Error("Package has no uid.");
+        const ledgerRef = db.collection("walletLedgers").doc(String(p.uid));
+        const ledgerSnap = await tx.get(ledgerRef);
+        if (ledgerSnap.exists) {
+          // Migrated accounts must never receive earnings or principal through the legacy combined wallet.
+          // The ledger-native accrual endpoint must process these packages before they can earn again.
+          throw new Error("LEDGER_NATIVE_ACCRUAL_REQUIRED");
+        }
 
+        const settingsRef = db.collection("siteSettings").doc("wallet");
+        const walletRef = db.collection("wallets").doc(String(p.uid));
         const [settingsSnap, walletSnap] = await Promise.all([
           tx.get(settingsRef),
           tx.get(walletRef)
