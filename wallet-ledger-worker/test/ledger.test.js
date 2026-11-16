@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { firestoreValue, firestoreFields, sourceBalance } from "../src/index.js";
+import { firestoreValue, firestoreFields, sourceBalance, parseBatchGetResponse } from "../src/index.js";
 
 test("Firestore values decode supported primitive types", () => {
   assert.equal(firestoreValue({ integerValue: "1250" }), 1250);
@@ -38,4 +38,14 @@ test("wallet summary rejects negative, fractional and over-reserved balances", (
   ]) {
     assert.throws(() => sourceBalance(ledger, "a", "p"), /invalid amounts/);
   }
+});
+
+test("batchGet parses both JSON arrays and streamed adjacent objects", () => {
+  assert.deepEqual(parseBatchGetResponse('[{"found":{"name":"a"}},{"missing":"b"}]'), [
+    { found: { name: "a" } }, { missing: "b" }
+  ]);
+  assert.deepEqual(parseBatchGetResponse('{"found":{"name":"a"}}\\n{"missing":"b"}'), [
+    { found: { name: "a" } }, { missing: "b" }
+  ]);
+  assert.deepEqual(parseBatchGetResponse(""), []);
 });
