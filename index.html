@@ -340,7 +340,7 @@ html.pz-auth-pending #sideMenu{pointer-events:none!important}
  <select id="withdrawBalanceType" class="search" onchange="changeWithdrawBalanceType()" style="width:100%;max-width:100%">
   <option value="available" selected>Available Balance</option>
   <option value="deposit">Deposit Balance</option>
-  <option value="package">Package Balance</option>
+  <option value="package">Package Balance</option>\n  <option value="profit">Profit Balance</option>
  </select>
  <div id="withdrawAvailableBalance" class="wallet-note" style="margin-top:10px;font-size:15px;font-weight:800">Available Balance: Loading…</div>
 </div></div>
@@ -713,14 +713,63 @@ function walletExchangeRate(){const rate=Number(walletSettingsCache?.exchangeRat
 function walletBalanceInBDT(data,rate){if(data&&Number.isFinite(Number(data.balanceBDT)))return Math.max(0,Number(data.balanceBDT));const legacy=Number(data?.balanceUSD||0);if(!Number.isFinite(legacy)||legacy<0)throw new Error('Wallet balance is invalid.');if(legacy===0)return 0;if(!Number.isFinite(rate)||rate<=0)throw new Error('Saved conversion rate is unavailable for this legacy balance.');return Math.round(legacy*rate*100)/100;}
 function updateWalletAmountPreview(kind){const input=document.getElementById(kind+'Amount'),preview=document.getElementById(kind+'AmountPreview'),bdt=Number(input?.value||0);if(!preview)return;const label=kind==='deposit'?'Deposit amount':'Withdrawal amount';preview.textContent=Number.isFinite(bdt)&&bdt>0?label+': ৳'+bdt.toLocaleString('en-US',{maximumFractionDigits:0}):label+': ৳0';}
 async function getWithdrawAvailableBalanceBDT(){const f=await getFirebase(),fs=f.firestore,settingsSnap=await fs.getDoc(fs.doc(f.db,'siteSettings','wallet'));walletSettingsCache=settingsSnap.exists()?settingsSnap.data():{};const rate=Number(walletSettingsCache.exchangeRateBDT||0),wallet=await fs.getDoc(fs.doc(f.db,'wallets',currentUser.uid));if(!wallet.exists())return 0;const data=wallet.data(),balance=walletBalanceInBDT(data,rate),pending=Math.max(0,Number(data.pendingWithdrawalBDT||0));return Math.max(0,Math.round((balance-pending)*100)/100);}
-async function refreshWithdrawAvailableBalance(){const display=document.getElementById('withdrawAvailableBalance');if(!display||!currentUser)return;display.textContent='Available Balance: Loading…';try{const balance=await getWithdrawAvailableBalanceBDT();display.textContent='Available Balance: ৳'+balance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}catch(e){display.textContent='Available Balance: Could not load';console.warn('Withdraw balance could not load:',e);}}
-function changeWithdrawBalanceType(){const type=document.getElementById('withdrawBalanceType')?.value||'available',display=document.getElementById('withdrawAvailableBalance'),status=document.getElementById('withdrawStatus'),amount=document.getElementById('withdrawAmount');if(!display)return;if(type==='available'){refreshWithdrawAvailableBalance();if(status)status.textContent='';return;}display.textContent=(type==='deposit'?'Deposit Balance':'Package Balance')+': ৳—';if(amount)amount.value='';updateWalletAmountPreview('withdraw');if(status)status.textContent='এই ব্যালেন্সের আলাদা হিসাব এখনো যুক্ত করা হয়নি।';}
-async function setWithdrawAllAmount(){const el=document.getElementById('withdrawAmount'),status=document.getElementById('withdrawStatus'),display=document.getElementById('withdrawAvailableBalance');if(!el||!currentUser)return;if((document.getElementById('withdrawBalanceType')?.value||'available')!=='available'){if(status)status.textContent='এই ব্যালেন্সের MAX হিসাব এখনো যুক্ত করা হয়নি।';return;}if(status)status.textContent='Checking available balance…';try{const balance=await getWithdrawAvailableBalanceBDT();if(display)display.textContent='Available Balance: ৳'+balance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});if(Number.isFinite(balance)&&balance>0){el.value=String(Math.floor(balance));updateWalletAmountPreview('withdraw');if(status)status.textContent='Maximum available BDT amount selected.';}else if(status)status.textContent='No available balance to withdraw yet.';}catch(e){if(status)status.textContent='Could not load available balance: '+e.message;}}
+async function getWalletLedgerSourceBalance(type){
+ const f=await getFirebase(),fs=f.firestore;
+ const settingsSnap=await fs.getDoc(fs.doc(f.db,'siteSettings','wallet'));
+ walletSettingsCache=settingsSnap.exists()?settingsSnap.data():{};
+ const apiBase=String(walletSettingsCache.walletLedgerApiUrl||'').trim().replace(/\\/+$/,'');
+ if(!apiBase)throw new Error('নতুন Wallet API এখনো চালু হয়নি।');
+ let apiUrl;try{apiUrl=new URL(apiBase);}catch(_){throw new Error('Wallet API URL সঠিক নয়।');}
+ if(apiUrl.protocol!=='https:')throw new Error('Wallet API অবশ্যই HTTPS হতে হবে।');
+ const token=await currentUser.getIdToken();
+ const response=await fetch(apiUrl.href+'/v1/wallet-summary',{headers:{Authorization:'Bearer '+token}});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok)throw new Error(data.error==='MIGRATION_PENDING'?'আপনার Wallet হিসাব এখনো Migration হয়নি।':'Wallet balance load করা যায়নি।');
+ const item=data.balances?.[type];
+ if(!item||!Number.isFinite(Number(item.withdrawableBDT)))throw new Error('এই Balance-এর তথ্য পাওয়া যায়নি।');
+ return {balance:Number(item.balancePoisha||0)/100,available:Number(item.withdrawableBDT),pending:Number(item.pendingWithdrawalPoisha||0)/100};
+}
+async function refreshWithdrawAvailableBalance(){
+ const display=document.getElementById('withdrawAvailableBalance');if(!display||!currentUser)return;
+ const type=document.getElementById('withdrawBalanceType')?.value||'available';
+ display.textContent='Balance: Loading…';
+ try{
+  if(type==='available'){
+   const balance=await getWithdrawAvailableBalanceBDT();
+   display.textContent='Available Balance: ৳'+balance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }else{
+   const item=await getWalletLedgerSourceBalance(type),label=type==='deposit'?'Deposit Balance':type==='package'?'Package Balance':'Profit Balance';
+   display.textContent=label+': ৳'+item.balance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' · Available: ৳'+item.available.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+ }catch(e){display.textContent='Balance: '+e.message;console.warn('Withdraw source balance could not load:',e);}
+}
+function changeWithdrawBalanceType(){
+ const type=document.getElementById('withdrawBalanceType')?.value||'available',status=document.getElementById('withdrawStatus'),amount=document.getElementById('withdrawAmount');
+ if(amount)amount.value='';
+ updateWalletAmountPreview('withdraw');
+ if(status)status.textContent='';
+ refreshWithdrawAvailableBalance();
+}
+async function setWithdrawAllAmount(){
+ const el=document.getElementById('withdrawAmount'),status=document.getElementById('withdrawStatus');
+ if(!el||!currentUser)return;
+ const type=document.getElementById('withdrawBalanceType')?.value||'available';
+ if(status)status.textContent='Checking available balance…';
+ try{
+  let balance;
+  if(type==='available')balance=await getWithdrawAvailableBalanceBDT();
+  else balance=(await getWalletLedgerSourceBalance(type)).available;
+  if(Number.isFinite(balance)&&balance>0){
+   el.value=String(Math.floor(balance));updateWalletAmountPreview('withdraw');
+   if(status)status.textContent='Maximum available amount selected.';
+  }else if(status)status.textContent='No available balance to withdraw yet.';
+ }catch(e){if(status)status.textContent='Could not load balance: '+e.message;}
+}
 
 async function compressDepositProof(file){const bitmap=await createImageBitmap(file);try{const scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height)),canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)throw new Error('Could not prepare the screenshot.');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);let blob=null;for(const q of [.82,.72,.62,.52,.42]){blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',q));if(blob&&blob.size<=480*1024)break;}if(!blob||blob.size>480*1024)throw new Error('Screenshot is too large after compression. Choose a smaller image.');return await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error('Could not read the compressed screenshot.'));reader.readAsDataURL(blob);});}finally{bitmap.close();}}
 async function submitWalletRequest(event,kind){
  event.preventDefault();if(!currentUser){setStatus('Please log in first.',true);showView('login');return;}
- const isDeposit=kind==='deposit',amountBDT=Number(document.getElementById(isDeposit?'depositAmount':'withdrawAmount').value),method=document.getElementById(isDeposit?'depositMethod':'withdrawMethod').value,account=document.getElementById(isDeposit?'depositNumber':'withdrawNumber').value.trim(),proofFile=isDeposit?document.getElementById('depositProof').files[0]:null,status=document.getElementById(kind+'Status'),form=event.currentTarget,submit=form.querySelector('button[type="submit"]');
+ const selectedWithdrawSource=document.getElementById('withdrawBalanceType')?.value||'available';if(kind==='withdraw'&&selectedWithdrawSource!=='available'){const sourceName=selectedWithdrawSource==='deposit'?'Deposit':selectedWithdrawSource==='package'?'Package':'Profit';const sourceStatus=document.getElementById('withdrawStatus');if(sourceStatus)sourceStatus.textContent=sourceName+' Balance-এর আলাদা Withdrawal API এখনো প্রস্তুত নয়। আপাতত এই Source থেকে Withdrawal Request নেওয়া হচ্ছে না।';return;}\n const isDeposit=kind==='deposit',amountBDT=Number(document.getElementById(isDeposit?'depositAmount':'withdrawAmount').value),method=document.getElementById(isDeposit?'depositMethod':'withdrawMethod').value,account=document.getElementById(isDeposit?'depositNumber':'withdrawNumber').value.trim(),proofFile=isDeposit?document.getElementById('depositProof').files[0]:null,status=document.getElementById(kind+'Status'),form=event.currentTarget,submit=form.querySelector('button[type="submit"]');
  await loadWalletSettings(kind);
  const settings=walletSettingsCache||{},minimumDeposit=Math.max(1,Number(settings.minimumDepositBDT||500)),minimumWithdraw=Math.max(1,Number(settings.minimumWithdrawBDT||500)),enabled=isDeposit?settings.depositEnabled===true:settings.withdrawEnabled===true,accounts=isDeposit?settings.depositAccounts:settings.withdrawAccounts,officialAccount=String(accounts?.[method]||'').trim();
  if(!enabled){status.textContent=(isDeposit?settings.depositMessage:settings.withdrawMessage)||'This service is currently unavailable.';return;}
