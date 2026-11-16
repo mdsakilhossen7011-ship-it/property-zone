@@ -133,8 +133,9 @@ function encodeFields(value) {
 }
 async function firestorePost(env, path, body, token) {
   const accessToken = token || await createServiceAccountAccessToken(env);
+  const endpoint = path.startsWith("documents:") ? path : "documents/" + path;
   const response = await fetch("https://firestore.googleapis.com/v1/projects/" + encodeURIComponent(env.FIREBASE_PROJECT_ID)
-    + "/databases/(default)/documents/" + path, {
+    + "/databases/(default)/" + endpoint, {
       method: "POST",
       headers: { authorization: "Bearer " + accessToken, "content-type": "application/json" },
       body: JSON.stringify(body)
