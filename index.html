@@ -836,10 +836,13 @@ async function submitWalletRequest(event,kind){
    const settingsSnap=await fs.getDoc(fs.doc(f.db,'siteSettings','wallet')),apiBase=String((settingsSnap.exists()?settingsSnap.data().walletLedgerApiUrl:'')||'').trim().replace(/\\/+$/,'');
    if(!apiBase)throw new Error('Wallet Ledger API এখনো Configure করা হয়নি।');
    const apiUrl=new URL(apiBase);if(apiUrl.protocol!=='https:')throw new Error('Wallet API অবশ্যই HTTPS হতে হবে।');
-   const token=await currentUser.getIdToken();
-   const response=await fetch(apiUrl.href+'/v1/withdrawal-request',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({source:selectedWithdrawSource,amountBDT,paymentMethod:method,walletNumber:account,packageId,publicId,email:currentUser.email||'',name:currentUser.displayName||'',adminPayoutAccount:officialAccount})});
+   const token=await currentUser.getIdToken(),idempotencyStorageKey='pz-withdraw:'+currentUser.uid+':'+selectedWithdrawSource+':'+amountBDT+':'+packageId;
+   let idempotencyKey='';try{idempotencyKey=sessionStorage.getItem(idempotencyStorageKey)||'';}catch(_){}
+   if(!idempotencyKey){idempotencyKey=crypto.randomUUID().replace(/-/g,'');try{sessionStorage.setItem(idempotencyStorageKey,idempotencyKey);}catch(_){}}
+   const response=await fetch(apiUrl.href+'/v1/withdrawal-request',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({source:selectedWithdrawSource,amountBDT,paymentMethod:method,walletNumber:account,packageId,publicId,email:currentUser.email||'',name:currentUser.displayName||'',adminPayoutAccount:officialAccount,idempotencyKey})});
    const result=await response.json().catch(()=>({}));
    if(!response.ok)throw new Error(result.error==='MIGRATION_PENDING'?'আপনার Wallet Migration এখনো সম্পন্ন হয়নি।':result.error||'Withdrawal Request ব্যর্থ হয়েছে।');
+   try{sessionStorage.removeItem(idempotencyStorageKey);}catch(_){} 
   }
   status.textContent=(isDeposit?'Deposit':'Withdrawal')+' request submitted. Status: Pending admin review.';form.reset();if(!isDeposit)refreshWithdrawAvailableBalance();
   const field=document.getElementById(kind+'Method');if(field)field.value='bKash';
