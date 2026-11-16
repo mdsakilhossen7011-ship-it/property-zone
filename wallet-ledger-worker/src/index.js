@@ -486,7 +486,7 @@ async function migrateMemberLedger(env, adminUid, input) {
   const profitPoisha = amountToPoisha(input.profitBDT || 0, true);
   const packagePoisha = amountToPoisha(input.packageBDT || 0, true);
   const packages = await listActivePackages(env, uid, token);
-  if (packages.length > 400) throw new Error("TOO_MANY_ACTIVE_PACKAGES");
+  if (packages.length >= 400) throw new Error("TOO_MANY_ACTIVE_PACKAGES");
   let calculatedPackagePoisha = 0;
   const packagePaths = packages.map(doc => {
     const fields = firestoreFields(doc.fields || {});
