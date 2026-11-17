@@ -207,6 +207,9 @@ export default {
   } catch(e) {
    const message=String(e.message||"Request failed");
    console.error("Property Zone OTP request failed", {stage, path, message});
+   if(stage==="one9-sms-send") {
+    return json({success:false,message:"এই মুহূর্তে OTP সার্ভিস সাময়িকভাবে অনুপলব্ধ। অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন"},502);
+   }
    const status=/INVALID|NOT_FOUND|EMAIL_EXISTS|PHONE_NUMBER_EXISTS/.test(message)?400:502;
    return json({success:false,message},status);
   }
