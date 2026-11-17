@@ -1,69 +1,28 @@
-# Property Zone wallet ledger backend
+# Property Zone — Firebase-only wallet flow
 
-Status: preparation only. This backend is NOT deployed and must not be connected to the live customer UI until the migration and integration checks below pass.
+This implementation uses the existing Firebase project, existing Firestore Security Rules, the current customer site, the separate Wallet Admin Panel, and the existing scheduled GitHub Actions earnings job.
 
-## Non-negotiable constraints
-- Do not change Firestore Security Rules.
-- Do not overwrite or delete existing wallets, deposit requests, activePackages, or withdrawal requests.
-- Keep the current single-wallet flow untouched until the backend is deployed and verified.
-- Never infer a customer's historic deposit/package/profit split from the current wallet balance alone.
+## No additional paid infrastructure
 
-## Intended ledger
-A server-owned document per customer (for example `walletLedgers/{uid}`) with integer poisha fields:
-- `depositAvailablePoisha`: approved deposit funds not yet used for package purchases or withdrawals.
-- `packagePrincipalPoisha`: principal currently held in active packages and eligible for package-principal withdrawal under the agreed policy.
-- `profitAvailablePoisha`: matured profit only (profit becomes withdrawable after 24 hours).
-- `pendingDepositWithdrawalPoisha`, `pendingPackageWithdrawalPoisha`, `pendingProfitWithdrawalPoisha`: reserved requests by source.
-- `schemaVersion`, `updatedAt`.
+- No Cloudflare account or Worker.
+- No Firebase Cloud Functions.
+- No Firebase Billing upgrade.
+- No Firestore Security Rules change.
+- Daily profit accrual continues through the existing GitHub Actions workflow and its existing `FIREBASE_SERVICE_ACCOUNT` repository secret.
 
-All balance mutations must be performed server-side in an atomic Firestore transaction and recorded in an immutable ledger entry with a unique idempotency key. Clients must never write ledger documents directly.
+## Four wallet operations
 
-## Required server operations
-1. Approve deposit: credit deposit balance exactly once for a pending `wallet-deposit` request.
-2. Buy package: debit deposit balance and credit package principal in the same transaction as creating the active package.
-3. Accrue profit: calculate from active package start/rate history; credit only completed 24-hour periods to available profit. A scheduled/triggered job must be idempotent.
-4. Request withdrawal: reserve only the selected source balance.
-5. Admin approve withdrawal: debit the selected reserved source exactly once.
-6. Admin reject withdrawal: release the reservation to the same source.
-7. Read balances: return a server-computed balance summary to the signed-in customer.
+1. **Deposit:** the member creates a pending deposit request. Admin verifies the payment and approves it. Approval credits `wallets/{uid}.balanceBDT` (Deposit Balance) exactly once in a Firestore transaction.
+2. **Package purchase:** the existing Firestore transaction debits Deposit Balance and creates an `activePackages/{packageId}` record. Package Balance is calculated from the member's active package principals; it is not added to Deposit Balance.
+3. **Profit:** the scheduled `scripts/credit-daily-earnings.js` job credits matured 24-hour earnings to `profitBalanceBDT`. At package maturity, principal returns to `balanceBDT` and earnings go to `profitBalanceBDT`. Package status and earning-ledger records make processing idempotent.
+4. **Withdrawal:** the member selects Deposit, Package, or Profit. The request is reserved in the existing `pendingWithdrawalBDT` field and records its source in the already-permitted `message` field using `[PZ_SOURCE=deposit]`, `[PZ_SOURCE=profit]`, or `[PZ_SOURCE=package;PACKAGE_ID=...]`. Admin approval debits only that source. Package withdrawal must match the full selected active package and closes that package. Rejection releases the reserve.
 
-## Legacy migration gate
-Before any customer is moved to the new ledger, reconcile that customer's:
-- approved historical deposit requests,
-- package purchase records / activePackages,
-- completed and pending withdrawals,
-- existing wallet balance and pendingWithdrawalBDT,
-- any manually adjusted/admin credited amounts.
+## Legacy records
 
-Do not auto-migrate a customer if the source history does not reconcile. Mark for manual review and keep the old wallet untouched. Existing wallet balance is not automatically classified as deposit, package, or profit.
+Older wallet balances may contain a mixture of deposits, earnings, and returned package principal. The app does not guess a historic split. Older withdrawal requests without a source marker require manual review before approval. If an old pending withdrawal reserve cannot be reconciled with source-tagged requests, new withdrawal requests are paused until Admin resolves it.
 
-## Deployment prerequisites
-- A Cloudflare Worker deployment controlled by the site owner.
-- A dedicated Firebase service account with the minimum required Firestore permissions, stored only as a Cloudflare Worker secret (never in HTML, GitHub source, or browser JavaScript).
-- Worker environment variables for Firebase project ID and allowed admin UIDs.
-- A verified Worker URL configured in the customer and admin apps only after deployment.
-- Test Firebase project or isolated test users for end-to-end tests.
+## Validation
 
-## Go-live checklist
-- Verify Firebase ID tokens on every request (issuer, audience, expiry, signature).
-- Authorize admin actions server-side using a fixed allowlist / verified claims; never trust a client-supplied admin flag.
-- Use Firestore transactions and idempotency keys for every monetary mutation.
-- Reject negative, fractional-poisha, duplicate, stale, or inconsistent requests.
-- Test concurrent package purchases, duplicate admin clicks, rejected withdrawals, 24-hour profit maturity, and retries.
-- Compare ledger totals with the legacy records before enabling any customer.
-- Do not change Firestore Rules as part of this work.
+The Firebase Wallet Checks workflow verifies the customer site's inline JavaScript and the daily earnings script syntax. The Admin Wallet Frontend Checks workflow verifies the separate wallet admin page.
 
-## Read-only migration audit utility
-A read-only reconciliation script is included at `scripts/audit-wallet-ledger-migration.js`.
-Run it in a trusted local environment with the Firebase service-account JSON supplied through the `FIREBASE_SERVICE_ACCOUNT` environment variable:
-
-```bash
-npm run audit:wallet-ledger
-```
-
-It reads wallets, deposit/withdrawal requests, package records, and earningLedger records; it writes only a local report file (default `wallet-ledger-migration-audit.json`). It does not write to Firestore. Treat the report as sensitive because it contains customer UIDs and financial totals; do not commit or publicly upload it. A customer marked `RECONCILED_REVIEW_REQUIRED` still requires a human review before migration. All other customers are marked for manual review. This audit is a first-pass reconciliation, not authorization to migrate funds.
-
-## Worker implementation status (stage 1)
-A separate Cloudflare Worker foundation now exists under `wallet-ledger-worker/`. It verifies Firebase ID-token signatures and claims, exchanges a server-held service-account key for a Firestore access token, and exposes a read-only `GET /v1/wallet-summary` endpoint for a previously migrated `walletLedgers/{uid}` document. Missing ledgers return `MIGRATION_PENDING`; the Worker does not infer balances from legacy wallet data.
-
-This is deliberately read-only. It has no deposit approval, package purchase, profit accrual, withdrawal request, withdrawal approval/rejection, or migration-write endpoints. It is not deployed and is not connected to either website. The current production customer/admin flow remains unchanged. Deploy only to a staging Worker after setting secrets directly in Cloudflare; never commit or message the service-account JSON.
+No live balance migration is performed by this change. Existing wallet documents and package records are preserved.
