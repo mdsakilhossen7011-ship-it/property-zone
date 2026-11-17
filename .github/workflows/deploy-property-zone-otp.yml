@@ -15,7 +15,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy workers/property-zone-otp/index.js --name property-zone-otp --compatibility-date 2026-11-17
+          command: deploy --config workers/property-zone-otp/wrangler.toml
           secrets: |
             ONE9_API_KEY
         env:
