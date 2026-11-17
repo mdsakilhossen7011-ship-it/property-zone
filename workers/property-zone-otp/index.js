@@ -44,7 +44,7 @@ async function googleAccessToken(env) {
   const header=b64url(JSON.stringify({alg:"RS256",typ:"JWT"}));
   const claim=b64url(JSON.stringify({iss:service.client_email,scope:"https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/datastore",aud:service.token_uri||"https://oauth2.googleapis.com/token",iat:now,exp:now+3600}));
   const unsigned=header+"."+claim;
-  const pem=service.private_key.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\\s/g,"");
+  const pem=service.private_key.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\s/g,"");
   const binary=Uint8Array.from(atob(pem),c=>c.charCodeAt(0));
   const key=await crypto.subtle.importKey("pkcs8",binary,{name:"RSASSA-PKCS1-v1_5",hash:"SHA-256"},false,["sign"]);
   const signature=new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5",key,new TextEncoder().encode(unsigned)));
@@ -78,7 +78,7 @@ async function createCustomToken(uid, env) {
   const header=b64url(JSON.stringify({alg:"RS256",typ:"JWT"}));
   const claim=b64url(JSON.stringify({iss:service.client_email,sub:service.client_email,aud:"https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit",iat:now,exp:now+3600,uid,claims:{}}));
   const unsigned=header+"."+claim;
-  const pem=service.private_key.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\\s/g,"");
+  const pem=service.private_key.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\s/g,"");
   const binary=Uint8Array.from(atob(pem),c=>c.charCodeAt(0));
   const key=await crypto.subtle.importKey("pkcs8",binary,{name:"RSASSA-PKCS1-v1_5",hash:"SHA-256"},false,["sign"]);
   const signature=new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5",key,new TextEncoder().encode(unsigned)));
