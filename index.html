@@ -1466,7 +1466,7 @@ async function startEmailRegistration(){
   const username=document.getElementById('regUsername').value.trim(),first=document.getElementById('regFirst').value.trim(),last=document.getElementById('regLast').value.trim(),email=document.getElementById('regEmail').value.trim(),pw=document.getElementById('regPassword').value,confirm=document.getElementById('regConfirm').value,ref=(document.getElementById('regReferral').value.trim()||new URLSearchParams(location.search).get('ref')||'').trim();
   if(!/^[a-zA-Z0-9_.-]{3,24}$/.test(username))throw new Error('User name must be 3–24 characters using letters, numbers, dot, dash or underscore.');
   if(!first||!last)throw new Error('Enter your first and last name.');
-  if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))throw new Error('Enter a valid email address.');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Enter a valid email address.');
   if(pw.length<8)throw new Error('Password must be at least 8 characters.');
   if(pw!==confirm)throw new Error('Passwords do not match.');
   if(button){button.disabled=true;button.textContent='Creating account…';}
