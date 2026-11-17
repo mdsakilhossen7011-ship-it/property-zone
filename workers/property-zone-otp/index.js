@@ -30,7 +30,7 @@ export default {
   if(request.method!=="POST") return json({success:false,message:"Method not allowed"},405);
   if(!env.OTP_STORE) return json({success:false,message:"OTP storage is not configured"},500);
   let body; try{body=await request.json()}catch{return json({success:false,message:"Invalid JSON"},400)}
-  const path=new URL(request.url).pathname.replace(/\/+$/,"");
+
   try {
    if(path.endsWith("/otp-send") || path.endsWith("/otp/send")) {
     const phone=normalizePhone(body.phone||body.to);
