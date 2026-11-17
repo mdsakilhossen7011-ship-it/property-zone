@@ -65,6 +65,15 @@ async function adminAuth(env, action, payload) {
   if(!response.ok) throw new Error(data.error?.message||"Firebase Authentication request failed");
   return data;
 }
+async function findPhoneUser(env, phone) {
+  try {
+    const data=await adminAuth(env,"accounts:lookup",{phoneNumber:[phone]});
+    return data.users?.[0]||null;
+  } catch(e) {
+    if(String(e.message||"").includes("USER_NOT_FOUND")) return null;
+    throw e;
+  }
+}
 async function verifyIdToken(idToken) {
   const response=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:lookup?key="+FIREBASE_WEB_API_KEY,{
     method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({idToken})
@@ -110,6 +119,7 @@ export default {
     const key="otp-rate:"+phone, now=Date.now(), prior=await env.OTP_STORE.get(key,{type:"json"});
     if(prior && now-prior.last<60000) return json({success:false,message:"Please wait before requesting another OTP"},429);
     if(prior && prior.count>=5 && now-prior.window<86400000) return json({success:false,message:"Daily OTP limit reached"},429);
+    if(await findPhoneUser(env,phone)) return json({success:false,message:"এই নম্বর দিয়ে আগে থেকেই অ্যাকাউন্ট আছে।"},409);
     const result=await one9("/otp/send",{to:one9Phone(phone),digits:"6",expiry:"5"},env);
     await env.OTP_STORE.put(key,JSON.stringify({last:now,window:prior?.window||now,count:(prior?.count||0)+1}),{expirationTtl:86400});
     return json({success:true,message:"OTP sent"});
@@ -128,8 +138,7 @@ export default {
     const verifiedPhone=await env.OTP_STORE.get("verified:"+verificationToken);
     if(!verifiedPhone || verifiedPhone!==phone) return json({success:false,message:"ফোন যাচাইয়ের মেয়াদ শেষ। আবার OTP নিন।"},403);
     const user=await verifyIdToken(idToken);
-    const found=await adminAuth(env,"accounts:lookup",{phoneNumber:[phone]});
-    const existing=found.users?.[0];
+    const existing=await findPhoneUser(env,phone);
     if(existing && existing.localId!==user.localId) return json({success:false,message:"এই নম্বর অন্য অ্যাকাউন্টে যুক্ত আছে।"},409);
     await adminAuth(env,"accounts:update",{localId:user.localId,phoneNumber:phone});
     await updateMemberPhone(env,user.localId,phone);
@@ -139,8 +148,7 @@ export default {
    if(path.endsWith("/phone-login")) {
     const phone=normalizePhone(body.phone), password=String(body.password||"");
     if(!phone||!password||password.length>128) return json({success:false,message:"মোবাইল নম্বর ও পাসওয়ার্ড দিন।"},400);
-    const found=await adminAuth(env,"accounts:lookup",{phoneNumber:[phone]});
-    const user=found.users?.[0];
+    const user=await findPhoneUser(env,phone);
     if(!user?.email) return json({success:false,message:"এই নম্বরে কোনো অ্যাকাউন্ট পাওয়া যায়নি।"},404);
     const response=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key="+FIREBASE_WEB_API_KEY,{
       method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email:user.email,password,returnSecureToken:true})
