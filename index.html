@@ -203,48 +203,55 @@ html.pz-auth-pending #sideMenu{pointer-events:none!important}
 </style>
 
 <style id="pz-register-visual-polish">
-/* Registration form: clean spacing, consistent labels and responsive grouping */
-#register .pz-register-card{width:min(100% - 24px,560px);max-width:560px;margin:30px auto;padding:clamp(20px,4.5vw,34px);border:1px solid #6b532b;border-radius:22px;background:radial-gradient(ellipse at 92% 0%,#493417 0%,#17130e 34%,#101010 72%);box-shadow:0 22px 65px #0008}
-#register .pz-register-head{padding:0 0 19px;margin:0 0 22px;border-bottom:1px solid #49391f}
-#register .pz-register-head .eyebrow{font-size:10px;letter-spacing:2.2px}
-#register .pz-register-head h2{font-size:clamp(29px,6vw,37px);line-height:1.12;margin:11px 0 8px}
-#register .pz-register-head p{font-size:13px;line-height:1.65}
-#register .pz-register-grid{gap:17px 13px}
-#register .pz-field{gap:8px;font-size:12px;letter-spacing:.15px;color:#f0e6d2}
+/* Compact registration layout: preserve the existing fields and all account logic. */
+#register .pz-register-card{width:min(100% - 24px,560px);max-width:560px;margin:20px auto;padding:clamp(16px,3vw,25px);border:1px solid #6b532b;border-radius:18px;background:radial-gradient(ellipse at 92% 0%,#493417 0%,#17130e 34%,#101010 72%);box-shadow:0 16px 42px #0007}
+#register .pz-register-head{padding:0 0 13px;margin:0 0 15px;border-bottom:1px solid #49391f}
+#register .pz-register-head .eyebrow{font-size:9px;letter-spacing:1.8px}
+#register .pz-register-head h2{font-size:clamp(25px,5.5vw,33px);line-height:1.12;margin:8px 0 6px}
+#register .pz-register-head p{font-size:12px;line-height:1.5}
+#register .pz-register-grid{gap:11px 12px}
+#register .pz-field{gap:5px;font-size:12px;letter-spacing:0;color:#f0e6d2}
 #register .pz-field>label{display:block;color:#f0e6d2;font-size:12px;font-weight:700}
-#register .pz-register-card .pz-field input{height:49px;padding:0 14px;border-radius:11px;background:#090909;border:1px solid #51432e;font-size:14px;box-shadow:inset 0 1px 2px #0007}
+#register .pz-register-card .pz-field input{height:43px;padding:0 12px;border-radius:10px;background:#090909;border:1px solid #51432e;font-size:13px;box-shadow:inset 0 1px 2px #0007}
 #register .pz-register-card .pz-field input:focus{border-color:#e3bd68;box-shadow:0 0 0 3px #d6ad5228}
 #register .pz-register-card .pz-field input::placeholder{color:#827b70}
-#register .pz-phone-row{gap:9px}
+#register .pz-phone-row{gap:8px}
 #register .pz-phone-row input{flex:1;min-width:0}
-#register .pz-country-code{height:49px;padding:0 13px;border-radius:11px;font-weight:750}
-#register .pz-field small{font-size:11px;line-height:1.45}
-#register .pz-otp-panel{padding:16px;border-radius:14px;background:linear-gradient(145deg,#211a10,#14120e);border-color:#66502a;gap:10px}
-/* Keep the OTP step completely hidden until Create Account successfully sends a code. */
+#register .pz-country-code{height:43px;padding:0 11px;border-radius:10px;font-size:12px;font-weight:750}
+#register .pz-field small{font-size:10px;line-height:1.35}
+#register .pz-otp-panel{padding:12px;border-radius:12px;background:linear-gradient(145deg,#211a10,#14120e);border-color:#66502a;gap:8px}
 #register #regOtpPanel[hidden]{display:none!important}
-#register .pz-otp-title{margin:0 0 3px;font-size:13px;font-weight:750;color:#f4e4bf}
+#register .pz-otp-title{margin:0 0 2px;font-size:12px;font-weight:750;color:#f4e4bf}
 #register .pz-secure-tag{font-size:9px;white-space:nowrap}
-#register .pz-send-otp{min-height:45px;margin:0;border-radius:10px}
-#register .pz-otp-row{gap:9px}
-#register .pz-otp-row input{height:46px!important}
-#register .pz-otp-row .btn{min-width:98px;border-radius:10px}
-#register #regOtpHint{display:block;line-height:1.5}
-#register .pz-verified-note{padding:9px 11px;border:1px solid #315c38;border-radius:9px;background:#14251a}
-#register .pz-create-account{min-height:53px;margin-top:20px;border-radius:12px;font-size:15px;font-weight:850;letter-spacing:.2px;box-shadow:0 8px 22px #d6ad5224}
-#register .pz-register-foot{margin:14px 2px 0;font-size:11px;line-height:1.65}
-#register .pz-register-login{padding-top:16px;margin-top:16px;border-top:1px solid #3c301d}
-@media(min-width:520px){
+#register .pz-send-otp{min-height:42px;margin:0;border-radius:9px}
+#register .pz-otp-row{gap:8px}
+#register .pz-otp-row input{height:42px!important}
+#register .pz-otp-row .btn{min-width:88px;border-radius:9px}
+#register #regOtpHint{display:block;line-height:1.4}
+#register .pz-verified-note{padding:8px 10px;border:1px solid #315c38;border-radius:9px;background:#14251a}
+#register .pz-create-account{min-height:45px;margin-top:14px;border-radius:10px;font-size:14px;font-weight:850;letter-spacing:.1px;box-shadow:0 6px 16px #d6ad5220}
+#register .pz-register-foot{margin:10px 2px 0;font-size:10px;line-height:1.5}
+#register .pz-register-login{padding-top:12px;margin-top:12px;border-top:1px solid #3c301d;font-size:12px}
+@media(min-width:481px){
  #register .pz-register-grid>.pz-field:nth-child(6),
  #register .pz-register-grid>.pz-field:nth-child(7){grid-column:span 1}
 }
 @media(max-width:480px){
- #register .pz-register-card{width:calc(100% - 20px);margin:18px auto;padding:20px 16px;border-radius:18px}
- #register .pz-register-grid{grid-template-columns:1fr;gap:13px}
+ #register .pz-register-card{width:calc(100% - 20px);margin:12px auto;padding:15px 12px;border-radius:15px}
+ #register .pz-register-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 9px}
+ #register .pz-field-wide{grid-column:1/-1}
+ #register .pz-field{font-size:11px;gap:4px}
+ #register .pz-field>span,#register .pz-field>label{font-size:11px;line-height:1.3}
+ #register .pz-register-card .pz-field input{height:41px;padding:0 9px;font-size:12px}
+ #register .pz-phone-row{gap:6px}
+ #register .pz-country-code{height:41px;padding:0 9px;font-size:11px}
+ #register .pz-otp-panel{padding:11px}
+ #register .pz-otp-row{grid-template-columns:minmax(0,1fr) 82px}
+ #register .pz-otp-row .btn{min-width:0;padding:8px 9px}
+}
+@media(max-width:350px){
+ #register .pz-register-grid{grid-template-columns:1fr;gap:10px}
  #register .pz-field-wide{grid-column:auto}
- #register .pz-otp-panel{padding:13px}
- #register .pz-country-code{padding:0 10px}
- #register .pz-otp-row{grid-template-columns:minmax(0,1fr) 88px}
- #register .pz-otp-row .btn{min-width:0;padding:9px 10px}
 }
 </style>
 
