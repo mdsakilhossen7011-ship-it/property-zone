@@ -183,6 +183,21 @@ html.pz-auth-pending #sideMenu{pointer-events:none!important}
 @keyframes mysteryFloat{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-8px) rotate(1deg)}}
 .mystery-box-title{font:900 clamp(30px,6vw,54px)/1.05 Georgia,serif;letter-spacing:1px;margin:5px 0 10px;color:#ffdc7b;text-shadow:0 3px 0 #7c4a10,0 0 24px #ffba35a8}.mystery-box-subtitle{font-size:clamp(13px,2.2vw,17px);font-weight:700;margin:0 auto 18px;max-width:700px;color:#f4f0e8}.mystery-box-subtitle em{font-style:normal;color:#ffe05b}.mystery-box-amount{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 28px;margin:0 auto 17px;border:1px solid #f4c65c;border-radius:12px;background:linear-gradient(110deg,#21170b,#5a390e 48%,#1b140c);box-shadow:0 0 24px #f7bd3c35;color:#ffe08a;font-size:clamp(25px,5vw,40px);font-weight:950}.mystery-box-button{display:flex;align-items:center;justify-content:center;gap:12px;width:min(100%,420px);margin:0 auto;padding:16px 22px;border:0;border-radius:999px;background:linear-gradient(110deg,#fff0a0,#f6c43f 48%,#bd7d14);color:#1b1307;font-weight:950;font-size:16px;letter-spacing:.3px;box-shadow:0 8px 25px #e9a82c55;cursor:pointer}.mystery-box-button:active{transform:translateY(1px)}.mystery-box-note{margin:13px 0 0;color:#f4d78f;font-size:12px}.mystery-box-perks{display:flex;justify-content:center;gap:0;flex-wrap:wrap;margin:22px auto 0;padding:12px 8px;border:1px solid #67502a;border-radius:999px;background:#090a13a8;max-width:850px}.mystery-box-perks span{padding:5px 17px;color:#f5e5bc;font-size:12px;border-right:1px solid #67502a}.mystery-box-perks span:last-child{border:0}
 @media(max-width:600px){.mystery-box-wrap{padding:24px 13px 17px;border-radius:18px}.mystery-box-art{transform:scale(.9);margin:7px auto 4px}.mystery-box-perks{border-radius:15px}.mystery-box-perks span{width:50%;border-right:0;font-size:11px}.mystery-box-perks span:nth-child(odd){border-right:1px solid #67502a}}
+/* Premium, responsive registration experience */
+.pz-register-card{max-width:560px;padding:clamp(18px,4vw,30px);border-color:#594522;background:radial-gradient(circle at 100% 0,#392a14 0,transparent 35%),#111}
+.pz-register-head{margin-bottom:22px}.pz-register-head h2{font:clamp(28px,5vw,36px) Georgia;margin:9px 0 7px;color:var(--gold2)}.pz-register-head p{font-size:13px;margin:0}
+.pz-register-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.pz-field{display:flex;flex-direction:column;gap:7px;min-width:0;color:#e9dfca;font-size:13px;font-weight:650}
+.pz-field-wide{grid-column:1/-1}.pz-field>span em{font-weight:400;color:var(--muted);font-style:normal}
+.pz-register-card .pz-field input{width:100%;min-width:0;height:47px;margin:0;padding:12px 13px;border:1px solid #4a3b24;border-radius:10px;background:#0b0b0b;color:#fff;outline:none;font-size:14px;transition:border-color .18s,box-shadow .18s}
+.pz-register-card .pz-field input:focus{border-color:var(--gold2);box-shadow:0 0 0 3px #d6ad5220}
+.pz-register-card .pz-field input::placeholder{color:#77716a}.pz-field small{font-size:11px;color:var(--muted);font-weight:400}
+.pz-phone-row{display:flex;gap:8px;align-items:center}.pz-country-code{height:47px;display:flex;align-items:center;justify-content:center;padding:0 11px;white-space:nowrap;border:1px solid #4a3b24;border-radius:10px;background:#211a10;color:var(--gold2);font-size:13px}
+.pz-otp-panel{padding:14px;border:1px solid #594522;border-radius:12px;background:#17130e}.pz-otp-title{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;font-size:13px}.pz-secure-tag{font-size:9px;letter-spacing:1px;color:var(--gold2);border:1px solid #594522;padding:4px 7px;border-radius:20px}
+.pz-send-otp{width:100%;margin:0 0 9px}.pz-otp-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.pz-otp-row .btn{min-width:88px}.pz-otp-row input{height:45px!important;margin:0!important;letter-spacing:3px;font-weight:750}
+.pz-register-card button:disabled{opacity:.42;cursor:not-allowed}.pz-verified-note{margin-top:9px;color:#a9e6b2;font-size:12px;font-weight:700}.pz-create-account{width:100%;min-height:49px;margin-top:18px;font-size:15px}.pz-register-foot{margin:13px 0 0}.pz-register-login{text-align:center;font-size:13px;color:var(--muted);margin:18px 0 0}.pz-register-login a{color:var(--gold2);font-weight:700}
+@media(max-width:480px){.pz-register-grid{grid-template-columns:1fr;gap:12px}.pz-field-wide{grid-column:auto}.pz-phone-row{gap:6px}.pz-country-code{padding:0 8px;font-size:12px}.pz-otp-panel{padding:11px}}
+
 </style>
 <style>
 #pzMaintenanceScreen{position:fixed;inset:0;z-index:2147483000;display:none;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse at top,#1d2938 0%,#090d14 65%);color:#f5f7fb;text-align:center;font-family:Inter,system-ui,Arial,sans-serif}#pzMaintenanceScreen .pz-maint-card{width:min(560px,100%);padding:34px 26px;border:1px solid #3a4657;border-radius:20px;background:#101722;box-shadow:0 24px 80px #0008}#pzMaintenanceScreen .pz-maint-icon{font-size:42px;margin-bottom:12px}#pzMaintenanceScreen h1{margin:0 0 12px;font-size:clamp(25px,5vw,36px)}#pzMaintenanceScreen p{margin:0;color:#bac5d3;line-height:1.8;white-space:pre-wrap}
@@ -280,7 +295,31 @@ html.pz-auth-pending #sideMenu{pointer-events:none!important}
 
 <section id="details" class="view"><button class="btn" type="button" onclick="showView('properties')">← Back to properties</button><div id="detailContent"></div></section>
 <section id="login" class="view"><div class="panel form"><div class="eyebrow">Welcome back</div><h2>Member Login</h2><div id="emailLogin"><input id="loginEmail" type="email" placeholder="Email address" autocomplete="email"><input id="loginPassword" type="password" placeholder="Password" autocomplete="current-password"><button class="btn primary" id="loginButton" style="width:100%" onclick="loginEmailPassword()">Login</button><p style="text-align:right;margin:10px 0"><a href="#" onclick="resetLoginPassword();return false" style="color:var(--gold2)">Forgot password?</a></p></div><p class="notice">Sign in with your email and password.</p><p>New here? <a href="#" onclick="showView('register')" style="color:var(--gold2)">Create account</a></p></div></section>
-<section id="register" class="view"><div class="panel form"><div class="eyebrow">Become a member</div><h2>Create Account</h2><input id="regUsername" type="text" placeholder="Choose a username" autocomplete="username"><input id="regFirst" placeholder="First name" autocomplete="given-name"><input id="regLast" placeholder="Last name" autocomplete="family-name"><input id="regEmail" type="email" placeholder="Email address" autocomplete="email" required><input id="regPassword" type="password" placeholder="Create password (min. 8 characters)" autocomplete="new-password"><input id="regConfirm" type="password" placeholder="Confirm password" autocomplete="new-password"><input id="regReferral" placeholder="Referral code (optional)" autocomplete="off"><button class="btn primary" id="regCreate" style="width:100%" onclick="registerWithEmail()">Create Account</button><p class="notice">Enter your Gmail and password to create your account. No email link is required.</p></div></section>
+<section id="register" class="view">
+ <div class="panel form pz-register-card">
+  <div class="pz-register-head"><div class="eyebrow">PROPERTY ZONE · MEMBER ACCESS</div><h2>Create your account</h2><p class="muted">Enter your details first. Verify your mobile number in the next step.</p></div>
+  <div class="pz-register-grid">
+   <label class="pz-field pz-field-wide"><span>User name</span><input id="regUsername" type="text" placeholder="Choose a username" autocomplete="username" minlength="3" maxlength="24" required></label>
+   <label class="pz-field"><span>First name</span><input id="regFirst" type="text" placeholder="First name" autocomplete="given-name" maxlength="60" required></label>
+   <label class="pz-field"><span>Last name</span><input id="regLast" type="text" placeholder="Last name" autocomplete="family-name" maxlength="60" required></label>
+   <label class="pz-field pz-field-wide"><span>Email</span><input id="regEmail" type="email" placeholder="you@example.com" autocomplete="email" maxlength="120" required></label>
+   <div class="pz-field pz-field-wide"><label for="regPhone">Phone number</label><div class="pz-phone-row"><span class="pz-country-code">🇧🇩 +880</span><input id="regPhone" type="tel" inputmode="tel" placeholder="01XXXXXXXXX" autocomplete="tel-national" maxlength="16" required oninput="pzRegistrationPhoneChanged()"></div><small>Enter your Bangladesh mobile number</small></div>
+   <label class="pz-field"><span>Password</span><input id="regPassword" type="password" placeholder="At least 8 characters" autocomplete="new-password" minlength="8" required></label>
+   <label class="pz-field"><span>Confirm password</span><input id="regConfirm" type="password" placeholder="Re-enter password" autocomplete="new-password" minlength="8" required></label>
+   <label class="pz-field pz-field-wide"><span>Referral code <em>(optional)</em></span><input id="regReferral" type="text" placeholder="Enter referral code if you have one" autocomplete="off" maxlength="40"></label>
+  </div>
+  <button class="btn primary pz-create-account" id="regCreate" type="button" onclick="startRegistrationOtp()">Create Account</button>
+  <div id="regOtpPanel" class="pz-field pz-field-wide pz-otp-panel" hidden>
+   <div class="pz-otp-title"><span>Verify your phone number</span><span class="pz-secure-tag">6-DIGIT OTP</span></div>
+   <p class="notice" style="margin:0">We sent a verification code to your phone. Enter it below to finish creating your account.</p>
+   <button class="btn pz-send-otp" type="button" id="regSendOtp" onclick="sendRegistrationOtp()">Resend code</button>
+   <div class="pz-otp-row"><input id="regOtp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Enter 6-digit code" autocomplete="one-time-code" oninput="this.value=this.value.replace(/\D/g,'').slice(0,6)"><button class="btn primary" type="button" id="regVerifyOtp" onclick="verifyRegistrationOtp()" disabled>Submit</button></div>
+   <small id="regOtpHint">The code expires in 5 minutes.</small><div id="regOtpVerified" class="pz-verified-note" hidden>✓ Phone number verified</div>
+  </div>
+  <p class="notice pz-register-foot">Your account will be created after successful phone verification.</p>
+  <p class="pz-register-login">Already have an account? <a href="#" onclick="showView('login');return false">Sign in</a></p>
+ </div>
+</section>
 
 <section id="dashboard" class="view">
  <div class="dash-earnings" style="grid-template-columns:repeat(2,minmax(0,1fr))">
@@ -1068,7 +1107,129 @@ async function ensureMemberProfile(f,user,referralCode='',phoneNumber=''){
  if(usedCode)await fs.setDoc(fs.doc(f.db,'referralRegistrations',usedCode,'members',user.uid),{createdAt:fs.serverTimestamp(),uid:user.uid,publicId,name});
  return memberData;
 }
-async function registerWithEmail(){clearStatus();let f=null;try{const first=document.getElementById('regFirst').value.trim(),last=document.getElementById('regLast').value.trim(),email=document.getElementById('regEmail').value.trim(),pw=document.getElementById('regPassword').value,confirm=document.getElementById('regConfirm').value,ref=(document.getElementById('regReferral').value.trim()||new URLSearchParams(location.search).get('ref')||'').trim();if(!first||!last)throw new Error('Enter first and last name.');if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Enter a valid email address.');if(pw.length<8)throw new Error('Password must be at least 8 characters.');if(pw!==confirm)throw new Error('Passwords do not match.');f=await getFirebase();if(ref&&ref.toUpperCase()!=='PZWYYMWLBZ'){const referral=await f.firestore.getDoc(f.firestore.doc(f.db,'referralCodes',ref.toUpperCase()));if(!referral.exists()||referral.data().active!==true)throw new Error('Referral code is invalid or inactive. Check the code and try again.');}const result=await f.createUserWithEmailAndPassword(f.auth,email,pw);await f.updateProfile(result.user,{displayName:first+' '+last});await ensureMemberProfile(f,result.user,ref);await ensurePublicUserId(f,result.user);currentUser=result.user;currentMemberStatus='active';authReady=true;syncNavigation();updateDashboard();showView('home');setStatus('Account created successfully. You can now use your account.');}catch(e){if(f?.auth?.currentUser&&!f.auth.currentUser.emailVerified){try{await f.signOut(f.auth)}catch(signOutError){console.warn('Could not clear unverified session:',signOutError)}}const msg=e.code==='auth/email-already-in-use'?'This email already has an account. Please log in, or use Forgot password to reset its password.':(e.message||'Could not create account. Please try again.');setStatus(msg,true)}}
+window.pzOtpVerifiedPhone='';
+window.pzOtpVerificationToken='';
+window.pzOtpCooldownTimer=null;
+function normalizePzBdPhone(value){
+ let p=String(value||'').replace(/\D/g,'');
+ if(p.startsWith('00880'))p=p.slice(2);
+ if(p.startsWith('01')&&p.length===11)p='88'+p;
+ if(p.startsWith('1')&&p.length===10)p='880'+p;
+ return /^8801[3-9]\d{8}$/.test(p)?'+'+p:null;
+}
+function pzRegistrationPhoneChanged(){
+ const phone=document.getElementById('regPhone')?.value||'',normalized=normalizePzBdPhone(phone);
+ if(window.pzOtpVerifiedPhone&&window.pzOtpVerifiedPhone!==normalized){
+  window.pzOtpVerifiedPhone='';window.pzOtpVerificationToken='';
+  const note=document.getElementById('regOtpVerified');if(note)note.hidden=true;
+  const panel=document.getElementById('regOtpPanel');if(panel)panel.hidden=true;
+  const create=document.getElementById('regCreate');if(create){create.hidden=false;create.disabled=false;}
+  const hint=document.getElementById('regOtpHint');if(hint)hint.textContent='Number changed. Request a new verification code.';
+ }
+ const send=document.getElementById('regSendOtp');if(send&&!send.dataset.cooldown)send.disabled=!normalized;
+}
+function validateRegistrationDetails(){
+ const username=document.getElementById('regUsername').value.trim(),first=document.getElementById('regFirst').value.trim(),last=document.getElementById('regLast').value.trim(),email=document.getElementById('regEmail').value.trim(),phone=normalizePzBdPhone(document.getElementById('regPhone').value),pw=document.getElementById('regPassword').value,confirm=document.getElementById('regConfirm').value;
+ if(!/^[a-zA-Z0-9_.-]{3,24}$/.test(username))throw new Error('User name must be 3–24 characters using letters, numbers, dot, dash or underscore.');
+ if(!first||!last)throw new Error('Enter your first and last name.');
+ if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Enter a valid email address.');
+ if(!phone)throw new Error('Enter a valid Bangladesh mobile number.');
+ if(pw.length<8)throw new Error('Password must be at least 8 characters.');
+ if(pw!==confirm)throw new Error('Passwords do not match.');
+ return phone;
+}
+async function startRegistrationOtp(){
+ clearStatus();const button=document.getElementById('regCreate');
+ try{validateRegistrationDetails();if(button){button.disabled=true;button.textContent='Sending code…';}await sendRegistrationOtp();}
+ catch(e){setStatus(e.message||'Please check your details.',true);}
+ finally{if(button){button.disabled=false;button.textContent='Create Account';}}
+}
+async function pzOtpRequest(name,payload){
+ const response=await fetch('https://property-zone-otp.mdsakilhossen409.workers.dev/'+name,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+ let data={};try{data=await response.json()}catch{}
+ if(!response.ok||!data.success)throw new Error(data.message||'Request failed. Please try again.');
+ return data;
+}
+function startPzOtpCooldown(seconds=60){
+ const button=document.getElementById('regSendOtp');if(!button)return;
+ clearInterval(window.pzOtpCooldownTimer);
+ let left=seconds;button.dataset.cooldown='1';button.disabled=true;button.textContent='Resend in '+left+'s';
+ window.pzOtpCooldownTimer=setInterval(()=>{
+  left--;
+  if(left<=0){clearInterval(window.pzOtpCooldownTimer);delete button.dataset.cooldown;button.disabled=!normalizePzBdPhone(document.getElementById('regPhone')?.value);button.textContent='Resend verification code';}
+  else button.textContent='Resend in '+left+'s';
+ },1000);
+}
+async function sendRegistrationOtp(){
+ clearStatus();
+ const phone=normalizePzBdPhone(document.getElementById('regPhone').value),button=document.getElementById('regSendOtp'),hint=document.getElementById('regOtpHint');
+ if(!phone){setStatus('Enter a valid Bangladesh mobile number, for example 017XXXXXXXX.',true);return;}
+ if(button?.dataset.cooldown)return;
+ if(button)button.disabled=true;
+ try{
+  await pzOtpRequest('otp-send',{phone});
+  window.pzOtpVerifiedPhone='';window.pzOtpVerificationToken='';
+  document.getElementById('regOtp').value='';
+  document.getElementById('regOtpPanel').hidden=false;
+  document.getElementById('regCreate').hidden=true;
+  document.getElementById('regVerifyOtp').disabled=false;
+  document.getElementById('regOtpVerified').hidden=true;
+  if(hint)hint.textContent='Code sent. It expires in 5 minutes.';
+  startPzOtpCooldown(60);
+  setStatus('Verification code sent. Please check your mobile phone.');
+ }catch(e){if(button)button.disabled=false;if(hint)hint.textContent=e.message||'Could not send verification code.';setStatus(e.message||'Could not send OTP.',true);}
+}
+async function verifyRegistrationOtp(){
+ clearStatus();
+ const phone=normalizePzBdPhone(document.getElementById('regPhone').value),otp=document.getElementById('regOtp').value.trim(),button=document.getElementById('regVerifyOtp');
+ if(!phone){setStatus('Enter a valid Bangladesh mobile number first.',true);return;}
+ if(window.pzOtpVerifiedPhone===phone&&window.pzOtpVerificationToken){await registerWithEmail();return;}
+ if(!/^\d{6}$/.test(otp)){setStatus('Enter the 6-digit verification code.',true);return;}
+ if(button){button.disabled=true;button.textContent='Verifying…';}
+ try{
+  const data=await pzOtpRequest('otp-verify',{phone,otp});
+  window.pzOtpVerifiedPhone=phone;window.pzOtpVerificationToken=data.verificationToken;
+  document.getElementById('regOtpVerified').hidden=false;
+  document.getElementById('regOtpHint').textContent='Phone verified. Creating your account…';
+  await registerWithEmail();
+ }catch(e){
+  window.pzOtpVerifiedPhone='';window.pzOtpVerificationToken='';
+  document.getElementById('regOtpHint').textContent=e.message||'OTP verification failed.';
+  setStatus(e.message||'OTP verification failed.',true);
+ }finally{if(button){button.disabled=false;button.textContent='Submit';}}
+}
+async function registerWithEmail(){
+ clearStatus();let f=null,result=null;
+ const createButton=document.getElementById('regCreate');
+ if(createButton?.disabled)return;
+ if(createButton){createButton.disabled=true;createButton.textContent='Creating account…';}
+ try{
+  const username=document.getElementById('regUsername').value.trim(),first=document.getElementById('regFirst').value.trim(),last=document.getElementById('regLast').value.trim(),email=document.getElementById('regEmail').value.trim(),phone=normalizePzBdPhone(document.getElementById('regPhone').value),pw=document.getElementById('regPassword').value,confirm=document.getElementById('regConfirm').value,ref=(document.getElementById('regReferral').value.trim()||new URLSearchParams(location.search).get('ref')||'').trim();
+  if(!/^[a-zA-Z0-9_.-]{3,24}$/.test(username))throw new Error('User name must be 3–24 characters using letters, numbers, dot, dash or underscore.');
+  if(!first||!last)throw new Error('Enter your first and last name.');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Enter a valid email address.');
+  if(!phone)throw new Error('Enter a valid Bangladesh mobile number.');
+  if(window.pzOtpVerifiedPhone!==phone||!window.pzOtpVerificationToken)throw new Error('Please verify this mobile number with OTP first.');
+  if(pw.length<8)throw new Error('Password must be at least 8 characters.');
+  if(pw!==confirm)throw new Error('Passwords do not match.');
+  f=await getFirebase();
+  if(ref&&ref.toUpperCase()!=='PZWYYMWLBZ'){const referral=await f.firestore.getDoc(f.firestore.doc(f.db,'referralCodes',ref.toUpperCase()));if(!referral.exists()||referral.data().active!==true)throw new Error('Referral code is invalid or inactive. Check the code and try again.');}
+  result=await f.createUserWithEmailAndPassword(f.auth,email,pw);
+  result.user.pzUsername=username;await f.updateProfile(result.user,{displayName:first+' '+last});
+  const idToken=await result.user.getIdToken();
+  try{await pzOtpRequest('complete-registration',{phone,verificationToken:window.pzOtpVerificationToken,idToken});}
+  catch(attachError){try{await f.deleteUser(result.user)}catch(deleteError){console.error('Could not roll back incomplete registration:',deleteError)}throw attachError;}
+  await ensureMemberProfile(f,result.user,ref,phone);
+  await f.firestore.setDoc(f.firestore.doc(f.db,'members',result.user.uid),{username,updatedAt:f.firestore.serverTimestamp()},{merge:true});
+  await ensurePublicUserId(f,result.user);
+  window.pzOtpVerifiedPhone='';window.pzOtpVerificationToken='';
+  currentUser=result.user;currentMemberStatus='active';authReady=true;syncNavigation();updateDashboard();showView('home');setStatus('Account created successfully. You can now use your account.');
+ }catch(e){
+  if(f?.auth?.currentUser&&result&&f.auth.currentUser.uid===result.user.uid){try{await f.signOut(f.auth)}catch(signOutError){console.warn('Could not clear incomplete registration session:',signOutError)}}
+  const msg=e.code==='auth/email-already-in-use'?'This email already has an account. Please log in, or use Forgot password to reset its password.':(e.message||'Could not create account. Please try again.');
+  setStatus(msg,true);
+ }finally{if(createButton){createButton.textContent='Create account';createButton.disabled=!window.pzOtpVerificationToken;}}
+}
 
 /* Website language switcher - robust text and dynamic content translation */
 const PZ_EN_TO_BN={
