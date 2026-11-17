@@ -76,7 +76,7 @@ export default async (req) => {
         const x=d.data();
         return {id:d.id,uid:x.uid||"",email:x.email||"",name:x.name||"Member",publicId:x.publicId||"",rewardAmount:Number(x.rewardAmount)||0,status:x.status||"recorded",createdAt:x.createdAt?.toDate?.().toISOString?.()||null};
       });
-      return json({success:true,roundId,claims,remaining:Array.isArray(settings.prizePoolRemaining)?settings.prizePoolRemaining.length:0,total:Array.isArray(settings.prizePool)?settings.prizePool.length:0,claimedCount:Number(settings.claimedCount)||0,prizePoolTotalBDT:Number(settings.prizePoolTotalBDT)||0,enabled:settings.enabled===true},200,origin);
+      return json({success:true,roundId,claims,remaining:Array.isArray(settings.prizePoolRemaining)?settings.prizePoolRemaining.length:0,total:Array.isArray(settings.prizePool)?settings.prizePool.length:0,claimedCount:Number(settings.claimedCount)||0,claimLimit:Number(settings.claimLimit)||0,prizePoolTotalBDT:Number(settings.prizePoolTotalBDT)||0,enabled:settings.enabled===true},200,origin);
     }
 
     if (body.action !== "claim") return json({success:false,message:"Unknown action."},400,origin);
