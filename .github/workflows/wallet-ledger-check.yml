@@ -1,0 +1,30 @@
+name: Wallet ledger checks
+
+on:
+  push:
+    branches:
+      - feature/segregated-wallet-backend-2026-11-17
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  wallet-ledger:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: wallet-ledger-worker
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check Worker syntax
+        run: node --check src/index.js
+      - name: Run wallet ledger unit tests
+        run: node --test
