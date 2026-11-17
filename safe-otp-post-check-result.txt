@@ -1,0 +1,5 @@
+result=PASS
+http_status=400
+curl_exit=0
+response={"success":false,"message":"Enter a valid Bangladesh phone number"}
+detail=POST reached the Worker and invalid phone was rejected before the One9 SMS step.
