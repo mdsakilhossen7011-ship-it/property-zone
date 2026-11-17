@@ -1,0 +1,7 @@
+name = "property-zone-otp"
+main = "index.js"
+compatibility_date = "2026-11-17"
+
+[[kv_namespaces]]
+binding = "OTP_STORE"
+id = "f2aea9d44cb043d08a9dbf6fbbec74b5"
