@@ -647,7 +647,7 @@ async function requestPropertyPurchase(propertyId,packageAmount){
     if(!Number.isFinite(propertyDailyRate)||propertyDailyRate<0||propertyDailyRate>1)throw new Error('Property profit rate is not configured correctly.');
     const balance=walletSnap.exists()?walletBalanceInBDT(walletSnap.data(),rate):0;
     if(balance+0.000001<amountBDT)throw new Error('Insufficient wallet balance. Please deposit funds first.');
-    tx.update(walletRef,{balanceBDT:Math.round((balance-amountBDT)*100)/100,lastPackagePurchaseId:packageRef.id,updatedAt:fs.serverTimestamp()});
+    tx.update(walletRef,{depositBalanceBDT:Math.round((balance-amountBDT)*100)/100,lastPackagePurchaseId:packageRef.id,updatedAt:fs.serverTimestamp()});
     tx.set(packageRef,{uid:currentUser.uid,propertyId,propertyTitle:p.name,amountBDT,dailyRate:propertyDailyRate,hourlyRate:propertyDailyRate/24,termDays:30,maturityAt:new Date(Date.now()+30*24*60*60*1000),status:'active',startedAt:fs.serverTimestamp(),createdAt:fs.serverTimestamp()});
    });
    status.textContent='Package of ৳'+Number(packageAmount).toLocaleString('en-US')+' activated successfully.';
@@ -703,7 +703,7 @@ function refreshWalletPaymentInfo(kind){
  const submit=form.querySelector('button[type="submit"]');if(submit)submit.disabled=!account;
 }
 function walletExchangeRate(){const rate=Number(walletSettingsCache?.exchangeRateBDT);return Number.isFinite(rate)&&rate>0?rate:0;}
-function walletBalanceInBDT(data,rate){if(data&&Number.isFinite(Number(data.balanceBDT)))return Math.max(0,Number(data.balanceBDT));const legacy=Number(data?.balanceUSD||0);if(!Number.isFinite(legacy)||legacy<0)throw new Error('Wallet balance is invalid.');if(legacy===0)return 0;if(!Number.isFinite(rate)||rate<=0)throw new Error('Saved conversion rate is unavailable for this legacy balance.');return Math.round(legacy*rate*100)/100;}
+function walletBalanceInBDT(data,rate){const deposit=Number(data?.depositBalanceBDT||0);if(!Number.isFinite(deposit)||deposit<0)throw new Error('Deposit Balance is invalid.');return Math.round(deposit*100)/100;}
 function updateWalletAmountPreview(kind){const input=document.getElementById(kind+'Amount'),preview=document.getElementById(kind+'AmountPreview'),bdt=Number(input?.value||0);if(!preview)return;const label=kind==='deposit'?'Deposit amount':'Withdrawal amount';preview.textContent=Number.isFinite(bdt)&&bdt>0?label+': ৳'+bdt.toLocaleString('en-US',{maximumFractionDigits:0}):label+': ৳0';}
 async function getWalletSourceBalances(){
  const f=await getFirebase(),fs=f.firestore;
