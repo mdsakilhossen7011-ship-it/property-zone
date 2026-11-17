@@ -98,6 +98,9 @@ html.pz-lang-loading body{visibility:hidden}
 .wallet-card.withdraw .wallet-submit{background:linear-gradient(135deg,#9bcfff,#477cb4);color:#07121d}
 .wallet-status{min-height:20px;font-size:12px;line-height:1.5;margin:10px 0 0;color:var(--gold2)}
 .wallet-note{padding:13px 15px;border:1px dashed #67522d;border-radius:12px;background:#17130d;color:#c9b991;font-size:12px;line-height:1.6}
+#withdrawPaymentInfo.wallet-note{position:relative;padding:17px 18px 17px 48px;border:1px solid rgba(117,184,239,.62);border-left:4px solid #8ec7ff;border-radius:14px;background:radial-gradient(circle at 100% 0,rgba(72,132,190,.24),transparent 48%),linear-gradient(135deg,#142333,#101923);color:#e4f2ff;font-size:14px;font-weight:700;line-height:1.75;box-shadow:0 8px 22px rgba(0,0,0,.22)}
+#withdrawPaymentInfo.wallet-note:before{content:'ⓘ';position:absolute;left:15px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:23px;height:23px;border:1px solid rgba(142,199,255,.65);border-radius:50%;color:#9bcfff;font-size:15px;font-weight:800}
+@media(max-width:650px){#withdrawPaymentInfo.wallet-note{padding:15px 13px 15px 43px;font-size:13px}}
 @media(max-width:650px){.wallet-grid{grid-template-columns:1fr}.wallet-card{padding:17px}.wallet-card h3{font-size:23px}}
 
 
