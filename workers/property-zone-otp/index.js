@@ -11,7 +11,7 @@ const b64url = (value) => {
   const bytes = typeof value === "string" ? new TextEncoder().encode(value) : value;
   let binary = "";
   for (let i=0;i<bytes.length;i++) binary += String.fromCharCode(bytes[i]);
-  return btoa(binary).replace(/=/g,"").replace(/\\+/g,"-").replace(/\\//g,"_");
+  return btoa(binary).replace(/=/g,"").replace(/\+/g,"-").replace(/\//g,"_");
 };
 const normalizePhone = (value) => {
   let p=String(value||"").replace(/[^0-9]/g,"");
@@ -20,7 +20,7 @@ const normalizePhone = (value) => {
   if(p.startsWith("1") && p.length===10) p="880"+p;
   return /^8801[3-9][0-9]{8}$/.test(p) ? "+"+p : null;
 };
-const one9Phone = (phone) => phone.replace(/^\\+/,"");
+const one9Phone = (phone) => phone.replace(/^\+/,"");
 async function one9(path, params, env) {
   if(!env.ONE9_API_KEY) throw new Error("SMS gateway is not configured");
   const body=new URLSearchParams({api_key:env.ONE9_API_KEY,...params});
@@ -95,7 +95,7 @@ async function updateMemberPhone(env, uid, phone) {
 }
 export default {
  async fetch(request, env) {
-  const path=new URL(request.url).pathname.replace(/\\/+$/,"");
+  const path=new URL(request.url).pathname.replace(/\/+$/,"");
   if(request.method==="GET" && (path==="/" || path==="/health")) {
    return json({success:true,worker:"property-zone-otp",otpStorage:!!env.OTP_STORE,one9Configured:!!env.ONE9_API_KEY,firebaseConfigured:!!env.FIREBASE_SERVICE_ACCOUNT_JSON});
   }
@@ -116,7 +116,7 @@ export default {
    }
    if(path.endsWith("/otp-verify") || path.endsWith("/otp/verify")) {
     const phone=normalizePhone(body.phone||body.to), otp=String(body.otp||"").trim();
-    if(!phone || !/^\\d{6}$/.test(otp)) return json({success:false,message:"Valid phone and 6-digit OTP are required"},400);
+    if(!phone || !/^\d{6}$/.test(otp)) return json({success:false,message:"Valid phone and 6-digit OTP are required"},400);
     await one9("/otp/verify",{to:one9Phone(phone),otp},env);
     const token=crypto.randomUUID();
     await env.OTP_STORE.put("verified:"+token,phone,{expirationTtl:300});
