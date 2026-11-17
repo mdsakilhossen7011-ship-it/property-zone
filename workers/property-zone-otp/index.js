@@ -21,15 +21,19 @@ const normalizePhone = (value) => {
   return /^8801[3-9][0-9]{8}$/.test(p) ? "+"+p : null;
 };
 const one9Phone = (phone) => phone.replace(/^\+/,"");
-async function one9(path, params, env) {
+async function one9Sms(to, sms, env) {
   if(!env.ONE9_API_KEY) throw new Error("SMS gateway is not configured");
-  const body=new URLSearchParams({api_key:env.ONE9_API_KEY,...params});
-  const res=await fetch("https://sms.one9.one/sms/api"+path,{method:"POST",headers:{"Accept":"application/json","Content-Type":"application/x-www-form-urlencoded"},body});
+  const body=new URLSearchParams({api_key:env.ONE9_API_KEY,action:"send-sms",to,from:"sms",sms});
+  const res=await fetch("https://sms.one9.one/sms/api",{method:"POST",headers:{"Accept":"application/json","Content-Type":"application/x-www-form-urlencoded"},body});
   const raw=await res.text(); let data;
   try{data=JSON.parse(raw)}catch{data={message:raw}}
   const valid=data && (data.success===true || data.status==="success" || ["200","900","0"].includes(String(data.statusCode||data.code||"")));
   if(!res.ok || !valid) throw new Error(data.message||data.reason||"SMS gateway request failed");
   return data;
+}
+async function hashOtp(phone, otp) {
+  const bytes=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(phone+":"+otp));
+  return Array.from(new Uint8Array(bytes),b=>b.toString(16).padStart(2,"0")).join("");
 }
 function serviceAccount(env) {
   if(!env.FIREBASE_SERVICE_ACCOUNT_JSON) throw new Error("Firebase Admin credentials are not configured");
@@ -122,15 +126,37 @@ export default {
     if(prior && prior.count>=5 && now-prior.window<86400000) return json({success:false,message:"Daily OTP limit reached"},429);
     stage = "firebase-phone-lookup";
     if(await findPhoneUser(env,phone)) return json({success:false,message:"এই নম্বর দিয়ে আগে থেকেই অ্যাকাউন্ট আছে।"},409);
-    stage = "one9-otp-send";
-    const result=await one9("/otp/send",{to:one9Phone(phone),digits:"6",expiry:"5"},env);
+    stage = "one9-sms-send";
+    const random = new Uint32Array(1);
+    crypto.getRandomValues(random);
+    const otp = String(random[0] % 1000000).padStart(6,"0");
+    const smsText = "Your Property Zone verification code is " + otp + ". It expires in 5 minutes. Do not share this code.";
+    await one9Sms(one9Phone(phone),smsText,env);
+    const otpHash = await hashOtp(phone,otp);
+    await env.OTP_STORE.put("otp-code:"+phone,JSON.stringify({hash:otpHash,expiresAt:Date.now()+300000,attempts:0}),{expirationTtl:300});
     await env.OTP_STORE.put(key,JSON.stringify({last:now,window:prior?.window||now,count:(prior?.count||0)+1}),{expirationTtl:86400});
     return json({success:true,message:"OTP sent"});
    }
    if(path.endsWith("/otp-verify") || path.endsWith("/otp/verify")) {
     const phone=normalizePhone(body.phone||body.to), otp=String(body.otp||"").trim();
     if(!phone || !/^\d{6}$/.test(otp)) return json({success:false,message:"Valid phone and 6-digit OTP are required"},400);
-    await one9("/otp/verify",{to:one9Phone(phone),otp},env);
+    const otpKey = "otp-code:"+phone;
+    const saved = await env.OTP_STORE.get(otpKey,{type:"json"});
+    if(!saved || saved.expiresAt<Date.now()) {
+      await env.OTP_STORE.delete(otpKey);
+      return json({success:false,message:"OTP-এর মেয়াদ শেষ। নতুন OTP নিন।"},400);
+    }
+    if(saved.attempts>=5) {
+      await env.OTP_STORE.delete(otpKey);
+      return json({success:false,message:"অনেকবার ভুল কোড দেওয়া হয়েছে। নতুন OTP নিন।"},429);
+    }
+    const submittedHash = await hashOtp(phone,otp);
+    if(submittedHash!==saved.hash) {
+      saved.attempts += 1;
+      await env.OTP_STORE.put(otpKey,JSON.stringify(saved),{expirationTtl:Math.max(1,Math.ceil((saved.expiresAt-Date.now())/1000))});
+      return json({success:false,message:"OTP সঠিক নয়। আবার চেষ্টা করো।"},400);
+    }
+    await env.OTP_STORE.delete(otpKey);
     const token=crypto.randomUUID();
     await env.OTP_STORE.put("verified:"+token,phone,{expirationTtl:300});
     return json({success:true,verificationToken:token, message:"OTP verified"});
