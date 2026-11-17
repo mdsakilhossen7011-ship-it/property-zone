@@ -107,8 +107,8 @@ service cloud.firestore {
           && request.auth.uid == memberId
           && resource.data.uid == memberId
           && request.resource.data.uid == memberId
-          && resource.data.balanceBDT is number
-          && request.resource.data.balanceBDT == resource.data.balanceBDT
+          && ((resource.data.balanceBDT is number && request.resource.data.balanceBDT == resource.data.balanceBDT)
+            || (resource.data.depositBalanceBDT is number && request.resource.data.depositBalanceBDT == resource.data.depositBalanceBDT))
           && request.resource.data.pendingWithdrawalBDT is number
           && request.resource.data.pendingWithdrawalBDT > (resource.data.keys().hasAny(['pendingWithdrawalBDT']) ? resource.data.pendingWithdrawalBDT : 0)
           && request.resource.data.lastWithdrawalRequestId is string
@@ -134,7 +134,7 @@ service cloud.firestore {
           && getAfter(/databases/$(database)/documents/activePackages/$(request.resource.data.lastPackagePurchaseId)).data.status == 'active'
           && getAfter(/databases/$(database)/documents/activePackages/$(request.resource.data.lastPackagePurchaseId)).data.amountBDT is number
           && request.resource.data.balanceBDT
-            == resource.data.balanceBDT - getAfter(/databases/$(database)/documents/activePackages/$(request.resource.data.lastPackagePurchaseId)).data.amountBDT);
+            == resource.data.balanceBDT - getAfter(/databases/$(database)/documents/activePackages/$(request.resource.data.lastPackagePurchaseId)).data.amountBDT)
         || (signedIn()
           && request.auth.uid == memberId
           && resource.data.uid == memberId
