@@ -857,7 +857,7 @@ async function submitWalletRequest(event,kind){
    payload.message+=' '+sourceTag;payload.reservedFunds=true;payload.transactionId='';
    const walletRef=fs.doc(f.db,'wallets',currentUser.uid),requestQuery=fs.query(fs.collection(f.db,'propertyEnquiries'),fs.where('uid','==',currentUser.uid));
    await fs.runTransaction(f.db,async tx=>{
-    const [walletSnap,pendingSnap]=await Promise.all([tx.get(walletRef),tx.get(requestQuery)]);
+    const walletSnap=await tx.get(walletRef);const pendingSnap=await fs.getDocs(requestQuery);
     if(!walletSnap.exists())throw new Error('Your wallet has no available balance.');
     const wallet=walletSnap.data(),pendingBySource={deposit:0,package:0,profit:0},pendingPackageIds=new Set();
     pendingSnap.docs.forEach(d=>{const r=d.data();if(r.requestType!=='wallet-withdraw'||r.status!=='pending')return;const m=String(r.message||'').match(/\[PZ_SOURCE=(deposit|package|profit)(?:;PACKAGE_ID=([^\]]+))?\]/);if(!m)return;pendingBySource[m[1]]+=Number(r.amountBDT)||0;if(m[1]==='package'&&m[2])pendingPackageIds.add(m[2]);});
