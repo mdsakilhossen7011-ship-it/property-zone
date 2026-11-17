@@ -78,8 +78,8 @@ async function main() {
         if (newDays === 0 && !matured) return null;
 
         if (!p.uid) throw new Error("Package has no uid.");
-        const ledgerRef = db.collection("walletLedgers").doc(String(p.uid));
-        const ledgerSnap = await tx.get(ledgerRef);
+        const walletLedgerRef = db.collection("walletLedgers").doc(String(p.uid));
+        const ledgerSnap = await tx.get(walletLedgerRef);
         if (ledgerSnap.exists) {
           // Migrated accounts must never receive earnings or principal through the legacy combined wallet.
           // The ledger-native accrual endpoint must process these packages before they can earn again.
@@ -129,33 +129,46 @@ async function main() {
         const earnings = roundBDT(principal * dailyRate * newDays);
         const principalReturn = matured ? roundBDT(principal) : 0;
         const totalCredit = roundBDT(earnings + principalReturn);
-        const nextBalance = roundBDT(balance + totalCredit);
+        const nextBalance = roundBDT(balance + principalReturn);
+        const currentProfitBalance = walletSnap.exists
+          ? Math.max(0, Number(walletSnap.data().profitBalanceBDT || 0))
+          : 0;
+        if (!Number.isFinite(currentProfitBalance)) {
+          throw new Error("Member profit balance is invalid.");
+        }
+        const nextProfitBalance = roundBDT(currentProfitBalance + earnings);
         const nextCreditedDays = Math.max(alreadyCreditedDays, dueCreditDays);
 
+        // Keep the three wallet sources separate: returned principal goes to Deposit Balance;
+        // matured daily earnings go to Profit Balance.
         if (walletSnap.exists) {
           tx.update(walletRef, {
             balanceBDT: nextBalance,
+            profitBalanceBDT: nextProfitBalance,
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
           });
         } else {
           tx.set(walletRef, {
             uid: p.uid,
             balanceBDT: nextBalance,
+            profitBalanceBDT: nextProfitBalance,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
           });
         }
 
-        const ledgerRef = db.collection("earningLedger").doc(
+        const earningLedgerRef = db.collection("earningLedger").doc(
           packageDoc.id + "_through_day_" + nextCreditedDays
         );
-        tx.set(ledgerRef, {
+        tx.set(earningLedgerRef, {
           uid: p.uid,
           packageId: packageDoc.id,
           principalBDT: roundBDT(principal),
           daysCredited: newDays,
           earningsBDT: earnings,
           principalReturnedBDT: principalReturn,
+          depositBalanceCreditBDT: principalReturn,
+          profitBalanceCreditBDT: earnings,
           totalWalletCreditBDT: totalCredit,
           creditedThroughDay: nextCreditedDays,
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
