@@ -1,0 +1,12 @@
+name = "property-zone-wallet-ledger-staging"
+main = "src/index.js"
+compatibility_date = "2026-11-17"
+
+# IMPORTANT: Replace this with a separate, non-production Firebase project ID
+# before deploying. Never point the staging Worker at the production project.
+[vars]
+FIREBASE_PROJECT_ID = "REPLACE_WITH_STAGING_FIREBASE_PROJECT_ID"
+ALLOWED_ORIGINS = "https://mdsakilhossen7011-ship-it.github.io"
+
+# Intentionally no [triggers] section: staging must not run production-style
+# scheduled profit accrual jobs.
