@@ -145,6 +145,7 @@ async function main() {
           tx.update(walletRef, {
             balanceBDT: nextBalance,
             profitBalanceBDT: nextProfitBalance,
+            walletSegregationVersion: Number(walletSnap.data().walletSegregationVersion || 1),
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
           });
         } else {
@@ -152,6 +153,7 @@ async function main() {
             uid: p.uid,
             balanceBDT: nextBalance,
             profitBalanceBDT: nextProfitBalance,
+            walletSegregationVersion: 2,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
           });
