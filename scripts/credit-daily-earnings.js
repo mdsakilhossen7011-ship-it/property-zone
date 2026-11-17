@@ -48,22 +48,10 @@ async function main() {
         let scheduleMaxDays = p.earningScheduleMaxDays == null ? null : Number(p.earningScheduleMaxDays);
 
         if (scheduleStartMs == null) {
-          if (elapsedPackageDays >= termDays) {
-            // Preserve the existing 30-day maturity payout for packages already matured before automation was enabled.
-            scheduleStartMs = startedAtMs;
-            scheduleMaxDays = termDays;
-          } else {
-            // Start future daily credits from activation of this scheduler; do not back-credit older estimates.
-            scheduleStartMs = now;
-            scheduleMaxDays = Math.max(0, termDays - elapsedPackageDays);
-            tx.update(packageRef, {
-              earningScheduleStartedAt: admin.firestore.Timestamp.fromMillis(now),
-              earningScheduleMaxDays: scheduleMaxDays,
-              creditedDays: 0,
-              updatedAt: admin.firestore.FieldValue.serverTimestamp()
-            });
-            return null;
-          }
+          // Use the real package activation time so existing active packages receive every
+          // fully elapsed day once; previously completed packages are skipped by status above.
+          scheduleStartMs = startedAtMs;
+          scheduleMaxDays = termDays;
         }
 
         const effectiveScheduleStartMs = scheduleStartMs;
@@ -77,10 +65,17 @@ async function main() {
 
         if (newDays === 0 && !matured) return null;
 
-        const settingsRef = db.collection("siteSettings").doc("wallet");
-        const walletRef = db.collection("wallets").doc(String(p.uid || ""));
         if (!p.uid) throw new Error("Package has no uid.");
+        const walletLedgerRef = db.collection("walletLedgers").doc(String(p.uid));
+        const ledgerSnap = await tx.get(walletLedgerRef);
+        if (ledgerSnap.exists) {
+          // Migrated accounts must never receive earnings or principal through the legacy combined wallet.
+          // The ledger-native accrual endpoint must process these packages before they can earn again.
+          throw new Error("LEDGER_NATIVE_ACCRUAL_REQUIRED");
+        }
 
+        const settingsRef = db.collection("siteSettings").doc("wallet");
+        const walletRef = db.collection("wallets").doc(String(p.uid));
         const [settingsSnap, walletSnap] = await Promise.all([
           tx.get(settingsRef),
           tx.get(walletRef)
@@ -105,50 +100,58 @@ async function main() {
         let balance = 0;
         if (walletSnap.exists) {
           const wallet = walletSnap.data();
-          if (Number.isFinite(Number(wallet.balanceBDT))) {
-            balance = Number(wallet.balanceBDT);
-          } else {
-            const legacyUSD = Number(wallet.balanceUSD || 0);
-            if (!Number.isFinite(legacyUSD) || legacyUSD < 0) {
-              throw new Error("Member wallet balance is invalid.");
-            }
-            if (legacyUSD > 0 && (!Number.isFinite(exchangeRate) || exchangeRate <= 0)) {
-              throw new Error("Missing BDT exchange rate for legacy wallet.");
-            }
-            balance = roundBDT(legacyUSD * exchangeRate);
+          const depositBalance = Number(wallet.depositBalanceBDT || 0);
+          if (!Number.isFinite(depositBalance) || depositBalance < 0) {
+            throw new Error("Member Deposit Balance is invalid.");
           }
+          balance = roundBDT(depositBalance);
         }
 
         const earnings = roundBDT(principal * dailyRate * newDays);
         const principalReturn = matured ? roundBDT(principal) : 0;
         const totalCredit = roundBDT(earnings + principalReturn);
-        const nextBalance = roundBDT(balance + totalCredit);
+        const nextBalance = roundBDT(balance + principalReturn);
+        const currentProfitBalance = walletSnap.exists
+          ? Math.max(0, Number(walletSnap.data().profitBalanceBDT || 0))
+          : 0;
+        if (!Number.isFinite(currentProfitBalance)) {
+          throw new Error("Member profit balance is invalid.");
+        }
+        const nextProfitBalance = roundBDT(currentProfitBalance + earnings);
         const nextCreditedDays = Math.max(alreadyCreditedDays, dueCreditDays);
 
+        // Keep the three wallet sources separate: returned principal goes to Deposit Balance;
+        // matured daily earnings go to Profit Balance.
         if (walletSnap.exists) {
           tx.update(walletRef, {
-            balanceBDT: nextBalance,
+            depositBalanceBDT: nextBalance,
+            profitBalanceBDT: nextProfitBalance,
+            walletSegregationVersion: Number(walletSnap.data().walletSegregationVersion || 1),
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
           });
         } else {
           tx.set(walletRef, {
             uid: p.uid,
-            balanceBDT: nextBalance,
+            depositBalanceBDT: nextBalance,
+            profitBalanceBDT: nextProfitBalance,
+            walletSegregationVersion: 2,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
           });
         }
 
-        const ledgerRef = db.collection("earningLedger").doc(
+        const earningLedgerRef = db.collection("earningLedger").doc(
           packageDoc.id + "_through_day_" + nextCreditedDays
         );
-        tx.set(ledgerRef, {
+        tx.set(earningLedgerRef, {
           uid: p.uid,
           packageId: packageDoc.id,
           principalBDT: roundBDT(principal),
           daysCredited: newDays,
           earningsBDT: earnings,
           principalReturnedBDT: principalReturn,
+          depositBalanceCreditBDT: principalReturn,
+          profitBalanceCreditBDT: earnings,
           totalWalletCreditBDT: totalCredit,
           creditedThroughDay: nextCreditedDays,
           createdAt: admin.firestore.FieldValue.serverTimestamp(),

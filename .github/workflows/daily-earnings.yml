@@ -19,6 +19,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+      - name: Check earnings script syntax
+        run: node --check scripts/credit-daily-earnings.js
       - name: Install dependencies
         run: npm install --omit=dev
       - name: Credit due package earnings
