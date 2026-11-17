@@ -48,22 +48,10 @@ async function main() {
         let scheduleMaxDays = p.earningScheduleMaxDays == null ? null : Number(p.earningScheduleMaxDays);
 
         if (scheduleStartMs == null) {
-          if (elapsedPackageDays >= termDays) {
-            // Preserve the existing 30-day maturity payout for packages already matured before automation was enabled.
-            scheduleStartMs = startedAtMs;
-            scheduleMaxDays = termDays;
-          } else {
-            // Start future daily credits from activation of this scheduler; do not back-credit older estimates.
-            scheduleStartMs = now;
-            scheduleMaxDays = Math.max(0, termDays - elapsedPackageDays);
-            tx.update(packageRef, {
-              earningScheduleStartedAt: admin.firestore.Timestamp.fromMillis(now),
-              earningScheduleMaxDays: scheduleMaxDays,
-              creditedDays: 0,
-              updatedAt: admin.firestore.FieldValue.serverTimestamp()
-            });
-            return null;
-          }
+          // Use the real package activation time so existing active packages receive every
+          // fully elapsed day once; previously completed packages are skipped by status above.
+          scheduleStartMs = startedAtMs;
+          scheduleMaxDays = termDays;
         }
 
         const effectiveScheduleStartMs = scheduleStartMs;
