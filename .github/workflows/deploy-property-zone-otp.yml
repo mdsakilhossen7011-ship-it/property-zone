@@ -25,3 +25,5 @@ jobs:
         env:
           ONE9_API_KEY: ${{ secrets.ONE9_API_KEY }}
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+
+# Refresh deployment from the verified cloudflare-otp-deploy worker source.
