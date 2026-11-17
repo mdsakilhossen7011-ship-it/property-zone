@@ -279,8 +279,8 @@ html.pz-auth-pending #sideMenu{pointer-events:none!important}
 </section>
 
 <section id="details" class="view"><button class="btn" type="button" onclick="showView('properties')">← Back to properties</button><div id="detailContent"></div></section>
-<section id="login" class="view"><div class="panel form"><div class="eyebrow">Welcome back</div><h2>Member Login</h2><div id="emailLogin"><input id="loginEmail" type="email" placeholder="Email address" autocomplete="email"><input id="loginPassword" type="password" placeholder="Password" autocomplete="current-password"><button class="btn primary" id="loginButton" style="width:100%" onclick="loginEmailPassword()">Login</button><p style="text-align:right;margin:10px 0"><a href="#" onclick="resetLoginPassword();return false" style="color:var(--gold2)">Forgot password?</a></p></div><p class="notice">Sign in with your email and password.</p><p>New here? <a href="#" onclick="showView('register')" style="color:var(--gold2)">Create account</a></p></div></section>
-<section id="register" class="view"><div class="panel form"><div class="eyebrow">Become a member</div><h2>Create Account</h2><input id="regUsername" type="text" placeholder="Choose a username" autocomplete="username"><input id="regFirst" placeholder="First name" autocomplete="given-name"><input id="regLast" placeholder="Last name" autocomplete="family-name"><input id="regEmail" type="email" placeholder="Email address" autocomplete="email" required><input id="regPassword" type="password" placeholder="Create password (min. 8 characters)" autocomplete="new-password"><input id="regConfirm" type="password" placeholder="Confirm password" autocomplete="new-password"><input id="regReferral" placeholder="Referral code (optional)" autocomplete="off"><button class="btn primary" id="regCreate" style="width:100%" onclick="registerWithEmail()">Create Account</button><p class="notice">Enter your Gmail and password to create your account. No email link is required.</p></div></section>
+<section id="login" class="view"><div class="panel form"><div class="eyebrow">Welcome back</div><h2>Member Login</h2><div id="emailLogin"><input id="loginEmail" type="text" placeholder="Email address or mobile number" autocomplete="username"><input id="loginPassword" type="password" placeholder="Password" autocomplete="current-password"><button class="btn primary" id="loginButton" style="width:100%" onclick="loginEmailPassword()">Login</button><p style="text-align:right;margin:10px 0"><a href="#" onclick="resetLoginPassword();return false" style="color:var(--gold2)">Forgot password?</a></p></div><p class="notice">Sign in with your email or mobile number and password.</p><p>New here? <a href="#" onclick="showView('register')" style="color:var(--gold2)">Create account</a></p></div></section>
+<section id="register" class="view"><div class="panel form"><div class="eyebrow">Become a member</div><h2>Create Account</h2><input id="regUsername" type="text" placeholder="Choose a username" autocomplete="username"><input id="regFirst" placeholder="First name" autocomplete="given-name"><input id="regLast" placeholder="Last name" autocomplete="family-name"><input id="regEmail" type="email" placeholder="Email address" autocomplete="email" required><input id="regPhone" type="tel" placeholder="Mobile number (01XXXXXXXXX)" autocomplete="tel" required><button class="btn" type="button" id="regSendOtp" style="width:100%;margin:6px 0" onclick="sendRegistrationOtp()">Send OTP</button><input id="regOtp" type="text" inputmode="numeric" maxlength="6" placeholder="Enter 6-digit OTP" autocomplete="one-time-code"><button class="btn" type="button" id="regVerifyOtp" style="width:100%;margin:6px 0" onclick="verifyRegistrationOtp()">Verify OTP</button><input id="regPassword" type="password" placeholder="Create password (min. 8 characters)" autocomplete="new-password"><input id="regConfirm" type="password" placeholder="Confirm password" autocomplete="new-password"><input id="regReferral" placeholder="Referral code (optional)" autocomplete="off"><button class="btn primary" id="regCreate" style="width:100%" onclick="registerWithEmail()">Create Account</button><p class="notice">Verify your mobile number with OTP before creating your account.</p></div></section>
 
 <section id="dashboard" class="view">
  <div class="dash-earnings" style="grid-template-columns:repeat(2,minmax(0,1fr))">
@@ -978,7 +978,7 @@ function pzHideBootLoader(){
 async function getFirebase(){
  if(window.pzFirebase)return window.pzFirebase;
  if(window.pzFirebasePromise)return window.pzFirebasePromise;
- window.pzFirebasePromise=(async()=>{if(window.pzFirebase)return window.pzFirebase;const [appMod,authMod,firestoreMod,storageMod]=await Promise.all([import('https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js'),import('https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js'),import('https://www.gstatic.com/firebasejs/12.5.0/firebase-storage.js')]);const config={apiKey:"AIzaSyDRLWFf4ISfQdoZp7JaQAWwwKCoL_aV6No",authDomain:"property-zone-17121.firebaseapp.com",projectId:"property-zone-17121",storageBucket:"property-zone-17121.firebasestorage.app",messagingSenderId:"631227640032",appId:"1:631227640032:web:855536883072ccfe3b8885"};const app=appMod.initializeApp(config);const auth=authMod.getAuth(app);/* Use Firebase's built-in browser persistence; do not block startup on a redundant persistence switch. */const db=firestoreMod.getFirestore(app),storage=storageMod.getStorage(app);window.pzFirebase={auth,db,storage,storageApi:storageMod,firestore:firestoreMod,createUserWithEmailAndPassword:authMod.createUserWithEmailAndPassword,signInWithEmailAndPassword:authMod.signInWithEmailAndPassword,updateProfile:authMod.updateProfile,sendEmailVerification:authMod.sendEmailVerification,sendPasswordResetEmail:authMod.sendPasswordResetEmail,onAuthStateChanged:authMod.onAuthStateChanged,signOut:authMod.signOut,setPersistence:authMod.setPersistence,browserLocalPersistence:authMod.browserLocalPersistence};try{const maintenanceSnap=await firestoreMod.getDoc(firestoreMod.doc(db,'siteSettings','maintenance'));if(maintenanceSnap.exists()&&maintenanceSnap.data().enabled===true){const screen=document.getElementById('pzMaintenanceScreen'),message=document.getElementById('pzMaintenanceMessage');if(message)message.textContent=maintenanceSnap.data().message||'We are improving the website. Please check back soon.';if(screen)screen.style.display='flex';document.documentElement.classList.remove('pz-auth-pending');pzHideBootLoader();return window.pzFirebase;}}catch(maintenanceReadError){console.warn('Maintenance status could not be checked:',maintenanceReadError);}
+ window.pzFirebasePromise=(async()=>{if(window.pzFirebase)return window.pzFirebase;const [appMod,authMod,firestoreMod,storageMod]=await Promise.all([import('https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js'),import('https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js'),import('https://www.gstatic.com/firebasejs/12.5.0/firebase-storage.js')]);const config={apiKey:"AIzaSyDRLWFf4ISfQdoZp7JaQAWwwKCoL_aV6No",authDomain:"property-zone-17121.firebaseapp.com",projectId:"property-zone-17121",storageBucket:"property-zone-17121.firebasestorage.app",messagingSenderId:"631227640032",appId:"1:631227640032:web:855536883072ccfe3b8885"};const app=appMod.initializeApp(config);const auth=authMod.getAuth(app);/* Use Firebase's built-in browser persistence; do not block startup on a redundant persistence switch. */const db=firestoreMod.getFirestore(app),storage=storageMod.getStorage(app);window.pzFirebase={auth,db,storage,storageApi:storageMod,firestore:firestoreMod,createUserWithEmailAndPassword:authMod.createUserWithEmailAndPassword,signInWithEmailAndPassword:authMod.signInWithEmailAndPassword,signInWithCustomToken:authMod.signInWithCustomToken,deleteUser:authMod.deleteUser,updateProfile:authMod.updateProfile,sendEmailVerification:authMod.sendEmailVerification,sendPasswordResetEmail:authMod.sendPasswordResetEmail,onAuthStateChanged:authMod.onAuthStateChanged,signOut:authMod.signOut,setPersistence:authMod.setPersistence,browserLocalPersistence:authMod.browserLocalPersistence};try{const maintenanceSnap=await firestoreMod.getDoc(firestoreMod.doc(db,'siteSettings','maintenance'));if(maintenanceSnap.exists()&&maintenanceSnap.data().enabled===true){const screen=document.getElementById('pzMaintenanceScreen'),message=document.getElementById('pzMaintenanceMessage');if(message)message.textContent=maintenanceSnap.data().message||'We are improving the website. Please check back soon.';if(screen)screen.style.display='flex';document.documentElement.classList.remove('pz-auth-pending');pzHideBootLoader();return window.pzFirebase;}}catch(maintenanceReadError){console.warn('Maintenance status could not be checked:',maintenanceReadError);}
 window.pzFirebase.onAuthStateChanged(auth,async u=>{currentUser=null;currentMemberStatus=null;if(u){currentUser=u;currentMemberStatus='active';}syncNavigation();authReady=true;document.documentElement.classList.remove('pz-auth-pending');const appMain=document.getElementById('appMain');if(appMain)appMain.style.visibility='visible';pzHideBootLoader();let requestedView=decodeURIComponent(location.hash.slice(1));if(!requestedView){try{requestedView=sessionStorage.getItem('pz_current_view')||''}catch(e){}}const requestedElement=document.getElementById(requestedView);const incomingReferralCode=(new URLSearchParams(location.search).get('ref')||'').trim().toUpperCase();if(u&&(requestedView==='login'||requestedView==='register')){showView('home',false,true);}else if(requestedElement&&requestedElement.classList.contains('view')){showView(requestedView,false,true);}else if(incomingReferralCode&&!u){const referralInput=document.getElementById('regReferral');if(referralInput)referralInput.value=incomingReferralCode;showView('register',false,true);}else{showView('home',false,true);}/* Keep the opening loader visible for the full 3-second intro. */});loadPublicWebsiteSettings(db,firestoreMod);loadPublicMysteryBox(db,firestoreMod);loadPublicOffers(db,firestoreMod);loadPublicProperties(db,firestoreMod);return window.pzFirebase})();
  try{return await window.pzFirebasePromise;}
  catch(error){window.pzFirebasePromise=null;throw error;}
@@ -1061,14 +1061,62 @@ async function ensureMemberProfile(f,user,referralCode='',phoneNumber=''){
   if(!referralSnap.exists()||referralSnap.data().active!==true)throw new Error('Referral code is invalid or inactive. Check the code and try again.');
  }
  const name=(user.displayName||user.email.split('@')[0]||'Member').trim(),ownCode=('PZ'+user.uid.replace(/[^a-z0-9]/gi,'').slice(0,8)).toUpperCase();
- const memberData={uid:user.uid,name,email:user.email,status:'active',accountVerified:true,referralCode:ownCode,referredByCode:usedCode,createdAt:fs.serverTimestamp(),updatedAt:fs.serverTimestamp()};
+ const memberData={uid:user.uid,name,email:user.email,phoneNumber:phoneNumber||'',phoneVerified:!!phoneNumber,status:'active',accountVerified:true,referralCode:ownCode,referredByCode:usedCode,createdAt:fs.serverTimestamp(),updatedAt:fs.serverTimestamp()};
  await fs.setDoc(memberRef,memberData);
  const ownCodeRef=fs.doc(f.db,'referralCodes',ownCode),ownCodeSnap=await fs.getDoc(ownCodeRef);
  if(!ownCodeSnap.exists())await fs.setDoc(ownCodeRef,{code:ownCode,active:true,createdAt:fs.serverTimestamp()});
  if(usedCode)await fs.setDoc(fs.doc(f.db,'referralRegistrations',usedCode,'members',user.uid),{createdAt:fs.serverTimestamp(),uid:user.uid,publicId,name});
  return memberData;
 }
-async function registerWithEmail(){clearStatus();let f=null;try{const first=document.getElementById('regFirst').value.trim(),last=document.getElementById('regLast').value.trim(),email=document.getElementById('regEmail').value.trim(),pw=document.getElementById('regPassword').value,confirm=document.getElementById('regConfirm').value,ref=(document.getElementById('regReferral').value.trim()||new URLSearchParams(location.search).get('ref')||'').trim();if(!first||!last)throw new Error('Enter first and last name.');if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Enter a valid email address.');if(pw.length<8)throw new Error('Password must be at least 8 characters.');if(pw!==confirm)throw new Error('Passwords do not match.');f=await getFirebase();if(ref&&ref.toUpperCase()!=='PZWYYMWLBZ'){const referral=await f.firestore.getDoc(f.firestore.doc(f.db,'referralCodes',ref.toUpperCase()));if(!referral.exists()||referral.data().active!==true)throw new Error('Referral code is invalid or inactive. Check the code and try again.');}const result=await f.createUserWithEmailAndPassword(f.auth,email,pw);await f.updateProfile(result.user,{displayName:first+' '+last});await ensureMemberProfile(f,result.user,ref);await ensurePublicUserId(f,result.user);currentUser=result.user;currentMemberStatus='active';authReady=true;syncNavigation();updateDashboard();showView('home');setStatus('Account created successfully. You can now use your account.');}catch(e){if(f?.auth?.currentUser&&!f.auth.currentUser.emailVerified){try{await f.signOut(f.auth)}catch(signOutError){console.warn('Could not clear unverified session:',signOutError)}}const msg=e.code==='auth/email-already-in-use'?'This email already has an account. Please log in, or use Forgot password to reset its password.':(e.message||'Could not create account. Please try again.');setStatus(msg,true)}}
+window.pzOtpVerifiedPhone='';
+window.pzOtpVerificationToken='';
+async function pzOtpRequest(name,payload){
+ const response=await fetch('/.netlify/functions/'+name,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+ let data={};try{data=await response.json()}catch{}
+ if(!response.ok||!data.success)throw new Error(data.message||'Request failed. Please try again.');
+ return data;
+}
+async function sendRegistrationOtp(){
+ clearStatus();const phone=document.getElementById('regPhone').value.trim(),button=document.getElementById('regSendOtp');
+ if(button)button.disabled=true;
+ try{await pzOtpRequest('otp-send',{phone});window.pzOtpVerifiedPhone='';window.pzOtpVerificationToken='';setStatus('OTP sent. Please check your mobile phone.');}
+ catch(e){setStatus(e.message||'Could not send OTP.',true);}
+ finally{if(button)button.disabled=false;}
+}
+async function verifyRegistrationOtp(){
+ clearStatus();const phone=document.getElementById('regPhone').value.trim(),otp=document.getElementById('regOtp').value.trim(),button=document.getElementById('regVerifyOtp');
+ if(button)button.disabled=true;
+ try{const data=await pzOtpRequest('otp-verify',{phone,otp});window.pzOtpVerifiedPhone=phone;window.pzOtpVerificationToken=data.verificationToken;setStatus('Phone number verified successfully.');}
+ catch(e){window.pzOtpVerifiedPhone='';window.pzOtpVerificationToken='';setStatus(e.message||'OTP verification failed.',true);}
+ finally{if(button)button.disabled=false;}
+}
+async function registerWithEmail(){
+ clearStatus();let f=null,result=null;
+ try{
+  const first=document.getElementById('regFirst').value.trim(),last=document.getElementById('regLast').value.trim(),email=document.getElementById('regEmail').value.trim(),phone=document.getElementById('regPhone').value.trim(),pw=document.getElementById('regPassword').value,confirm=document.getElementById('regConfirm').value,ref=(document.getElementById('regReferral').value.trim()||new URLSearchParams(location.search).get('ref')||'').trim();
+  if(!first||!last)throw new Error('Enter first and last name.');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Enter a valid email address.');
+  if(!phone)throw new Error('Enter your mobile number.');
+  if(window.pzOtpVerifiedPhone!==phone||!window.pzOtpVerificationToken)throw new Error('Please verify your mobile number with OTP first.');
+  if(pw.length<8)throw new Error('Password must be at least 8 characters.');
+  if(pw!==confirm)throw new Error('Passwords do not match.');
+  f=await getFirebase();
+  if(ref&&ref.toUpperCase()!=='PZWYYMWLBZ'){const referral=await f.firestore.getDoc(f.firestore.doc(f.db,'referralCodes',ref.toUpperCase()));if(!referral.exists()||referral.data().active!==true)throw new Error('Referral code is invalid or inactive. Check the code and try again.');}
+  result=await f.createUserWithEmailAndPassword(f.auth,email,pw);
+  await f.updateProfile(result.user,{displayName:first+' '+last});
+  const idToken=await result.user.getIdToken();
+  try{await pzOtpRequest('complete-registration',{phone,verificationToken:window.pzOtpVerificationToken,idToken});}
+  catch(attachError){try{await f.deleteUser(result.user)}catch(deleteError){console.error('Could not roll back incomplete registration:',deleteError)}throw attachError;}
+  await ensureMemberProfile(f,result.user,ref,phone);
+  await ensurePublicUserId(f,result.user);
+  window.pzOtpVerifiedPhone='';window.pzOtpVerificationToken='';
+  currentUser=result.user;currentMemberStatus='active';authReady=true;syncNavigation();updateDashboard();showView('home');setStatus('Account created successfully. You can now use your account.');
+ }catch(e){
+  if(f?.auth?.currentUser&&result&&f.auth.currentUser.uid===result.user.uid){try{await f.signOut(f.auth)}catch(signOutError){console.warn('Could not clear incomplete registration session:',signOutError)}}
+  const msg=e.code==='auth/email-already-in-use'?'This email already has an account. Please log in, or use Forgot password to reset its password.':(e.message||'Could not create account. Please try again.');
+  setStatus(msg,true);
+ }
+}
 
 /* Website language switcher - robust text and dynamic content translation */
 const PZ_EN_TO_BN={
@@ -2848,37 +2896,23 @@ async function loginEmailPassword(){
  clearStatus();
  try{
   const f=await getFirebase();
-  // Firebase's default browser persistence is already active.
-  const email=document.getElementById('loginEmail').value.trim(),pw=document.getElementById('loginPassword').value;
-  if(!email||!pw)throw new Error('Enter email and password.');
-  const result=await f.signInWithEmailAndPassword(f.auth,email,pw);
-  currentUser=result.user;
-  currentMemberStatus='active';
-  authReady=true;
-  syncNavigation();
-  updateDashboard();
-  setStatus('Logged in successfully.');
-  showView('home');
-  Promise.resolve().then(async()=>{
-   try{
-    const adminSnap=await f.firestore.getDoc(f.firestore.doc(f.db,'admins',result.user.uid));
-    const adminData=adminSnap.exists()?adminSnap.data():null;
-    if(adminData?.role==='admin'&&adminData?.active===true){currentMemberStatus='active';}
-    else{
-     const member=await ensureMemberProfile(f,result.user,'');
-     await ensurePublicUserId(f,result.user);
-     currentMemberStatus=member?.status||'active';
-    }
-    if(currentUser?.uid===result.user.uid)updateDashboard();
-   }catch(profileError){console.warn('Member/referral background sync did not finish; signed-in session is kept:',profileError);}
-  });
+  const identifier=document.getElementById('loginEmail').value.trim(),pw=document.getElementById('loginPassword').value;
+  if(!identifier||!pw)throw new Error('Enter your email or mobile number and password.');
+  let result;
+  if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier))result=await f.signInWithEmailAndPassword(f.auth,identifier,pw);
+  else{const data=await pzOtpRequest('phone-login',{phone:identifier,password:pw});result=await f.signInWithCustomToken(f.auth,data.customToken);}
+  currentUser=result.user;currentMemberStatus='active';authReady=true;syncNavigation();updateDashboard();setStatus('Logged in successfully.');showView('home');
+  Promise.resolve().then(async()=>{try{
+   const adminSnap=await f.firestore.getDoc(f.firestore.doc(f.db,'admins',result.user.uid)),adminData=adminSnap.exists()?adminSnap.data():null;
+   if(adminData?.role==='admin'&&adminData?.active===true)currentMemberStatus='active';
+   else{const member=await ensureMemberProfile(f,result.user,'');await ensurePublicUserId(f,result.user);currentMemberStatus=member?.status||'active';}
+   if(currentUser?.uid===result.user.uid)updateDashboard();
+  }catch(profileError){console.warn('Member/referral background sync did not finish; signed-in session is kept:',profileError);}});
  }catch(e){
-  const code=e?.code||'';
-  const message=(code==='auth/invalid-credential'||code==='auth/wrong-password'||code==='auth/user-not-found')?'Incorrect email or password. Please try again.':(e.message||'Login failed.');
+  const code=e?.code||'',message=(code==='auth/invalid-credential'||code==='auth/wrong-password'||code==='auth/user-not-found')?'Incorrect email/mobile number or password. Please try again.':(e.message||'Login failed.');
   setStatus(message,true);
  }finally{
-  const remaining=Math.max(0,3000-(Date.now()-started));
-  await new Promise(resolve=>setTimeout(resolve,remaining));
+  const remaining=Math.max(0,3000-(Date.now()-started));await new Promise(resolve=>setTimeout(resolve,remaining));
   if(button){button.disabled=false;button.innerHTML=original;}
  }
 }
