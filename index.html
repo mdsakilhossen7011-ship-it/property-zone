@@ -766,27 +766,22 @@ async function refreshWithdrawAvailableBalance(){
 async function loadWithdrawPackageOptions(){
  const picker=document.getElementById('withdrawPackagePicker'),select=document.getElementById('withdrawPackageId');
  if(!picker||!select)return;
- const isPackage=(document.getElementById('withdrawBalanceType')?.value||'available')==='package';
+ const isPackage=(document.getElementById('withdrawBalanceType')?.value||'deposit')==='package';
  picker.style.display=isPackage?'block':'none';
  if(!isPackage||!currentUser)return;
  select.innerHTML='<option value="">Loading active packages…</option>';
  try{
-  const f=await getFirebase(),fs=f.firestore;
-  const [snap,settingsSnap]=await Promise.all([
-   fs.getDocs(fs.query(fs.collection(f.db,'activePackages'),fs.where('uid','==',currentUser.uid),fs.where('status','==','active'))),
-   fs.getDoc(fs.doc(f.db,'siteSettings','wallet'))
-  ]);
-  const fallbackRate=Number(settingsSnap.exists()?settingsSnap.data().exchangeRateBDT||0:0);
-  const packages=snap.docs.map(d=>{
-   const p=d.data(),amount=Number(p.amountBDT!=null?p.amountBDT:Number(p.amountUSD||0)*Number(p.exchangeRateBDT||fallbackRate));
-   return {id:d.id,...p,withdrawAmountBDT:amount};
-  }).filter(p=>Number.isFinite(p.withdrawAmountBDT)&&p.withdrawAmountBDT>0);
+  const balances=await getWalletSourceBalances(),packages=balances.activePackages.filter(p=>!balances.pendingPackageIds.has(p.id));
   select.replaceChildren();
-  if(!packages.length){select.innerHTML='<option value="">No active package available</option>';return;}
+  if(!packages.length){select.innerHTML='<option value="">No available active package</option>';return;}
   select.add(new Option('Choose an active package',''));
-  packages.forEach(p=>select.add(new Option((p.propertyTitle||p.propertyName||'Property Package')+' · ৳'+p.withdrawAmountBDT.toLocaleString('en-US',{maximumFractionDigits:2}),p.id)));
+  packages.forEach(p=>{
+   const amount=Number(p.amountBDT!=null?p.amountBDT:Number(p.amountUSD||0)*Number(p.exchangeRateBDT||walletSettingsCache.exchangeRateBDT||0));
+   if(Number.isFinite(amount)&&amount>0)select.add(new Option((p.propertyTitle||p.propertyName||'Property Package')+' · ৳'+amount.toLocaleString('en-US',{maximumFractionDigits:2}),p.id));
+  });
  }catch(error){select.innerHTML='<option value="">Could not load packages</option>';console.warn('Active packages could not load:',error);}
 }
+
 function changeWithdrawBalanceType(){
  const type=document.getElementById('withdrawBalanceType')?.value||'available',status=document.getElementById('withdrawStatus'),amount=document.getElementById('withdrawAmount');
  if(amount)amount.value='';
