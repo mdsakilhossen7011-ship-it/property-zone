@@ -16,7 +16,12 @@ export default async (req) => {
    if(count>=5){const e=new Error("আজ এই নম্বরে OTP পাঠানোর সীমা শেষ।");e.status=429;throw e;}
    tx.set(ref,{day,count:count+1,cooldownUntil:Timestamp.fromMillis(now+60000),updatedAt:Timestamp.now()},{merge:true});
   });
-  await one9("/otp/send",{to:phone,digits:"6",expiry:"5"});
+  try {
+   await one9("/otp/send",{to:phone,digits:"6",expiry:"5"});
+  } catch(gatewayError) {
+   console.error("OTP gateway send failed:",gatewayError?.message||gatewayError);
+   return json({success:false,message:"এই মুহূর্তে OTP সার্ভিস সাময়িকভাবে অনুপলব্ধ। অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন"},502,origin);
+  }
   return json({success:true,message:"OTP পাঠানো হয়েছে।"},200,origin);
  } catch(e){ return json({success:false,message:e.message||"OTP পাঠানো যায়নি।"},e.status||502,origin); }
 };
