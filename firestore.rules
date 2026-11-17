@@ -100,7 +100,8 @@ service cloud.firestore {
       allow create: if isAdmin()
         && request.resource.data.uid == memberId
         && ((request.resource.data.balanceBDT is number && request.resource.data.balanceBDT >= 0)
-          || (request.resource.data.balanceUSD is number && request.resource.data.balanceUSD >= 0));
+          || (request.resource.data.balanceUSD is number && request.resource.data.balanceUSD >= 0)
+          || (request.resource.data.depositBalanceBDT is number && request.resource.data.depositBalanceBDT >= 0));
       allow update: if isAdmin()
         || (signedIn()
           && request.auth.uid == memberId
@@ -134,6 +135,21 @@ service cloud.firestore {
           && getAfter(/databases/$(database)/documents/activePackages/$(request.resource.data.lastPackagePurchaseId)).data.amountBDT is number
           && request.resource.data.balanceBDT
             == resource.data.balanceBDT - getAfter(/databases/$(database)/documents/activePackages/$(request.resource.data.lastPackagePurchaseId)).data.amountBDT);
+        || (signedIn()
+          && request.auth.uid == memberId
+          && resource.data.uid == memberId
+          && request.resource.data.uid == memberId
+          && resource.data.depositBalanceBDT is number
+          && request.resource.data.depositBalanceBDT is number
+          && request.resource.data.depositBalanceBDT < resource.data.depositBalanceBDT
+          && request.resource.data.lastPackagePurchaseId is string
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['depositBalanceBDT','lastPackagePurchaseId','updatedAt'])
+          && existsAfter(/databases/$(database)/documents/activePackages/$(request.resource.data.lastPackagePurchaseId))
+          && getAfter(/databases/$(database)/documents/activePackages/$(request.resource.data.lastPackagePurchaseId)).data.uid == memberId
+          && getAfter(/databases/$(database)/documents/activePackages/$(request.resource.data.lastPackagePurchaseId)).data.status == 'active'
+          && getAfter(/databases/$(database)/documents/activePackages/$(request.resource.data.lastPackagePurchaseId)).data.amountBDT is number
+          && request.resource.data.depositBalanceBDT
+            == resource.data.depositBalanceBDT - getAfter(/databases/$(database)/documents/activePackages/$(request.resource.data.lastPackagePurchaseId)).data.amountBDT);
       allow delete: if isAdmin();
     }
 
@@ -156,9 +172,9 @@ service cloud.firestore {
         && request.resource.data.startedAt is timestamp
         && request.resource.data.createdAt is timestamp
         && exists(/databases/$(database)/documents/wallets/$(request.auth.uid))
-        && get(/databases/$(database)/documents/wallets/$(request.auth.uid)).data.balanceBDT is number
-        && getAfter(/databases/$(database)/documents/wallets/$(request.auth.uid)).data.balanceBDT
-          == get(/databases/$(database)/documents/wallets/$(request.auth.uid)).data.balanceBDT - request.resource.data.amountBDT
+        && get(/databases/$(database)/documents/wallets/$(request.auth.uid)).data.depositBalanceBDT is number
+        && getAfter(/databases/$(database)/documents/wallets/$(request.auth.uid)).data.depositBalanceBDT
+          == get(/databases/$(database)/documents/wallets/$(request.auth.uid)).data.depositBalanceBDT - request.resource.data.amountBDT
         && getAfter(/databases/$(database)/documents/wallets/$(request.auth.uid)).data.lastPackagePurchaseId == packageId;
       allow update, delete: if isAdmin();
     }
