@@ -309,14 +309,25 @@ html.pz-auth-pending #sideMenu{pointer-events:none!important}
    <label class="pz-field pz-field-wide"><span>Referral code <em>(optional)</em></span><input id="regReferral" type="text" placeholder="Enter referral code if you have one" autocomplete="off" maxlength="40"></label>
   </div>
   <button class="btn primary pz-create-account" id="regCreate" type="button" onclick="startRegistrationOtp()">Create Account</button>
+  <p class="notice pz-register-foot">Your account will be created after successful phone verification.</p>
+  <p class="pz-register-login">Already have an account? <a href="#" onclick="showView('login');return false">Sign in</a></p>
+ </div>
+</section>
+
+
+<section id="registerOtp" class="view">
+ <div class="panel form pz-register-card">
+  <div class="pz-register-head"><div class="eyebrow">PROPERTY ZONE · PHONE VERIFICATION</div><h2>Verify your phone number</h2><p class="muted">Enter the 6-digit code sent to your mobile number to finish creating your account.</p></div>
   <div id="regOtpPanel" class="pz-field pz-field-wide pz-otp-panel" hidden>
-   <div class="pz-otp-title"><span>Verify your phone number</span><span class="pz-secure-tag">6-DIGIT OTP</span></div>
+   <div class="pz-otp-title"><span>Phone verification</span><span class="pz-secure-tag">6-DIGIT OTP</span></div>
    <p class="notice" style="margin:0">We sent a verification code to your phone. Enter it below to finish creating your account.</p>
    <button class="btn pz-send-otp" type="button" id="regSendOtp" onclick="sendRegistrationOtp()">Resend code</button>
    <div class="pz-otp-row"><input id="regOtp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Enter 6-digit code" autocomplete="one-time-code" oninput="this.value=this.value.replace(/\D/g,'').slice(0,6)"><button class="btn primary" type="button" id="regVerifyOtp" onclick="verifyRegistrationOtp()" disabled>Submit</button></div>
    <small id="regOtpHint">The code expires in 5 minutes.</small><div id="regOtpVerified" class="pz-verified-note" hidden>✓ Phone number verified</div>
   </div>
+
   <p class="notice pz-register-foot">Your account will be created after successful phone verification.</p>
+  <button class="btn" type="button" style="width:100%;margin-top:12px" onclick="showView('register')">← Back to account details</button>
   <p class="pz-register-login">Already have an account? <a href="#" onclick="showView('login');return false">Sign in</a></p>
  </div>
 </section>
@@ -1171,11 +1182,11 @@ async function sendRegistrationOtp(){
   window.pzOtpVerifiedPhone='';window.pzOtpVerificationToken='';
   document.getElementById('regOtp').value='';
   document.getElementById('regOtpPanel').hidden=false;
-  document.getElementById('regCreate').hidden=true;
   document.getElementById('regVerifyOtp').disabled=false;
   document.getElementById('regOtpVerified').hidden=true;
   if(hint)hint.textContent='Code sent. It expires in 5 minutes.';
   startPzOtpCooldown(60);
+  showView('registerOtp');
   setStatus('Verification code sent. Please check your mobile phone.');
  }catch(e){if(button)button.disabled=false;if(hint)hint.textContent=e.message||'Could not send verification code.';setStatus(e.message||'Could not send OTP.',true);}
 }
