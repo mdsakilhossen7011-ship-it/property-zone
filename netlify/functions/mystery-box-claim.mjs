@@ -1,5 +1,5 @@
 import { corsOrigin, preflight, json, readBody, firebase } from "./_shared.mjs";
-import { randomInt } from "node:crypto";
+import { randomInt, randomUUID } from "node:crypto";
 
 const ADMIN_ACCOUNTS = new Map([
   ["Ry06huUzzmeqryzna9lPzpNw4Rr1", "ridoyhasank5434@gmail.com"],
@@ -29,6 +29,30 @@ export default async (req) => {
     if (!body || typeof body.action !== "string") return json({success:false,message:"Invalid request."},400,origin);
     const {auth,db} = firebase();
     const user = await requireUser(req,auth);
+
+    if (body.action === "admin-reset-round") {
+      await requireAdmin(user,db);
+      const settingsRef = db.doc("siteSettings/mysteryBox");
+      const result = await db.runTransaction(async tx => {
+        const snap = await tx.get(settingsRef);
+        if (!snap.exists) throw Object.assign(new Error("Mystery Box settings are missing."),{status:404});
+        const settings = snap.data();
+        const currentRemaining = Array.isArray(settings.prizePoolRemaining) ? settings.prizePoolRemaining : [];
+        if (String(settings.roundId || "") && currentRemaining.length > 0)
+          throw Object.assign(new Error("The current round still has prizes. Finish it before starting a new round."),{status:409});
+        const pool = Array.isArray(settings.prizePool) ? settings.prizePool.map(Number) : [];
+        if (!pool.length || pool.length > 100 || pool.some(n => !Number.isSafeInteger(n) || n < 1 || n > 1000000))
+          throw Object.assign(new Error("Save a valid prize pool before starting a round."),{status:400});
+        const roundId = randomUUID();
+        tx.set(settingsRef,{
+          roundId, prizePoolRemaining:pool, claimedCount:0,
+          roundStartedAt:new Date(), roundStartedBy:user.uid,
+          roundStatus:"active"
+        },{merge:true});
+        return {roundId,total:pool.length,remaining:pool.length,totalBudget:pool.reduce((a,b)=>a+b,0)};
+      });
+      return json({success:true,...result},200,origin);
+    }
 
     if (body.action === "admin-claims") {
       await requireAdmin(user,db);
