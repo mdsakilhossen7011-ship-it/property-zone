@@ -1071,7 +1071,7 @@ async function ensureMemberProfile(f,user,referralCode='',phoneNumber=''){
 window.pzOtpVerifiedPhone='';
 window.pzOtpVerificationToken='';
 async function pzOtpRequest(name,payload){
- const response=await fetch('/.netlify/functions/'+name,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+ const response=await fetch('https://property-zone-otp.mdsakilhossen409.workers.dev/'+name,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
  let data={};try{data=await response.json()}catch{}
  if(!response.ok||!data.success)throw new Error(data.message||'Request failed. Please try again.');
  return data;
