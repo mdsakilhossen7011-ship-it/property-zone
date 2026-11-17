@@ -100,18 +100,11 @@ async function main() {
         let balance = 0;
         if (walletSnap.exists) {
           const wallet = walletSnap.data();
-          if (Number.isFinite(Number(wallet.balanceBDT))) {
-            balance = Number(wallet.balanceBDT);
-          } else {
-            const legacyUSD = Number(wallet.balanceUSD || 0);
-            if (!Number.isFinite(legacyUSD) || legacyUSD < 0) {
-              throw new Error("Member wallet balance is invalid.");
-            }
-            if (legacyUSD > 0 && (!Number.isFinite(exchangeRate) || exchangeRate <= 0)) {
-              throw new Error("Missing BDT exchange rate for legacy wallet.");
-            }
-            balance = roundBDT(legacyUSD * exchangeRate);
+          const depositBalance = Number(wallet.depositBalanceBDT || 0);
+          if (!Number.isFinite(depositBalance) || depositBalance < 0) {
+            throw new Error("Member Deposit Balance is invalid.");
           }
+          balance = roundBDT(depositBalance);
         }
 
         const earnings = roundBDT(principal * dailyRate * newDays);
@@ -131,7 +124,7 @@ async function main() {
         // matured daily earnings go to Profit Balance.
         if (walletSnap.exists) {
           tx.update(walletRef, {
-            balanceBDT: nextBalance,
+            depositBalanceBDT: nextBalance,
             profitBalanceBDT: nextProfitBalance,
             walletSegregationVersion: Number(walletSnap.data().walletSegregationVersion || 1),
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -139,7 +132,7 @@ async function main() {
         } else {
           tx.set(walletRef, {
             uid: p.uid,
-            balanceBDT: nextBalance,
+            depositBalanceBDT: nextBalance,
             profitBalanceBDT: nextProfitBalance,
             walletSegregationVersion: 2,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
