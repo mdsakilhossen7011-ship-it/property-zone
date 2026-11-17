@@ -220,6 +220,8 @@ html.pz-auth-pending #sideMenu{pointer-events:none!important}
 #register .pz-country-code{height:49px;padding:0 13px;border-radius:11px;font-weight:750}
 #register .pz-field small{font-size:11px;line-height:1.45}
 #register .pz-otp-panel{padding:16px;border-radius:14px;background:linear-gradient(145deg,#211a10,#14120e);border-color:#66502a;gap:10px}
+/* Keep the OTP step completely hidden until Create Account successfully sends a code. */
+#register #regOtpPanel[hidden]{display:none!important}
 #register .pz-otp-title{margin:0 0 3px;font-size:13px;font-weight:750;color:#f4e4bf}
 #register .pz-secure-tag{font-size:9px;white-space:nowrap}
 #register .pz-send-otp{min-height:45px;margin:0;border-radius:10px}
