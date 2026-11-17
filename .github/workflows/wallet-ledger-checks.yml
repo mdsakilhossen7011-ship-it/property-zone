@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "scripts/audit-wallet-ledger-migration.js"
+      - "scripts/credit-daily-earnings.js"
       - "package.json"
       - "backend/**"
       - "wallet-ledger-worker/**"
@@ -35,6 +36,8 @@ jobs:
           node-version: "20"
       - name: Check audit script syntax
         run: node --check scripts/audit-wallet-ledger-migration.js
+      - name: Check daily earnings script syntax
+        run: node --check scripts/credit-daily-earnings.js
       - name: Check customer site inline JavaScript syntax
         run: node scripts/check-inline-scripts.js index.html
       - name: Check Worker module syntax
