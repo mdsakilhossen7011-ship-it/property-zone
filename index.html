@@ -2993,3 +2993,5 @@ renderProperties();
 syncNavigation();getFirebase().catch(e=>{const main=document.getElementById('appMain');document.documentElement.classList.remove('pz-auth-pending');if(main)main.style.visibility='visible';pzHideBootLoader();authReady=true;syncNavigation();setStatus('Could not connect to account service: '+(e&&e.message?e.message:'Please check your internet connection.'),true)});
 </script>
 </body></html>
+
+<!-- Trigger production Netlify deployment for the updated registration form. -->
