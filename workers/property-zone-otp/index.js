@@ -112,6 +112,7 @@ export default {
   if(request.method!=="POST") return json({success:false,message:"Method not allowed"},405);
   if(!env.OTP_STORE) return json({success:false,message:"OTP storage is not configured"},500);
   let body; try{body=await request.json()}catch{return json({success:false,message:"Invalid JSON"},400)}
+  let stage = "request";
   try {
    if(path.endsWith("/otp-send") || path.endsWith("/otp/send")) {
     const phone=normalizePhone(body.phone||body.to);
@@ -119,7 +120,9 @@ export default {
     const key="otp-rate:"+phone, now=Date.now(), prior=await env.OTP_STORE.get(key,{type:"json"});
     if(prior && now-prior.last<60000) return json({success:false,message:"Please wait before requesting another OTP"},429);
     if(prior && prior.count>=5 && now-prior.window<86400000) return json({success:false,message:"Daily OTP limit reached"},429);
+    stage = "firebase-phone-lookup";
     if(await findPhoneUser(env,phone)) return json({success:false,message:"এই নম্বর দিয়ে আগে থেকেই অ্যাকাউন্ট আছে।"},409);
+    stage = "one9-otp-send";
     const result=await one9("/otp/send",{to:one9Phone(phone),digits:"6",expiry:"5"},env);
     await env.OTP_STORE.put(key,JSON.stringify({last:now,window:prior?.window||now,count:(prior?.count||0)+1}),{expirationTtl:86400});
     return json({success:true,message:"OTP sent"});
@@ -160,6 +163,7 @@ export default {
    return json({success:false,message:"Unknown endpoint"},404);
   } catch(e) {
    const message=String(e.message||"Request failed");
+   console.error("Property Zone OTP request failed", {stage, path, message});
    const status=/INVALID|NOT_FOUND|EMAIL_EXISTS|PHONE_NUMBER_EXISTS/.test(message)?400:502;
    return json({success:false,message},status);
   }
