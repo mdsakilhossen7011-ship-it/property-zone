@@ -1086,11 +1086,11 @@ window.pzOtpVerifiedPhone='';
 window.pzOtpVerificationToken='';
 window.pzOtpCooldownTimer=null;
 function normalizePzBdPhone(value){
- let p=String(value||'').replace(/\\D/g,'');
+ let p=String(value||'').replace(/\D/g,'');
  if(p.startsWith('00880'))p=p.slice(2);
  if(p.startsWith('01')&&p.length===11)p='88'+p;
  if(p.startsWith('1')&&p.length===10)p='880'+p;
- return /^8801[3-9]\\d{8}$/.test(p)?'+'+p:null;
+ return /^8801[3-9]\d{8}$/.test(p)?'+'+p:null;
 }
 function pzRegistrationPhoneChanged(){
  const phone=document.getElementById('regPhone')?.value||'';
@@ -1142,7 +1142,7 @@ async function verifyRegistrationOtp(){
  clearStatus();
  const phone=normalizePzBdPhone(document.getElementById('regPhone').value),otp=document.getElementById('regOtp').value.trim(),button=document.getElementById('regVerifyOtp');
  if(!phone){setStatus('Enter a valid Bangladesh mobile number first.',true);return;}
- if(!/^\\d{6}$/.test(otp)){setStatus('Enter the 6-digit verification code.',true);return;}
+ if(!/^\d{6}$/.test(otp)){setStatus('Enter the 6-digit verification code.',true);return;}
  if(button)button.disabled=true;
  try{
   const data=await pzOtpRequest('otp-verify',{phone,otp});
@@ -1165,7 +1165,7 @@ async function registerWithEmail(){
  try{
   const first=document.getElementById('regFirst').value.trim(),last=document.getElementById('regLast').value.trim(),email=document.getElementById('regEmail').value.trim(),phone=normalizePzBdPhone(document.getElementById('regPhone').value),pw=document.getElementById('regPassword').value,confirm=document.getElementById('regConfirm').value,ref=(document.getElementById('regReferral').value.trim()||new URLSearchParams(location.search).get('ref')||'').trim();
   if(!first||!last)throw new Error('Enter your first and last name.');
-  if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))throw new Error('Enter a valid email address.');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Enter a valid email address.');
   if(!phone)throw new Error('Enter a valid Bangladesh mobile number.');
   if(window.pzOtpVerifiedPhone!==phone||!window.pzOtpVerificationToken)throw new Error('Please verify this mobile number with OTP first.');
   if(pw.length<8)throw new Error('Password must be at least 8 characters.');
