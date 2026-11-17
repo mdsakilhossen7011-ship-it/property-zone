@@ -1,5 +1,5 @@
-import { corsOrigin, preflight, json, readBody, firebase } from "./_shared.mjs";
-import { randomInt } from "node:crypto";
+import { corsOrigin, json, readBody, firebase } from "./_shared.mjs";
+import { randomInt, randomUUID } from "node:crypto";
 
 const ADMIN_ACCOUNTS = new Map([
   ["Ry06huUzzmeqryzna9lPzpNw4Rr1", "ridoyhasank5434@gmail.com"],
@@ -21,14 +21,48 @@ async function requireAdmin(user, db) {
 }
 
 export default async (req) => {
-  const blocked = preflight(req);
-  if (blocked) return blocked;
   const origin = corsOrigin(req);
+  if (req.method === "OPTIONS") return new Response(null, { status: origin ? 204 : 403, headers: {
+    "access-control-allow-origin": origin,
+    "access-control-allow-methods": "POST, OPTIONS",
+    "access-control-allow-headers": "Content-Type, Authorization",
+    "access-control-max-age": "86400",
+    "vary": "Origin"
+  }});
+  if (!origin) return new Response("Forbidden", { status: 403 });
+  if (req.method !== "POST") return json({success:false,message:"Method not allowed."},405,origin);
   try {
     const body = await readBody(req);
     if (!body || typeof body.action !== "string") return json({success:false,message:"Invalid request."},400,origin);
     const {auth,db} = firebase();
     const user = await requireUser(req,auth);
+
+    if (body.action === "admin-reset-round") {
+      await requireAdmin(user,db);
+      const settingsRef = db.doc("siteSettings/mysteryBox");
+      const result = await db.runTransaction(async tx => {
+        const snap = await tx.get(settingsRef);
+        if (!snap.exists) throw Object.assign(new Error("Mystery Box settings are missing."),{status:404});
+        const settings = snap.data();
+        const currentRemaining = Array.isArray(settings.prizePoolRemaining) ? settings.prizePoolRemaining : [];
+        const claimLimit = Math.max(0, Math.floor(Number(settings.claimLimit) || 0));
+        const claimedCount = Math.max(0, Math.floor(Number(settings.claimedCount) || 0));
+        const limitReached = claimLimit > 0 && claimedCount >= claimLimit;
+        if (String(settings.roundId || "") && currentRemaining.length > 0 && !limitReached)
+          throw Object.assign(new Error("The current round still has prizes. Finish it before starting a new round."),{status:409});
+        const pool = Array.isArray(settings.prizePool) ? settings.prizePool.map(Number) : [];
+        if (!pool.length || pool.length > 100 || pool.some(n => !Number.isSafeInteger(n) || n < 1 || n > 1000000))
+          throw Object.assign(new Error("Save a valid prize pool before starting a round."),{status:400});
+        const roundId = randomUUID();
+        tx.set(settingsRef,{
+          roundId, prizePoolRemaining:pool, claimedCount:0,
+          roundStartedAt:new Date(), roundStartedBy:user.uid,
+          roundStatus:"active"
+        },{merge:true});
+        return {roundId,total:pool.length,remaining:pool.length,totalBudget:pool.reduce((a,b)=>a+b,0)};
+      });
+      return json({success:true,...result},200,origin);
+    }
 
     if (body.action === "admin-claims") {
       await requireAdmin(user,db);
@@ -42,7 +76,7 @@ export default async (req) => {
         const x=d.data();
         return {id:d.id,uid:x.uid||"",email:x.email||"",name:x.name||"Member",publicId:x.publicId||"",rewardAmount:Number(x.rewardAmount)||0,status:x.status||"recorded",createdAt:x.createdAt?.toDate?.().toISOString?.()||null};
       });
-      return json({success:true,roundId,claims,remaining:Array.isArray(settings.prizePoolRemaining)?settings.prizePoolRemaining.length:0,total:Array.isArray(settings.prizePool)?settings.prizePool.length:0,claimedCount:Number(settings.claimedCount)||0,prizePoolTotalBDT:Number(settings.prizePoolTotalBDT)||0,enabled:settings.enabled===true},200,origin);
+      return json({success:true,roundId,claims,remaining:Array.isArray(settings.prizePoolRemaining)?settings.prizePoolRemaining.length:0,total:Array.isArray(settings.prizePool)?settings.prizePool.length:0,claimedCount:Number(settings.claimedCount)||0,claimLimit:Number(settings.claimLimit)||0,prizePoolTotalBDT:Number(settings.prizePoolTotalBDT)||0,enabled:settings.enabled===true},200,origin);
     }
 
     if (body.action !== "claim") return json({success:false,message:"Unknown action."},400,origin);
@@ -68,7 +102,9 @@ export default async (req) => {
       if (limit>0 && count>=limit) throw Object.assign(new Error("This round has reached its claim limit."),{status:409});
       const amount=Number(remaining.splice(randomInt(remaining.length),1)[0]);
       if (!Number.isSafeInteger(amount)||amount<1) throw Object.assign(new Error("Invalid prize pool entry."),{status:500});
-      tx.update(settingsRef,{prizePoolRemaining:remaining,claimedCount:count+1,lastClaimAt:new Date()});
+      const nextCount=count+1;
+      const nextStatus=(limit>0&&nextCount>=limit)?"claim_limit_reached":(remaining.length?"active":"exhausted");
+      tx.update(settingsRef,{prizePoolRemaining:remaining,claimedCount:nextCount,lastClaimAt:new Date(),roundStatus:nextStatus});
       tx.create(claimRef,{uid:user.uid,email:user.email||"",name:String(member.name||user.name||"Member").slice(0,100),publicId:String(member.publicId||""),rewardAmount:amount,roundId,status:"recorded",createdAt:new Date()});
       return {alreadyClaimed:false,rewardAmount:amount,roundId,remainingCount:remaining.length};
     });

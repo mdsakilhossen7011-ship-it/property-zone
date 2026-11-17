@@ -1081,7 +1081,23 @@ async function loadPublicMysteryBox(db,fs){
   document.getElementById('mysteryBoxAmount').textContent='৳'+amount.toLocaleString('en-US')+' REWARD';
   document.getElementById('mysteryBoxNote').textContent=(Number(s.claimLimit)>0?'Limited to first '+Math.floor(Number(s.claimLimit))+' claims · ':'')+(s.note||'Free Telegram claim required');
   const btn=document.getElementById('mysteryBoxOpenButton');
-  btn.onclick=()=>{if(s.telegramUrl){window.open(s.telegramUrl,'_blank','noopener,noreferrer');}else{alert('Mystery Box claim link will be available soon.');}};
+  btn.onclick=async()=>{
+   const liveUser=window.pzFirebase?.auth?.currentUser;
+   if(!liveUser){alert('Please sign in to open the Mystery Box.');showView('login');return;}
+   if(btn.disabled)return;
+   const oldText=btn.textContent;btn.disabled=true;btn.textContent='OPENING…';
+   try{
+    const idToken=await liveUser.getIdToken();
+    const response=await fetch('/.netlify/functions/mystery-box-claim',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},body:JSON.stringify({action:'claim'})});
+    let result={};try{result=await response.json();}catch{}
+    if(!response.ok||result.success!==true)throw new Error(result.message||'Mystery Box could not be opened. Please try again.');
+    if(result.alreadyClaimed)alert('You already opened this Mystery Box in the current round. Reward: ৳'+Number(result.rewardAmount||0).toLocaleString('en-US'));
+    else alert('Congratulations! You received ৳'+Number(result.rewardAmount||0).toLocaleString('en-US')+'. Remaining prizes: '+Number(result.remainingCount||0)+'.');
+    btn.textContent=result.alreadyClaimed?'ALREADY CLAIMED':'CLAIM RECORDED';
+    const note=document.getElementById('mysteryBoxNote');if(note)note.textContent=result.remainingCount===0?'All rewards in this round have been claimed.':(s.note||'Your reward has been recorded.');
+   }catch(error){alert(error.message||'Mystery Box is temporarily unavailable.');btn.textContent=oldText;}
+   finally{btn.disabled=false;}
+  };
   section.style.display='block';
  }catch(e){section.style.display='none';console.warn('Mystery Box settings could not load:',e);}
 }

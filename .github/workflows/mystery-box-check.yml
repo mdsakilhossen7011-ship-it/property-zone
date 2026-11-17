@@ -1,0 +1,27 @@
+name: Mystery Box Function Check
+
+on:
+  pull_request:
+    paths:
+      - "netlify/functions/mystery-box-claim.mjs"
+      - ".github/workflows/mystery-box-check.yml"
+  push:
+    branches:
+      - main
+      - feature/mystery-box-integration
+    paths:
+      - "netlify/functions/mystery-box-claim.mjs"
+      - ".github/workflows/mystery-box-check.yml"
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check Mystery Box Netlify Function syntax
+        run: node --check netlify/functions/mystery-box-claim.mjs
