@@ -1,0 +1,29 @@
+name: Safe Property Zone OTP POST Check
+
+on:
+  push:
+    branches: [cloudflare-otp-deploy]
+    paths:
+      - ".github/workflows/safe-otp-post-check.yml"
+
+jobs:
+  safe-post-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST an invalid phone number (must stop before SMS)
+        shell: bash
+        run: |
+          set -euo pipefail
+          response_file="$(mktemp)"
+          status="$(curl -sS -o "$response_file" -w '%{http_code}' \
+            -X POST 'https://property-zone-otp.mdsakilhossen409.workers.dev/otp-send' \
+            -H 'Content-Type: application/json' \
+            --data '{"phone":"not-a-phone"}')"
+          echo "HTTP_STATUS=$status"
+          cat "$response_file"
+          if [[ "$status" != "400" ]]; then
+            echo "Expected HTTP 400 for invalid phone; endpoint may be blocked before validation."
+            exit 1
+          fi
+          grep -q 'Enter a valid Bangladesh phone number' "$response_file"
+          echo "PASS: Worker accepted POST and rejected the invalid phone before the SMS provider step."
