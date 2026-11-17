@@ -340,7 +340,7 @@ html.pz-auth-pending #sideMenu{pointer-events:none!important}
  <div class="wallet-intro"><div class="eyebrow">PROLOGIS, INC. (PLD) WALLET</div><h2 style="margin:8px 0;color:#9bcfff">Withdraw to Your Wallet</h2><p class="muted" style="margin:0">Choose your payout method and use the Cash Out Number below. Enter the amount in Bangladeshi Taka (BDT ৳).</p><div id="withdrawPaymentInfo" class="wallet-note" style="margin:16px 0 0">Loading Cash Out Number…</div><div style="margin-top:14px">
  <label for="withdrawBalanceType" style="display:block;font-weight:800;margin-bottom:8px">Withdraw Balance</label>
  <select id="withdrawBalanceType" class="search" onchange="changeWithdrawBalanceType()" style="width:100%;max-width:100%">
-  <option value="available" selected>Available Balance</option>
+  <option value="deposit" selected>Deposit Balance</option>
   <option value="deposit">Deposit Balance</option>
   <option value="package">Package Balance</option>
   <option value="profit">Profit Balance</option>
@@ -634,44 +634,30 @@ async function requestPropertyPurchase(propertyId,packageAmount){
   const allowed=[1000,2000,5000,10000,20000,50000];
   if(!allowed.includes(Number(packageAmount))){status.textContent='Invalid package selected.';return;}
   const buttons=document.querySelectorAll('#propertyPackageList button');buttons.forEach(b=>b.disabled=true);
-  status.textContent='Checking Deposit Balance…';
+  status.textContent='Checking package and wallet balance…';
   try{
-   const f=await getFirebase(),fs=f.firestore;
-   const settingsSnap=await fs.getDoc(fs.doc(f.db,'siteSettings','wallet'));
-   const apiBase=String((settingsSnap.exists()?settingsSnap.data().walletLedgerApiUrl:'')||'').trim().replace(/\/+$/,'');
-   if(!apiBase)throw new Error('The new wallet system is not enabled yet. Please contact support.');
-   let apiUrl;
-   try{apiUrl=new URL(apiBase);}catch(_){throw new Error('Wallet backend URL is not configured correctly.');}
-   if(apiUrl.protocol!=='https:')throw new Error('Wallet backend must use a secure HTTPS address.');
+   await loadWalletSettings('deposit');
+   const rate=walletExchangeRate();
    const amountBDT=Number(packageAmount);
    if(!Number.isSafeInteger(amountBDT)||amountBDT<=0)throw new Error('Invalid package amount.');
-   const token=await currentUser.getIdToken();
-   const pendingKey='pz-package-purchase:'+currentUser.uid+':'+propertyId+':'+amountBDT;
-   let idempotencyKey='';
-   try{idempotencyKey=sessionStorage.getItem(pendingKey)||'';}catch(_){}
-   if(!idempotencyKey){idempotencyKey=crypto.randomUUID().replace(/-/g,'');try{sessionStorage.setItem(pendingKey,idempotencyKey);}catch(_){}}
-   const response=await fetch(apiUrl.href+'/v1/package-purchase',{
-    method:'POST',
-    headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-    body:JSON.stringify({propertyId,propertyTitle:p.name,amountBDT,idempotencyKey})
+   const f=await getFirebase(),fs=f.firestore,walletRef=fs.doc(f.db,'wallets',currentUser.uid),packageRef=fs.doc(fs.collection(f.db,'activePackages'));
+   await fs.runTransaction(f.db,async tx=>{
+    const profitSettingsRef=fs.doc(f.db,'siteSettings','propertyProfit');
+    const [walletSnap,profitSettingsSnap]=await Promise.all([tx.get(walletRef),tx.get(profitSettingsRef)]);
+    const propertyDailyRate=profitSettingsSnap.exists()?Number(profitSettingsSnap.data().dailyRate):0.02;
+    if(!Number.isFinite(propertyDailyRate)||propertyDailyRate<0||propertyDailyRate>1)throw new Error('Property profit rate is not configured correctly.');
+    const balance=walletSnap.exists()?walletBalanceInBDT(walletSnap.data(),rate):0;
+    if(balance+0.000001<amountBDT)throw new Error('Insufficient wallet balance. Please deposit funds first.');
+    tx.update(walletRef,{balanceBDT:Math.round((balance-amountBDT)*100)/100,lastPackagePurchaseId:packageRef.id,updatedAt:fs.serverTimestamp()});
+    tx.set(packageRef,{uid:currentUser.uid,propertyId,propertyTitle:p.name,amountBDT,dailyRate:propertyDailyRate,hourlyRate:propertyDailyRate/24,termDays:30,maturityAt:new Date(Date.now()+30*24*60*60*1000),status:'active',startedAt:fs.serverTimestamp(),createdAt:fs.serverTimestamp()});
    });
-   const result=await response.json().catch(()=>({}));
-   if(!response.ok){
-    const messages={
-     MIGRATION_PENDING:'Your wallet is not migrated yet. Package purchase is temporarily unavailable.',
-     INSUFFICIENT_DEPOSIT_BALANCE:'Insufficient Deposit Balance. Please deposit funds first.',
-     INVALID_PACKAGE_AMOUNT:'Invalid package amount.',
-     BACKEND_NOT_CONFIGURED:'Wallet backend is not configured yet.',
-     UNAUTHORIZED:'Your session expired. Please log in again.'
-    };
-    throw new Error(messages[result.error]||'Package purchase could not be completed. Please try again.');
-   }
-   try{sessionStorage.removeItem(pendingKey);}catch(_){}
-   status.textContent=result.duplicate?'This package purchase was already processed. Your balance was not charged again.':'Package of ৳'+amountBDT.toLocaleString('en-US')+' activated successfully. Deposit Balance reduced and Package Balance increased.';
-   await loadDashboardStats();await loadWalletAndEarnings();await showPropertyPackages(propertyId);
+   status.textContent='Package of ৳'+Number(packageAmount).toLocaleString('en-US')+' activated successfully.';
+   await loadDashboardStats();await loadWalletAndEarnings();
   }catch(e){status.textContent=e.message||'Could not activate package.';}
   finally{buttons.forEach(b=>b.disabled=false);}
 }
+
+
 
 function selectWalletMethod(kind,method,button){
  const field=document.getElementById(kind+'Method');if(!field)return;field.value=method;
@@ -720,48 +706,63 @@ function refreshWalletPaymentInfo(kind){
 function walletExchangeRate(){const rate=Number(walletSettingsCache?.exchangeRateBDT);return Number.isFinite(rate)&&rate>0?rate:0;}
 function walletBalanceInBDT(data,rate){if(data&&Number.isFinite(Number(data.balanceBDT)))return Math.max(0,Number(data.balanceBDT));const legacy=Number(data?.balanceUSD||0);if(!Number.isFinite(legacy)||legacy<0)throw new Error('Wallet balance is invalid.');if(legacy===0)return 0;if(!Number.isFinite(rate)||rate<=0)throw new Error('Saved conversion rate is unavailable for this legacy balance.');return Math.round(legacy*rate*100)/100;}
 function updateWalletAmountPreview(kind){const input=document.getElementById(kind+'Amount'),preview=document.getElementById(kind+'AmountPreview'),bdt=Number(input?.value||0);if(!preview)return;const label=kind==='deposit'?'Deposit amount':'Withdrawal amount';preview.textContent=Number.isFinite(bdt)&&bdt>0?label+': ৳'+bdt.toLocaleString('en-US',{maximumFractionDigits:0}):label+': ৳0';}
-async function getWithdrawAvailableBalanceBDT(){
- const f=await getFirebase(),fs=f.firestore,settingsSnap=await fs.getDoc(fs.doc(f.db,'siteSettings','wallet'));
+async function getWalletSourceBalances(){
+ const f=await getFirebase(),fs=f.firestore;
+ const [settingsSnap,walletSnap,packageSnap,requestSnap]=await Promise.all([
+  fs.getDoc(fs.doc(f.db,'siteSettings','wallet')),
+  fs.getDoc(fs.doc(f.db,'wallets',currentUser.uid)),
+  fs.getDocs(fs.query(fs.collection(f.db,'activePackages'),fs.where('uid','==',currentUser.uid))),
+  fs.getDocs(fs.query(fs.collection(f.db,'propertyEnquiries'),fs.where('uid','==',currentUser.uid)))
+ ]);
  walletSettingsCache=settingsSnap.exists()?settingsSnap.data():{};
- const apiBase=String(walletSettingsCache.walletLedgerApiUrl||'').trim().replace(/\/+$/,'');
- if(!apiBase)throw new Error('Wallet Ledger API এখনো Configure করা হয়নি।');
- const apiUrl=new URL(apiBase);if(apiUrl.protocol!=='https:')throw new Error('Wallet API অবশ্যই HTTPS হতে হবে।');
- const token=await currentUser.getIdToken(),response=await fetch(apiUrl.href+'/v1/wallet-summary',{headers:{Authorization:'Bearer '+token}});
- const data=await response.json().catch(()=>({}));
- if(!response.ok)throw new Error(data.error==='MIGRATION_PENDING'?'আপনার Wallet Migration এখনো সম্পন্ন হয়নি।':'Wallet balance load করা যায়নি।');
- const balances=data.balances||{};
- return ['deposit','package','profit'].reduce((sum,key)=>sum+Math.max(0,Number(balances[key]?.withdrawableBDT||0)),0);
+ const wallet=walletSnap.exists()?walletSnap.data():{};
+ const rate=Number(walletSettingsCache.exchangeRateBDT||0);
+ const deposit=walletSnap.exists()?walletBalanceInBDT(wallet,rate):0;
+ const profit=Math.max(0,Number(wallet.profitBalanceBDT||0));
+ const activePackages=packageSnap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.status==='active');
+ const packageBalance=activePackages.reduce((sum,p)=>{
+  const amount=Number(p.amountBDT!=null?p.amountBDT:Number(p.amountUSD||0)*Number(p.exchangeRateBDT||rate));
+  return sum+(Number.isFinite(amount)&&amount>0?amount:0);
+ },0);
+ const pending={deposit:0,package:0,profit:0},pendingPackageIds=new Set();
+ requestSnap.docs.forEach(d=>{
+  const r=d.data();if(r.requestType!=='wallet-withdraw'||r.status!=='pending')return;
+  const match=String(r.message||'').match(/\[PZ_SOURCE=(deposit|package|profit)(?:;PACKAGE_ID=([^\]]+))?\]/);
+  if(!match)return;
+  pending[match[1]]+=Math.max(0,Number(r.amountBDT)||0);
+  if(match[1]==='package'&&match[2])pendingPackageIds.add(match[2]);
+ });
+ const balances={deposit,package:packageBalance,profit};
+ const result={};
+ Object.keys(balances).forEach(key=>{
+  const reserved=pending[key]||0;
+  result[key]={balance:balances[key],pending:reserved,available:Math.max(0,Math.round((balances[key]-reserved)*100)/100)};
+ });
+ result.activePackages=activePackages;
+ result.pendingPackageIds=pendingPackageIds;
+ result.wallet=wallet;
+ return result;
+}
+async function getWithdrawAvailableBalanceBDT(){
+ const balances=await getWalletSourceBalances();
+ return ['deposit','package','profit'].reduce((sum,key)=>sum+balances[key].available,0);
 }
 async function getWalletLedgerSourceBalance(type){
- const f=await getFirebase(),fs=f.firestore;
- const settingsSnap=await fs.getDoc(fs.doc(f.db,'siteSettings','wallet'));
- walletSettingsCache=settingsSnap.exists()?settingsSnap.data():{};
- const apiBase=String(walletSettingsCache.walletLedgerApiUrl||'').trim().replace(/\/+$/,'');
- if(!apiBase)throw new Error('নতুন Wallet API এখনো চালু হয়নি।');
- let apiUrl;try{apiUrl=new URL(apiBase);}catch(_){throw new Error('Wallet API URL সঠিক নয়।');}
- if(apiUrl.protocol!=='https:')throw new Error('Wallet API অবশ্যই HTTPS হতে হবে।');
- const token=await currentUser.getIdToken();
- const response=await fetch(apiUrl.href+'/v1/wallet-summary',{headers:{Authorization:'Bearer '+token}});
- const data=await response.json().catch(()=>({}));
- if(!response.ok)throw new Error(data.error==='MIGRATION_PENDING'?'আপনার Wallet হিসাব এখনো Migration হয়নি।':'Wallet balance load করা যায়নি।');
- const item=data.balances?.[type];
- if(!item||!Number.isFinite(Number(item.withdrawableBDT)))throw new Error('এই Balance-এর তথ্য পাওয়া যায়নি।');
- return {balance:Number(item.balancePoisha||0)/100,available:Number(item.withdrawableBDT),pending:Number(item.pendingWithdrawalPoisha||0)/100};
+ if(!['deposit','package','profit'].includes(type))throw new Error('Select a valid balance source.');
+ const balances=await getWalletSourceBalances();
+ return balances[type];
 }
 async function refreshWithdrawAvailableBalance(){
  const display=document.getElementById('withdrawAvailableBalance');if(!display||!currentUser)return;
- const type=document.getElementById('withdrawBalanceType')?.value||'available';
+ const type=document.getElementById('withdrawBalanceType')?.value||'deposit';
  display.textContent='Balance: Loading…';
  try{
-  if(type==='available'){
-   const balance=await getWithdrawAvailableBalanceBDT();
-   display.textContent='Available Balance: ৳'+balance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-  }else{
-   const item=await getWalletLedgerSourceBalance(type),label=type==='deposit'?'Deposit Balance':type==='package'?'Package Balance':'Profit Balance';
-   display.textContent=label+': ৳'+item.balance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' · Available: ৳'+item.available.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-  }
+  const balances=await getWalletSourceBalances(),item=balances[type],label=type==='deposit'?'Deposit Balance':type==='package'?'Package Balance':'Profit Balance';
+  if(type==='package'&&item.balance<=0)display.textContent='Package Balance: ৳0.00 · No active package';
+  else display.textContent=label+': ৳'+item.balance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' · Available: ৳'+item.available.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
  }catch(e){display.textContent='Balance: '+e.message;console.warn('Withdraw source balance could not load:',e);}
 }
+
 async function loadWithdrawPackageOptions(){
  const picker=document.getElementById('withdrawPackagePicker'),select=document.getElementById('withdrawPackageId');
  if(!picker||!select)return;
@@ -808,12 +809,11 @@ document.getElementById('withdrawPackageId')?.addEventListener('change',async fu
 async function setWithdrawAllAmount(){
  const el=document.getElementById('withdrawAmount'),status=document.getElementById('withdrawStatus');
  if(!el||!currentUser)return;
- const type=document.getElementById('withdrawBalanceType')?.value||'available';
+ const type=document.getElementById('withdrawBalanceType')?.value||'deposit';
  if(status)status.textContent='Checking available balance…';
  try{
   let balance;
-  if(type==='available')balance=await getWithdrawAvailableBalanceBDT();
-  else if(type==='package'){
+  if(type==='package'){
    const packageId=document.getElementById('withdrawPackageId')?.value||'';
    if(!packageId)throw new Error('আগে একটি Active Package নির্বাচন করুন।');
    const f=await getFirebase(),snap=await f.firestore.getDoc(f.firestore.doc(f.db,'activePackages',packageId));
@@ -821,17 +821,14 @@ async function setWithdrawAllAmount(){
    const p=snap.data(),settingsSnap=await f.firestore.getDoc(f.firestore.doc(f.db,'siteSettings','wallet')),rate=Number(settingsSnap.exists()?settingsSnap.data().exchangeRateBDT||0:0);
    balance=Number(p.amountBDT!=null?p.amountBDT:Number(p.amountUSD||0)*Number(p.exchangeRateBDT||rate));
   }else balance=(await getWalletLedgerSourceBalance(type)).available;
-  if(Number.isFinite(balance)&&balance>0){
-   el.value=String(Math.floor(balance));updateWalletAmountPreview('withdraw');
-   if(status)status.textContent='Maximum available amount selected.';
-  }else if(status)status.textContent='No available balance to withdraw yet.';
+  if(Number.isFinite(balance)&&balance>0){el.value=String(Math.floor(balance));updateWalletAmountPreview('withdraw');if(status)status.textContent='Maximum available amount selected.';}
+  else if(status)status.textContent='No available balance to withdraw yet.';
  }catch(e){if(status)status.textContent='Could not load balance: '+e.message;}
 }
 
 async function compressDepositProof(file){const bitmap=await createImageBitmap(file);try{const scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height)),canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)throw new Error('Could not prepare the screenshot.');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);let blob=null;for(const q of [.82,.72,.62,.52,.42]){blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',q));if(blob&&blob.size<=480*1024)break;}if(!blob||blob.size>480*1024)throw new Error('Screenshot is too large after compression. Choose a smaller image.');return await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error('Could not read the compressed screenshot.'));reader.readAsDataURL(blob);});}finally{bitmap.close();}}
 async function submitWalletRequest(event,kind){
  event.preventDefault();if(!currentUser){setStatus('Please log in first.',true);showView('login');return;}
-
  const isDeposit=kind==='deposit',amountBDT=Number(document.getElementById(isDeposit?'depositAmount':'withdrawAmount').value),method=document.getElementById(isDeposit?'depositMethod':'withdrawMethod').value,account=document.getElementById(isDeposit?'depositNumber':'withdrawNumber').value.trim(),proofFile=isDeposit?document.getElementById('depositProof').files[0]:null,status=document.getElementById(kind+'Status'),form=event.currentTarget,submit=form.querySelector('button[type="submit"]');
  await loadWalletSettings(kind);
  const settings=walletSettingsCache||{},minimumDeposit=Math.max(1,Number(settings.minimumDepositBDT||500)),minimumWithdraw=Math.max(1,Number(settings.minimumWithdrawBDT||500)),enabled=isDeposit?settings.depositEnabled===true:settings.withdrawEnabled===true,accounts=isDeposit?settings.depositAccounts:settings.withdrawAccounts,officialAccount=String(accounts?.[method]||'').trim();
@@ -844,30 +841,44 @@ async function submitWalletRequest(event,kind){
  if(isDeposit&&(!proofFile||!['image/jpeg','image/png','image/webp'].includes(proofFile.type)||proofFile.size<=0||proofFile.size>5*1024*1024)){status.textContent='Please upload a JPG, PNG or WebP payment screenshot up to 5 MB.';return;}
  submit.disabled=true;status.textContent='Submitting your request…';
  try{
-  const f=await getFirebase(),fs=f.firestore,publicId=await ensurePublicUserId(f,currentUser);
+  const f=await getFirebase(),fs=f.firestore,requestRef=fs.doc(fs.collection(f.db,'propertyEnquiries')),publicId=await ensurePublicUserId(f,currentUser);
+  const payload={requestType:isDeposit?'wallet-deposit':'wallet-withdraw',uid:currentUser.uid,publicId,email:currentUser.email||'',name:currentUser.displayName||'',amountBDT,paymentCurrency:'BDT',paymentMethod:method,walletNumber:account,paymentAccount:account,senderAccount:isDeposit?account:'',receivingAccount:isDeposit?officialAccount:'',adminPayoutAccount:isDeposit?'':officialAccount,message:(isDeposit?'DEPOSIT':'WITHDRAWAL')+' request: ৳'+amountBDT.toLocaleString('en-US')+' via '+method+'. '+(isDeposit?'Sender: '+account+' · Paid to: '+officialAccount:'User payout account: '+account+' · Admin payout info: '+officialAccount),status:'pending',createdAt:fs.serverTimestamp()};
   if(isDeposit){
-   const requestRef=fs.doc(fs.collection(f.db,'propertyEnquiries'));
-   const payload={requestType:'wallet-deposit',uid:currentUser.uid,publicId,email:currentUser.email||'',name:currentUser.displayName||'',amountBDT,paymentCurrency:'BDT',paymentMethod:method,walletNumber:account,paymentAccount:account,senderAccount:account,receivingAccount:officialAccount,message:'DEPOSIT request: ৳'+amountBDT.toLocaleString('en-US')+' via '+method+'. Sender: '+account+' · Paid to: '+officialAccount,status:'pending',createdAt:fs.serverTimestamp()};
    status.textContent='Preparing screenshot…';payload.paymentProofData=await compressDepositProof(proofFile);await fs.setDoc(requestRef,payload);
   }else{
-   if(selectedWithdrawSource==='available')throw new Error('পুরোনো Combined Balance থেকে Withdrawal বন্ধ। Deposit, Package অথবা Profit Balance নির্বাচন করুন।');
+   const source=document.getElementById('withdrawBalanceType')?.value||'deposit';
+   if(!['deposit','package','profit'].includes(source))throw new Error('Select Deposit, Package or Profit Balance.');
    let packageId='';
-   if(selectedWithdrawSource==='package'){
+   if(source==='package'){
     packageId=document.getElementById('withdrawPackageId')?.value||'';
     if(!packageId)throw new Error('উত্তোলনের জন্য একটি Active Package নির্বাচন করুন।');
    }
-   const settingsSnap=await fs.getDoc(fs.doc(f.db,'siteSettings','wallet')),apiBase=String((settingsSnap.exists()?settingsSnap.data().walletLedgerApiUrl:'')||'').trim().replace(/\/+$/,'');
-   if(!apiBase)throw new Error('Wallet Ledger API এখনো Configure করা হয়নি।');
-   const apiUrl=new URL(apiBase);if(apiUrl.protocol!=='https:')throw new Error('Wallet API অবশ্যই HTTPS হতে হবে।');
-   const token=await currentUser.getIdToken(),idempotencyStorageKey='pz-withdraw:'+currentUser.uid+':'+selectedWithdrawSource+':'+amountBDT+':'+packageId;
-   let idempotencyKey='';try{idempotencyKey=sessionStorage.getItem(idempotencyStorageKey)||'';}catch(_){}
-   if(!idempotencyKey){idempotencyKey=crypto.randomUUID().replace(/-/g,'');try{sessionStorage.setItem(idempotencyStorageKey,idempotencyKey);}catch(_){}}
-   const response=await fetch(apiUrl.href+'/v1/withdrawal-request',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({source:selectedWithdrawSource,amountBDT,paymentMethod:method,walletNumber:account,packageId,publicId,email:currentUser.email||'',name:currentUser.displayName||'',adminPayoutAccount:officialAccount,idempotencyKey})});
-   const result=await response.json().catch(()=>({}));
-   if(!response.ok)throw new Error(result.error==='MIGRATION_PENDING'?'আপনার Wallet Migration এখনো সম্পন্ন হয়নি।':result.error||'Withdrawal Request ব্যর্থ হয়েছে।');
-   try{sessionStorage.removeItem(idempotencyStorageKey);}catch(_){} 
+   const sourceTag='[PZ_SOURCE='+source+(packageId?';PACKAGE_ID='+packageId:'')+']';
+   payload.message+=' '+sourceTag;payload.reservedFunds=true;payload.transactionId='';
+   const walletRef=fs.doc(f.db,'wallets',currentUser.uid),requestQuery=fs.query(fs.collection(f.db,'propertyEnquiries'),fs.where('uid','==',currentUser.uid));
+   await fs.runTransaction(f.db,async tx=>{
+    const [walletSnap,pendingSnap]=await Promise.all([tx.get(walletRef),tx.get(requestQuery)]);
+    if(!walletSnap.exists())throw new Error('Your wallet has no available balance.');
+    const wallet=walletSnap.data(),pendingBySource={deposit:0,package:0,profit:0},pendingPackageIds=new Set();
+    pendingSnap.docs.forEach(d=>{const r=d.data();if(r.requestType!=='wallet-withdraw'||r.status!=='pending')return;const m=String(r.message||'').match(/\[PZ_SOURCE=(deposit|package|profit)(?:;PACKAGE_ID=([^\]]+))?\]/);if(!m)return;pendingBySource[m[1]]+=Number(r.amountBDT)||0;if(m[1]==='package'&&m[2])pendingPackageIds.add(m[2]);});
+    let sourceBalance=0,packageSnap=null;
+    if(source==='deposit')sourceBalance=walletBalanceInBDT(wallet,Number(settings.exchangeRateBDT||0));
+    else if(source==='profit')sourceBalance=Math.max(0,Number(wallet.profitBalanceBDT||0));
+    else{
+     if(pendingPackageIds.has(packageId))throw new Error('This package already has a pending withdrawal request.');
+     const packageRef=fs.doc(f.db,'activePackages',packageId);packageSnap=await tx.get(packageRef);
+     if(!packageSnap.exists()||packageSnap.data().uid!==currentUser.uid||packageSnap.data().status!=='active')throw new Error('Selected package is no longer active.');
+     const p=packageSnap.data();sourceBalance=Number(p.amountBDT!=null?p.amountBDT:Number(p.amountUSD||0)*Number(p.exchangeRateBDT||settings.exchangeRateBDT||0));
+     if(!Number.isFinite(sourceBalance)||sourceBalance<=0||Math.abs(sourceBalance-amountBDT)>0.001)throw new Error('Package withdrawal must match the full selected package amount.');
+    }
+    const available=Math.max(0,Math.round((sourceBalance-pendingBySource[source])*100)/100);
+    if(available+0.000001<amountBDT)throw new Error('Insufficient '+source+' balance. Available: ৳'+available.toLocaleString('en-US')+'.');
+    const pending=Math.max(0,Number(wallet.pendingWithdrawalBDT||0));
+    tx.update(walletRef,{pendingWithdrawalBDT:Math.round((pending+amountBDT)*100)/100,lastWithdrawalRequestId:requestRef.id,updatedAt:fs.serverTimestamp()});
+    tx.set(requestRef,payload);
+   });
   }
-  status.textContent=(isDeposit?'Deposit':'Withdrawal')+' request submitted. Status: Pending admin review.';form.reset();if(!isDeposit)refreshWithdrawAvailableBalance();
+  status.textContent=(isDeposit?'Deposit':'Withdrawal')+' request submitted. Status: Pending admin review.';form.reset();if(!isDeposit){refreshWithdrawAvailableBalance();loadWithdrawPackageOptions();}
   const field=document.getElementById(kind+'Method');if(field)field.value='bKash';
   document.querySelectorAll('[data-wallet-method="'+kind+'"]').forEach(el=>el.classList.toggle('selected',el.dataset.value==='bKash'));
   const accountInput=document.getElementById(kind+'Number'),accountLabel=document.getElementById(kind+'AccountLabel');if(accountInput){accountInput.type='tel';accountInput.inputMode='numeric';accountInput.maxLength=11;accountInput.placeholder='01XXXXXXXXX';}if(accountLabel)accountLabel.textContent=isDeposit?'Your payment number (from which you sent the money)':'Your receiving bKash / Nagad / Rocket number';
@@ -907,48 +918,41 @@ async function loadWalletAndEarnings(){
  if(!currentUser)return;
  try{
   const f=await getFirebase(),fs=f.firestore;
-  const settingsSnap=await fs.getDoc(fs.doc(f.db,'siteSettings','wallet'));
-  const profitSettingsSnap=await fs.getDoc(fs.doc(f.db,'siteSettings','propertyProfit'));
+  const [settingsSnap,profitSettingsSnap,walletSnap,packageSnap]=await Promise.all([
+   fs.getDoc(fs.doc(f.db,'siteSettings','wallet')),
+   fs.getDoc(fs.doc(f.db,'siteSettings','propertyProfit')),
+   fs.getDoc(fs.doc(f.db,'wallets',currentUser.uid)),
+   fs.getDocs(fs.query(fs.collection(f.db,'activePackages'),fs.where('uid','==',currentUser.uid)))
+  ]);
   walletSettingsCache=settingsSnap.exists()?settingsSnap.data():{};
-  const profitSettings=profitSettingsSnap.exists()?profitSettingsSnap.data():{};
-  const profitHistory=Array.isArray(profitSettings.history)?profitSettings.history:[];
-  const currentProfitRate=Number.isFinite(Number(profitSettings.dailyRate))?Number(profitSettings.dailyRate):0.02;
-  const rate=Number(walletSettingsCache.exchangeRateBDT||0);
-  let ledgerBalances=null;
-  const apiBase=String(walletSettingsCache.walletLedgerApiUrl||'').trim().replace(/\/+$/,'');
-  if(apiBase){
-   try{
-    const apiUrl=new URL(apiBase);
-    if(apiUrl.protocol==='https:'){
-     const token=await currentUser.getIdToken(),response=await fetch(apiUrl.href+'/v1/wallet-summary',{headers:{Authorization:'Bearer '+token}});
-     const result=await response.json().catch(()=>({}));
-     if(response.ok)ledgerBalances=result.balances||null;
-    }
-   }catch(apiError){console.warn('Segregated wallet summary is not available yet:',apiError);}
-  }
-  const snap=await fs.getDocs(fs.query(fs.collection(f.db,'activePackages'),fs.where('uid','==',currentUser.uid),fs.where('status','==','active')));
-  const now=Date.now(),dayStart=new Date();dayStart.setHours(0,0,0,0);
-  let hourly=0,today=0,total=0;
-  snap.docs.forEach(d=>{
-   const p=d.data(),amount=Number(p.amountBDT||(Number(p.amountUSD||0)*Number(p.exchangeRateBDT||rate))),started=p.startedAt?.toMillis?.()||now;
+  const profitSettings=profitSettingsSnap.exists()?profitSettingsSnap.data():{},profitHistory=Array.isArray(profitSettings.history)?profitSettings.history:[];
+  const currentProfitRate=Number.isFinite(Number(profitSettings.dailyRate))?Number(profitSettings.dailyRate):0.02,rate=Number(walletSettingsCache.exchangeRateBDT||0);
+  const wallet=walletSnap.exists()?walletSnap.data():{},deposit=walletSnap.exists()?walletBalanceInBDT(wallet,rate):0,profit=Math.max(0,Number(wallet.profitBalanceBDT||0));
+  const active=packageSnap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.status==='active');
+  const packageBalance=active.reduce((sum,p)=>{const amount=Number(p.amountBDT!=null?p.amountBDT:Number(p.amountUSD||0)*Number(p.exchangeRateBDT||rate));return sum+(Number.isFinite(amount)&&amount>0?amount:0);},0);
+  const now=Date.now(),dayStart=new Date();dayStart.setHours(0,0,0,0);let hourly=0,today=0,total=0;
+  active.forEach(p=>{
+   const amount=Number(p.amountBDT!=null?p.amountBDT:Number(p.amountUSD||0)*Number(p.exchangeRateBDT||rate)),started=p.startedAt?.toMillis?.()||now;
    if(!Number.isFinite(amount)||amount<=0)return;
-   const maturity=started+30*24*60*60*1000,earningEnd=Math.min(now,maturity);
+   const maturity=started+Math.max(1,Number(p.termDays||30))*24*60*60*1000,earningEnd=Math.min(now,maturity);
    if(earningEnd>now-1)hourly+=amount*currentProfitRate/24;
    today+=propertyProfitBetween(amount,Math.max(started,dayStart.getTime()),earningEnd,profitHistory,Number(p.dailyRate)||0.02);
    total+=propertyProfitBetween(amount,started,earningEnd,profitHistory,Number(p.dailyRate)||0.02);
   });
   const money=n=>'৳'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const balanceIds=[['dashDepositBalance','dashDepositNote','deposit'],['dashPackageBalance','dashPackageNote','package'],['dashProfitBalance','dashProfitNote','profit']];
-  balanceIds.forEach(([valueId,noteId,key])=>{
-   const value=document.getElementById(valueId),note=document.getElementById(noteId),item=ledgerBalances?.[key];
-   if(value)value.textContent=item?money(Number(item.balancePoisha||0)/100):'—';
-   if(note)note.textContent=item?'Available: '+money(Number(item.withdrawablePoisha||0)/100):'Migration pending or Wallet API not configured';
-  });
+  document.getElementById('dashDepositBalance').textContent=money(deposit);
+  document.getElementById('dashPackageBalance').textContent=money(packageBalance);
+  document.getElementById('dashProfitBalance').textContent=money(profit);
+  const legacyNote=walletSnap.exists()&&Number(wallet.balanceBDT||0)>0&&wallet.walletSegregationVersion!==2?'Legacy wallet funds may include earlier combined earnings; verify before reclassifying.':'Deposit funds available for package purchase.';
+  document.getElementById('dashDepositNote').textContent=legacyNote;
+  document.getElementById('dashPackageNote').textContent=active.length+' active package(s)';
+  document.getElementById('dashProfitNote').textContent='Matured profit available for withdrawal';
   document.getElementById('dashHourlyEarning').textContent=money(hourly);
   document.getElementById('dashTodayEarning').textContent=money(today);
   document.getElementById('dashTotalEarning').textContent=money(total);
  }catch(e){['dashDepositBalance','dashPackageBalance','dashProfitBalance','dashHourlyEarning','dashTodayEarning','dashTotalEarning'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='—'});console.warn('Wallet and earnings could not load:',e);}
 }
+
 function startWalletEarningsRefresh(){
  if(walletEarningsRefreshTimer)clearInterval(walletEarningsRefreshTimer);
  loadWalletAndEarnings();
