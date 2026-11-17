@@ -870,7 +870,7 @@ async function submitWalletRequest(event,kind){
      const p=packageSnap.data();sourceBalance=Number(p.amountBDT!=null?p.amountBDT:Number(p.amountUSD||0)*Number(p.exchangeRateBDT||settings.exchangeRateBDT||0));
      if(!Number.isFinite(sourceBalance)||sourceBalance<=0||Math.abs(sourceBalance-amountBDT)>0.001)throw new Error('Package withdrawal must match the full selected package amount.');
     }
-    const available=Math.max(0,Math.round((sourceBalance-pendingBySource[source])*100)/100);
+    const available=Math.max(0,Math.round((sourceBalance-(source==='package'?0:pendingBySource[source]))*100)/100);
     if(available+0.000001<amountBDT)throw new Error('Insufficient '+source+' balance. Available: ৳'+available.toLocaleString('en-US')+'.');
     const pending=Math.max(0,Number(wallet.pendingWithdrawalBDT||0));
     tx.update(walletRef,{pendingWithdrawalBDT:Math.round((pending+amountBDT)*100)/100,lastWithdrawalRequestId:requestRef.id,updatedAt:fs.serverTimestamp()});
