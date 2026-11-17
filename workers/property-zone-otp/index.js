@@ -23,12 +23,29 @@ const normalizePhone = (value) => {
 const one9Phone = (phone) => phone.replace(/^\+/,"");
 async function one9Sms(to, sms, env) {
   if(!env.ONE9_API_KEY) throw new Error("SMS gateway is not configured");
-  const body=new URLSearchParams({api_key:env.ONE9_API_KEY,action:"send-sms",to,from:"sms",sms});
-  const res=await fetch("https://sms.one9.one/sms/api",{method:"POST",headers:{"Accept":"application/json","Content-Type":"application/x-www-form-urlencoded"},body});
-  const raw=await res.text(); let data;
+  const response=await fetch("https://sms.one9.one/api/v3/sms/send",{
+    method:"POST",
+    headers:{
+      "Authorization":"Bearer "+env.ONE9_API_KEY,
+      "Accept":"application/json",
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({
+      recipient:to,
+      sender_id:env.ONE9_SENDER_ID||"W3Space",
+      type:"plain",
+      message:sms
+    })
+  });
+  const raw=await response.text();
+  let data;
   try{data=JSON.parse(raw)}catch{data={message:raw}}
-  const valid=data && (data.success===true || data.status==="success" || ["200","900","0"].includes(String(data.statusCode||data.code||"")));
-  if(!res.ok || !valid) throw new Error(data.message||data.reason||"SMS gateway request failed");
+  const accepted=data && (data.status==="success" || data.success===true);
+  if(!response.ok || !accepted) {
+    const reason=typeof data.message==="string" ? data.message :
+      (typeof data.error==="string" ? data.error : "One9 SMS API rejected the request (HTTP "+response.status+")");
+    throw new Error(reason.slice(0,240));
+  }
   return data;
 }
 async function hashOtp(phone, otp) {
