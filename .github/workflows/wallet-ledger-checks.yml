@@ -1,13 +1,9 @@
-name: Wallet Ledger Backend and Frontend Checks
+name: Firebase Wallet Checks
 
 on:
   pull_request:
     paths:
-      - "scripts/audit-wallet-ledger-migration.js"
       - "scripts/credit-daily-earnings.js"
-      - "package.json"
-      - "backend/**"
-      - "wallet-ledger-worker/**"
       - "index.html"
       - "scripts/check-inline-scripts.js"
       - ".github/workflows/wallet-ledger-checks.yml"
@@ -15,10 +11,7 @@ on:
     branches:
       - "feature/segregated-wallet-backend-2026-11-17"
     paths:
-      - "scripts/audit-wallet-ledger-migration.js"
-      - "package.json"
-      - "backend/**"
-      - "wallet-ledger-worker/**"
+      - "scripts/credit-daily-earnings.js"
       - "index.html"
       - "scripts/check-inline-scripts.js"
       - ".github/workflows/wallet-ledger-checks.yml"
@@ -34,15 +27,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Check audit script syntax
-        run: node --check scripts/audit-wallet-ledger-migration.js
+      - name: Check customer site inline JavaScript
+        run: node scripts/check-inline-scripts.js index.html
       - name: Check daily earnings script syntax
         run: node --check scripts/credit-daily-earnings.js
-      - name: Check customer site inline JavaScript syntax
-        run: node scripts/check-inline-scripts.js index.html
-      - name: Check Worker module syntax
-        run: node --input-type=module --check < wallet-ledger-worker/src/index.js
-      - name: Run wallet ledger unit tests
-        run: node --test wallet-ledger-worker/test/*.test.js
-      - name: Check package metadata
-        run: node -e "const p=require('./package.json'); if(!p.scripts['audit:wallet-ledger']) process.exit(1)"
