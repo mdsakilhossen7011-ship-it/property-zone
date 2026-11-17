@@ -11,11 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: cloudflare/wrangler-action@v3
+      - name: Deploy Worker and upload One9 secret
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy --config workers/property-zone-otp/wrangler.toml
+          wranglerVersion: "4"
+          workingDirectory: "workers/property-zone-otp"
+          command: deploy
           secrets: |
             ONE9_API_KEY
         env:
