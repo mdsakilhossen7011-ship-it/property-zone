@@ -22,6 +22,10 @@ async function one9(path, params, env) {
 }
 export default {
  async fetch(request, env) {
+  const path=new URL(request.url).pathname.replace(/\\/+$/,"");
+  if(request.method==="GET" && (path==="/" || path==="/health")) {
+   return json({success:true,worker:"property-zone-otp",otpStorage:!!env.OTP_STORE,one9Configured:!!env.ONE9_API_KEY,firebaseConfigured:!!env.FIREBASE_SERVICE_ACCOUNT_JSON});
+  }
   if(request.method==="OPTIONS") return new Response(null,{headers:cors});
   if(request.method!=="POST") return json({success:false,message:"Method not allowed"},405);
   if(!env.OTP_STORE) return json({success:false,message:"OTP storage is not configured"},500);
