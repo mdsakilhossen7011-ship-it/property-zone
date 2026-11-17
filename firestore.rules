@@ -83,6 +83,13 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Admin-only read access for wallet ledger existence checks in Admin Panel transactions.
+    // No client-side create, update, delete, or collection listing is permitted.
+    match /walletLedgers/{memberId} {
+      allow get: if isAdmin();
+      allow list, create, update, delete: if false;
+    }
+
     function validPackageAmount(amount) {
       return amount in [1000, 2000, 5000, 10000, 20000, 50000, 100000];
     }
