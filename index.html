@@ -726,17 +726,19 @@ async function getWalletSourceBalances(){
  },0);
  const pending={deposit:0,package:0,profit:0},pendingPackageIds=new Set();
  requestSnap.docs.forEach(d=>{
-  const r=d.data();if(r.requestType!=='wallet-withdraw'||r.status!=='pending')return;
+  const r=d.data();if(r.requestType!=='wallet-withdraw'||!['pending','open'].includes(String(r.status||'').toLowerCase()))return;
   const match=String(r.message||'').match(/\[PZ_SOURCE=(deposit|package|profit)(?:;PACKAGE_ID=([^\]]+))?\]/);
   if(!match)return;
   pending[match[1]]+=Math.max(0,Number(r.amountBDT)||0);
   if(match[1]==='package'&&match[2])pendingPackageIds.add(match[2]);
  });
  const balances={deposit,package:packageBalance,profit};
- const result={};
+ const knownPending=Object.values(pending).reduce((sum,value)=>sum+value,0),aggregatePending=Math.max(0,Number(wallet.pendingWithdrawalBDT||0));
+ const legacyPending=Math.max(0,Math.round((aggregatePending-knownPending)*100)/100),reserveMismatch=knownPending-aggregatePending>0.01;
+ const result={legacyPending,reserveMismatch};
  Object.keys(balances).forEach(key=>{
   const reserved=pending[key]||0;
-  result[key]={balance:balances[key],pending:reserved,available:Math.max(0,Math.round((balances[key]-reserved)*100)/100)};
+  result[key]={balance:balances[key],pending:reserved,available:legacyPending>0||reserveMismatch?0:Math.max(0,Math.round((balances[key]-reserved)*100)/100)};
  });
  result.activePackages=activePackages;
  result.pendingPackageIds=pendingPackageIds;
@@ -758,7 +760,8 @@ async function refreshWithdrawAvailableBalance(){
  display.textContent='Balance: Loading…';
  try{
   const balances=await getWalletSourceBalances(),item=balances[type],label=type==='deposit'?'Deposit Balance':type==='package'?'Package Balance':'Profit Balance';
-  if(type==='package'&&item.balance<=0)display.textContent='Package Balance: ৳0.00 · No active package';
+  if(balances.legacyPending>0||balances.reserveMismatch)display.textContent='New withdrawals are paused: an older or inconsistent pending withdrawal needs Admin review.';
+  else if(type==='package'&&item.balance<=0)display.textContent='Package Balance: ৳0.00 · No active package';
   else display.textContent=label+': ৳'+item.balance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' · Available: ৳'+item.available.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
  }catch(e){display.textContent='Balance: '+e.message;console.warn('Withdraw source balance could not load:',e);}
 }
@@ -855,7 +858,9 @@ async function submitWalletRequest(event,kind){
     const walletSnap=await tx.get(walletRef);const pendingSnap=await fs.getDocs(requestQuery);
     if(!walletSnap.exists())throw new Error('Your wallet has no available balance.');
     const wallet=walletSnap.data(),pendingBySource={deposit:0,package:0,profit:0},pendingPackageIds=new Set();
-    pendingSnap.docs.forEach(d=>{const r=d.data();if(r.requestType!=='wallet-withdraw'||r.status!=='pending')return;const m=String(r.message||'').match(/\[PZ_SOURCE=(deposit|package|profit)(?:;PACKAGE_ID=([^\]]+))?\]/);if(!m)return;pendingBySource[m[1]]+=Number(r.amountBDT)||0;if(m[1]==='package'&&m[2])pendingPackageIds.add(m[2]);});
+    pendingSnap.docs.forEach(d=>{const r=d.data();if(r.requestType!=='wallet-withdraw'||!['pending','open'].includes(String(r.status||'').toLowerCase()))return;const m=String(r.message||'').match(/\[PZ_SOURCE=(deposit|package|profit)(?:;PACKAGE_ID=([^\]]+))?\]/);if(!m)return;pendingBySource[m[1]]+=Number(r.amountBDT)||0;if(m[1]==='package'&&m[2])pendingPackageIds.add(m[2]);});
+    const knownPending=Object.values(pendingBySource).reduce((sum,value)=>sum+value,0),aggregatePending=Math.max(0,Number(wallet.pendingWithdrawalBDT||0));
+    if(aggregatePending-knownPending>0.01||knownPending-aggregatePending>0.01)throw new Error('An older or inconsistent pending withdrawal needs Admin review before a new request.');
     let sourceBalance=0,packageSnap=null;
     if(source==='deposit')sourceBalance=walletBalanceInBDT(wallet,Number(settings.exchangeRateBDT||0));
     else if(source==='profit')sourceBalance=Math.max(0,Number(wallet.profitBalanceBDT||0));
