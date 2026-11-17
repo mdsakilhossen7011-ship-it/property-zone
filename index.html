@@ -387,7 +387,7 @@ html.pz-auth-pending #sideMenu{pointer-events:none!important}
 </section>
 
 <section id="withdrawWallet" class="view">
- <div class="wallet-intro"><div class="eyebrow">PROPERTY ZONE WALLET</div><h2 style="margin:8px 0;color:#9bcfff">Withdraw to Your Wallet</h2><p class="muted" style="margin:0">Choose your payout method, enter your own receiving account number, and enter the amount in Bangladeshi Taka (BDT ৳).</p><div id="withdrawPaymentInfo" class="wallet-note" style="margin:16px 0 0">Loading Cash Out Number…</div><div style="margin-top:14px">
+ <div class="wallet-intro"><div class="eyebrow">PROPERTY ZONE WALLET</div><h2 style="margin:8px 0;color:#9bcfff">Withdraw to Your Wallet</h2><p class="muted" style="margin:0">Choose your payout method, enter your own receiving account number, and enter the amount in Bangladeshi Taka (BDT ৳).</p><div id="withdrawPaymentInfo" class="wallet-note" style="margin:16px 0 0">Enter your own receiving account details below.</div><div style="margin-top:14px">
  <label for="withdrawBalanceType" style="display:block;font-weight:800;margin-bottom:8px">Withdraw Balance</label>
  <select id="withdrawBalanceType" class="search" onchange="changeWithdrawBalanceType()" style="width:100%;max-width:100%">
   <option value="deposit" selected>Deposit Balance</option>
@@ -410,7 +410,7 @@ html.pz-auth-pending #sideMenu{pointer-events:none!important}
 </div>
  <div class="wallet-grid" style="grid-template-columns:minmax(0,1fr);max-width:760px"><article class="wallet-card withdraw"><div class="wallet-card-head"><div class="wallet-card-title"><div class="wallet-symbol">↗</div><div><h3>Withdraw</h3><div class="wallet-sub">Request a payout</div></div></div><span class="wallet-pill">PAYOUT</span></div>
    <form onsubmit="submitWalletRequest(event,'withdraw')"><label for="withdrawAmount">Withdrawal amount (BDT ৳)</label><button class="btn" type="button" style="margin:6px 0 10px" onclick="setWithdrawAllAmount()">MAX Withdraw</button><input id="withdrawAmount" class="search" type="number" min="1" step="1" required placeholder="Minimum set by admin" oninput="updateWalletAmountPreview('withdraw')"><input type="hidden" id="withdrawMethod" value="bKash"><p id="withdrawAmountPreview" class="wallet-status">Amount: ৳0</p>
-     <label for="withdrawNumber" id="withdrawAccountLabel">Your receiving bKash / Nagad number</label><input id="withdrawNumber" class="search" type="tel" inputmode="numeric" maxlength="11" required placeholder="01XXXXXXXXX"><button class="btn primary wallet-submit" type="submit">Submit Withdrawal Request →</button></form><p id="withdrawStatus" class="wallet-status" role="status"></p>
+     <label for="withdrawNumber" id="withdrawAccountLabel">Send your bKash Personal Number</label><input id="withdrawNumber" class="search" type="tel" inputmode="numeric" maxlength="11" required placeholder="01XXXXXXXXX"><button class="btn primary wallet-submit" type="submit">Submit Withdrawal Request →</button></form><p id="withdrawStatus" class="wallet-status" role="status"></p>
   </article></div>
  <div class="wallet-note">Requests are sent to the Property Zone admin for review. bKash, Nagad, Rocket, Bank Account and Binance are available request methods; this form records a request and does not transfer money automatically.</div>
   <button class="btn" style="margin-top:10px" onclick="showView('walletHistory')">View Deposit / Withdraw History</button>
@@ -708,13 +708,21 @@ async function requestPropertyPurchase(propertyId,packageAmount){
 
 
 
+function withdrawAccountPrompt(method){
+ if(method==='bKash')return 'Send your bKash Personal Number';
+ if(method==='Nagad')return 'Send your Nagad Personal Number';
+ if(method==='Rocket')return 'Send your Rocket Personal Number';
+ if(method==='Binance')return 'Enter your Binance ID';
+ if(method==='Bank Account')return 'Enter your Bank Account Details';
+ return 'Enter your receiving account details';
+}
 function selectWalletMethod(kind,method,button){
  const field=document.getElementById(kind+'Method');if(!field)return;field.value=method;
  document.querySelectorAll('[data-wallet-method="'+kind+'"]').forEach(el=>el.classList.toggle('selected',el===button));
  const account=document.getElementById(kind+'Number'),label=document.getElementById(kind+'AccountLabel');if(!account||!label)return;
- if(method==='Binance'){label.textContent='Binance Pay ID / UID';account.type='text';account.inputMode='text';account.maxLength=100;account.placeholder='Enter Binance Pay ID or UID';}
- else if(method==='Bank Account'){label.textContent=kind==='deposit'?'Your sending bank account details':'Your receiving bank account details';account.type='text';account.inputMode='text';account.maxLength=100;account.placeholder='Bank name and account number';}
- else{label.textContent=kind==='deposit'?'Your payment number (from which you sent the money)':'Your receiving '+method+' number';account.type='tel';account.inputMode='numeric';account.maxLength=method==='Rocket'?12:11;account.placeholder=method==='Rocket'?'12-digit Rocket account number':'01XXXXXXXXX';}
+ if(method==='Binance'){label.textContent=kind==='withdraw'?withdrawAccountPrompt(method):'Binance Pay ID / UID';account.type='text';account.inputMode='text';account.maxLength=100;account.placeholder='Enter your Binance ID';}
+ else if(method==='Bank Account'){label.textContent=kind==='deposit'?'Your sending bank account details':withdrawAccountPrompt(method);account.type='text';account.inputMode='text';account.maxLength=100;account.placeholder='Bank name and account number';}
+ else{label.textContent=kind==='deposit'?'Your payment number (from which you sent the money)':withdrawAccountPrompt(method);account.type='tel';account.inputMode='numeric';account.maxLength=method==='Rocket'?12:11;account.placeholder=method==='Rocket'?'12-digit Rocket account number':'01XXXXXXXXX';}
  refreshWalletPaymentInfo(kind);
 }
 async function loadWalletSettings(kind){
@@ -736,7 +744,7 @@ async function loadWalletSettings(kind){
    const heading=String(walletSettingsCache.depositLabelText||'Cash In Number').trim();
    info.textContent=(account?heading+' · '+method+': '+account:(message||'Admin has not configured this payment method yet.'))+' · Minimum: ৳'+Math.max(1,Number(walletSettingsCache.minimumDepositBDT||500)).toLocaleString('en-US');
   }else{
-   info.textContent='Enter your own receiving '+method+' number below. Admin will review and process your withdrawal request. · Minimum: ৳'+Math.max(1,Number(walletSettingsCache.minimumWithdrawBDT||500)).toLocaleString('en-US');
+   info.textContent=withdrawAccountPrompt(method)+'. Admin will review and process your withdrawal request. · Minimum: ৳'+Math.max(1,Number(walletSettingsCache.minimumWithdrawBDT||500)).toLocaleString('en-US');
   }
   const submit=form.querySelector('button[type="submit"]');
   if(submit)submit.disabled=kind==='deposit'?!account:false;
@@ -756,7 +764,7 @@ function refreshWalletPaymentInfo(kind){
   const heading=String(walletSettingsCache.depositLabelText||'Cash In Number').trim();
   info.textContent=account?heading+' · '+method+': '+account:(message||'Admin has not configured this payment method yet.');
  }else{
-  info.textContent='Enter your own receiving '+method+' number below. Admin will review and process your withdrawal request.';
+  info.textContent=withdrawAccountPrompt(method)+'. Admin will review and process your withdrawal request.';
  }
  const submit=form.querySelector('button[type="submit"]');if(submit)submit.disabled=kind==='deposit'?!account:false;
 }
