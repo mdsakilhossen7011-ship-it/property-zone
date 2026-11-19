@@ -201,6 +201,36 @@ html.pz-auth-pending #sideMenu{pointer-events:none!important}
 .pz-register-card button:disabled{opacity:.42;cursor:not-allowed}.pz-verified-note{margin-top:9px;color:#a9e6b2;font-size:12px;font-weight:700}.pz-create-account{width:100%;min-height:49px;margin-top:18px;font-size:15px}.pz-register-foot{margin:13px 0 0}.pz-register-login{text-align:center;font-size:13px;color:var(--muted);margin:18px 0 0}.pz-register-login a{color:var(--gold2);font-weight:700}
 @media(max-width:480px){.pz-register-grid{grid-template-columns:1fr;gap:12px}.pz-field-wide{grid-column:auto}.pz-phone-row{gap:6px}.pz-country-code{padding:0 8px;font-size:12px}.pz-otp-panel{padding:11px}}
 
+
+/* Mobile registration: compact, full-width layout only; no form behavior changes */
+@media(max-width:600px){
+  body{padding-top:62px!important}
+  .top .nav{min-height:62px;padding:9px 12px}
+  .brand{font-size:17px;gap:8px}
+  .top .menu-toggle{width:42px!important;height:40px!important;flex-basis:42px!important}
+  .wrap{padding:12px 10px 34px}
+  .form.pz-register-card{width:100%;max-width:620px;margin:8px auto;padding:15px 13px;border-radius:14px}
+  .pz-register-head{margin-bottom:13px}
+  .pz-register-head h2{font-size:27px;margin:6px 0}
+  .pz-register-head p{font-size:12px;line-height:1.45}
+  .pz-register-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 9px}
+  .pz-field{gap:5px;font-size:12px}
+  .pz-field-wide{grid-column:1/-1}
+  .pz-register-card .pz-field input{height:42px;padding:9px 11px;font-size:13px;border-radius:9px}
+  .pz-country-code{height:42px;padding:0 9px;font-size:12px}
+  .pz-phone-row{gap:7px}
+  .pz-field small{font-size:10px;line-height:1.35}
+  .pz-create-account{min-height:44px;margin-top:13px;font-size:14px}
+  .pz-register-foot{margin:9px 0 0;font-size:11px;line-height:1.4}
+  .pz-register-login{font-size:12px;margin:12px 0 0}
+}
+@media(max-width:360px){
+  .form.pz-register-card{padding:12px 10px}
+  .pz-register-grid{gap:9px 7px}
+  .pz-register-head h2{font-size:24px}
+  .pz-register-card .pz-field input{padding:8px 9px;font-size:12px}
+}
+
 </style>
 <style>
 #pzMaintenanceScreen{position:fixed;inset:0;z-index:2147483000;display:none;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse at top,#1d2938 0%,#090d14 65%);color:#f5f7fb;text-align:center;font-family:Inter,system-ui,Arial,sans-serif}#pzMaintenanceScreen .pz-maint-card{width:min(560px,100%);padding:34px 26px;border:1px solid #3a4657;border-radius:20px;background:#101722;box-shadow:0 24px 80px #0008}#pzMaintenanceScreen .pz-maint-icon{font-size:42px;margin-bottom:12px}#pzMaintenanceScreen h1{margin:0 0 12px;font-size:clamp(25px,5vw,36px)}#pzMaintenanceScreen p{margin:0;color:#bac5d3;line-height:1.8;white-space:pre-wrap}
