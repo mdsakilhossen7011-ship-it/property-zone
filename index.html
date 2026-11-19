@@ -1275,11 +1275,21 @@ async function registerWithEmail(){
   const idToken=await result.user.getIdToken();
   try{await pzOtpRequest('complete-registration',{phone,verificationToken:window.pzOtpVerificationToken,idToken});}
   catch(attachError){try{await f.deleteUser(result.user)}catch(deleteError){console.error('Could not roll back incomplete registration:',deleteError)}throw attachError;}
-  await ensureMemberProfile(f,result.user,ref,phone);
-  await f.firestore.setDoc(f.firestore.doc(f.db,'members',result.user.uid),{username,updatedAt:f.firestore.serverTimestamp()},{merge:true});
-  await ensurePublicUserId(f,result.user);
+  // Firebase createUserWithEmailAndPassword already signs the new user in.
+  // Once the OTP Worker has attached the verified phone, keep that session active
+  // even if optional member/profile synchronization encounters a temporary error.
   window.pzOtpVerifiedPhone='';window.pzOtpVerificationToken='';
-  currentUser=result.user;currentMemberStatus='active';authReady=true;syncNavigation();updateDashboard();showView('home');setStatus('Account created successfully. You can now use your account.');
+  currentUser=result.user;currentMemberStatus='active';authReady=true;syncNavigation();updateDashboard();showView('home');
+  setStatus('Account created successfully. You are now logged in.');
+  try{
+   await ensureMemberProfile(f,result.user,ref,phone);
+   await f.firestore.setDoc(f.firestore.doc(f.db,'members',result.user.uid),{username,updatedAt:f.firestore.serverTimestamp()},{merge:true});
+   await ensurePublicUserId(f,result.user);
+   if(currentUser?.uid===result.user.uid)updateDashboard();
+  }catch(profileError){
+   console.warn('Account was created and remains signed in, but profile synchronization needs retry:',profileError);
+   setStatus('Account created and logged in. Some profile details may take a moment to sync.');
+  }
  }catch(e){
   if(f?.auth?.currentUser&&result&&f.auth.currentUser.uid===result.user.uid){try{await f.signOut(f.auth)}catch(signOutError){console.warn('Could not clear incomplete registration session:',signOutError)}}
   const msg=e.code==='auth/email-already-in-use'?'This email already has an account. Please log in, or use Forgot password to reset its password.':(e.message||'Could not create account. Please try again.');
