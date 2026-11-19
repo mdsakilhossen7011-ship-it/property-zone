@@ -300,19 +300,19 @@ html.pz-auth-pending #sideMenu{pointer-events:none!important}
 <section id="login" class="view"><div class="panel form"><div class="eyebrow">Welcome back</div><h2>Member Login</h2><div id="emailLogin"><input id="loginEmail" type="email" placeholder="Email address" autocomplete="email"><input id="loginPassword" type="password" placeholder="Password" autocomplete="current-password"><button class="btn primary" id="loginButton" style="width:100%" onclick="loginEmailPassword()">Login</button><p style="text-align:right;margin:10px 0"><a href="#" onclick="resetLoginPassword();return false" style="color:var(--gold2)">Forgot password?</a></p></div><p class="notice">Sign in with your email and password.</p><p>New here? <a href="#" onclick="showView('register')" style="color:var(--gold2)">Create account</a></p></div></section>
 <section id="register" class="view">
  <div class="panel form pz-register-card">
-  <div class="pz-register-head"><div class="eyebrow">PROPERTY ZONE · MEMBER ACCESS</div><h2>Create your account</h2><p class="muted">Enter your details to create an account with your email address.</p></div>
+  <div class="pz-register-head"><div class="eyebrow">PROPERTY ZONE · MEMBER ACCESS</div><h2>Create your account</h2><p class="muted">Enter your details and verify your phone number to create an account.</p></div>
   <div class="pz-register-grid">
    <label class="pz-field pz-field-wide"><span>User name</span><input id="regUsername" type="text" placeholder="Choose a username" autocomplete="username" minlength="3" maxlength="24" required></label>
    <label class="pz-field"><span>First name</span><input id="regFirst" type="text" placeholder="First name" autocomplete="given-name" maxlength="60" required></label>
    <label class="pz-field"><span>Last name</span><input id="regLast" type="text" placeholder="Last name" autocomplete="family-name" maxlength="60" required></label>
    <label class="pz-field pz-field-wide"><span>Email</span><input id="regEmail" type="email" placeholder="you@example.com" autocomplete="email" maxlength="120" required></label>
-   <div class="pz-field pz-field-wide" style="display:none" aria-hidden="true"><label for="regPhone">Phone number</label><div class="pz-phone-row"><span class="pz-country-code">🇧🇩 +880</span><input id="regPhone" type="tel" inputmode="tel" placeholder="01XXXXXXXXX" autocomplete="tel-national" maxlength="16"></div><small>Phone verification will be enabled later.</small></div>
+   <label class="pz-field pz-field-wide"><span>Phone number</span><div class="pz-phone-row"><span class="pz-country-code">🇧🇩 +880</span><input id="regPhone" type="tel" inputmode="tel" placeholder="01XXXXXXXXX" autocomplete="tel-national" maxlength="16" oninput="pzRegistrationPhoneChanged()" required></div><small>Enter your Bangladesh mobile number. OTP verification is required.</small></label>
    <label class="pz-field"><span>Password</span><input id="regPassword" type="password" placeholder="At least 8 characters" autocomplete="new-password" minlength="8" required></label>
    <label class="pz-field"><span>Confirm password</span><input id="regConfirm" type="password" placeholder="Re-enter password" autocomplete="new-password" minlength="8" required></label>
    <label class="pz-field pz-field-wide"><span>Referral code <em>(optional)</em></span><input id="regReferral" type="text" placeholder="Enter referral code if you have one" autocomplete="off" maxlength="40"></label>
   </div>
-  <button class="btn primary pz-create-account" id="regCreate" type="button" onclick="startEmailRegistration()">Create Account</button>
-  <p class="notice pz-register-foot">Register securely with your email and password. Phone verification is temporarily paused.</p>
+  <button class="btn primary pz-create-account" id="regCreate" type="button" onclick="startRegistrationOtp()">Create Account</button>
+  <p class="notice pz-register-foot">Your account will be created only after your phone number is verified by OTP.</p>
   <p class="pz-register-login">Already have an account? <a href="#" onclick="showView('login');return false">Sign in</a></p>
  </div>
 </section>
@@ -1168,31 +1168,7 @@ function validateRegistrationDetails(){
  if(pw!==confirm)throw new Error('Passwords do not match.');
  return phone;
 }
-async function startEmailRegistration(){
- clearStatus();const button=document.getElementById('regCreate');let f=null,result=null;
- try{
-  const username=document.getElementById('regUsername').value.trim(),first=document.getElementById('regFirst').value.trim(),last=document.getElementById('regLast').value.trim(),email=document.getElementById('regEmail').value.trim(),pw=document.getElementById('regPassword').value,confirm=document.getElementById('regConfirm').value,ref=(document.getElementById('regReferral').value.trim()||new URLSearchParams(location.search).get('ref')||'').trim();
-  if(!/^[a-zA-Z0-9_.-]{3,24}$/.test(username))throw new Error('User name must be 3–24 characters using letters, numbers, dot, dash or underscore.');
-  if(!first||!last)throw new Error('Enter your first and last name.');
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Enter a valid email address.');
-  if(pw.length<8)throw new Error('Password must be at least 8 characters.');
-  if(pw!==confirm)throw new Error('Passwords do not match.');
-  if(button){button.disabled=true;button.textContent='Creating account…';}
-  f=await getFirebase();
-  if(ref&&ref.toUpperCase()!=='PZWYYMWLBZ'){const referral=await f.firestore.getDoc(f.firestore.doc(f.db,'referralCodes',ref.toUpperCase()));if(!referral.exists()||referral.data().active!==true)throw new Error('Referral code is invalid or inactive. Check the code and try again.');}
-  result=await f.createUserWithEmailAndPassword(f.auth,email,pw);
-  await f.updateProfile(result.user,{displayName:first+' '+last});
-  result.user.pzUsername=username;
-  await ensureMemberProfile(f,result.user,ref,'');
-  await f.firestore.setDoc(f.firestore.doc(f.db,'members',result.user.uid),{username,updatedAt:f.firestore.serverTimestamp()},{merge:true});
-  await ensurePublicUserId(f,result.user);
-  window.pzOtpVerifiedPhone='';window.pzOtpVerificationToken='';
-  currentUser=result.user;currentMemberStatus='active';authReady=true;syncNavigation();updateDashboard();showView('home');setStatus('Account created successfully. You can now use your account.');
- }catch(e){
-  if(f?.auth?.currentUser&&result&&f.auth.currentUser.uid===result.user.uid){try{await f.signOut(f.auth)}catch(signOutError){console.warn('Could not clear incomplete registration session:',signOutError)}}
-  setStatus(e.message||'Could not create your account. Please try again.',true);
- }finally{if(button){button.disabled=false;button.textContent='Create Account';}}
-}
+async function startEmailRegistration(){return startRegistrationOtp();}
 async function startRegistrationOtp(){
  clearStatus();const button=document.getElementById('regCreate');
  try{validateRegistrationDetails();if(button){button.disabled=true;button.textContent='Sending code…';}await sendRegistrationOtp();}
